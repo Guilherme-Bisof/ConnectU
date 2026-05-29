@@ -18,93 +18,110 @@ enum Role {
 }
 
 model Company {
-  id              String @id @default(uuid())
-  name            String @unique
-  description     String?
-  logoUrl         String?
-  website         String?
+  id          String  @id @default(uuid())
+  name        String  @unique
+  description String?
+  logoUrl     String?
+  website     String?
 
-  members         User[]
-  jobs            Job[]
+  members User[]
+  jobs    Job[]
 
-  createdAt       DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 model User {
-  id              String   @id @default(uuid())
-  name            String
-  email           String   @unique
-  password        String
-  role            Role     @default(STUDENT)
-  avatarUrl       String?
-  bio             String?
+  id         String  @id @default(uuid())
+  name       String
+  email      String  @unique
+  password   String
+  role       Role    @default(STUDENT)
+  avatarUrl  String?
+  degreeType String?
+  startDate  String?
+  endDate    String?
+  bio        String?
+  resumeUrl  String?
+  isPioneer  Boolean @default(false)
 
   // Carreira e Status 
-  currentCompany  String?  // Onde o aluno trabalha atualmente
-  isOpenToWork    Boolean  @default(false) // Se está procurando emprego
-  
-  // Específico para Alunos
-  course          String?  
-  institution     String?  
-  skills          String[] // ["Next.js", "Node", "PostgreSQL"]
-  githubUrl       String?
-  
-  // Links Personalizados (Portfólio, YouTube, etc)
-  links           Link[]
-  projects        Project[]
+  currentCompany String? // Onde o aluno trabalha atualmente
+  isOpenToWork   Boolean @default(false) // Se está procurando emprego
 
+  // Específico para Alunos
+  course      String?
+  institution String?
+  skills      String[] // ["Next.js", "Node", "PostgreSQL"]
+  githubUrl   String?
+
+  // Links Personalizados (Portfólio, YouTube, etc)
+  links    Link[]
+  projects Project[]
+
+  // Aplicação de vagas
+  applications Application[]
 
   // Relacionamentos
-  posts           Post[]   
-  messages        Message[]
+  posts    Post[]
+  messages Message[]
+  likes    Like[]
+  comments Comment[]
 
-  companyId       String?
-  company         Company?  @relation(fields: [companyId], references: [id])
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
 }
 
 model Link {
-  id      String @id @default(uuid())
-  label   String // Título do link (ex: "YouTube", "Portfólio")
-  url     String // A URL real
-  
-  userId  String
-  user    User   @relation(fields: [userId], references: [id])
+  id    String @id @default(uuid())
+  label String // Título do link (ex: "YouTube", "Portfólio")
+  url   String // A URL real
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 }
 
 model Job {
   id             String   @id @default(uuid())
-  title          String   
-  description    String
-  requiredSkills String[] 
+  title          String
+  type           String
+  description    String?
+  requiredSkills String[]
+  desirableSkills String[]
+  isInternship    Boolean @default(false)
+
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
 
-  companyId      String
-  company        Company  @relation(fields: [companyId], references: [id])
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  applications Application[]
 }
 
 model Post {
   id        String   @id @default(uuid())
   content   String
-  imageUrl  String?  
+  imageUrl  String?
   createdAt DateTime @default(now())
 
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
-}
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
 
+  likes    Like[]
+  comments Comment[]
+}
 
 // Projetos
 model Project {
-  id        String @id @default(uuid())
-  title     String
-  description   String
-  link      String?
-  imageUrl  String?
+  id          String  @id @default(uuid())
+  title       String
+  description String
+  link        String?
+  imageUrl    String?
 
   // Relacionamento
-  userId    String
-  user      User @relation(fields: [userId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
 }
@@ -115,11 +132,11 @@ enum ChatContext {
 }
 
 model Room {
-  id          String      @id @default(uuid())
-  context     ChatContext @default(SOCIAL)
-  jobId       String?     // Atrelado a uma vaga se for profissional
-  messages    Message[]
-  createdAt   DateTime    @default(now())
+  id        String      @id @default(uuid())
+  context   ChatContext @default(SOCIAL)
+  jobId     String? // Atrelado a uma vaga se for profissional
+  messages  Message[]
+  createdAt DateTime    @default(now())
 }
 
 model Message {
@@ -127,11 +144,47 @@ model Message {
   content   String
   createdAt DateTime @default(now())
 
-  roomId    String
-  room      Room     @relation(fields: [roomId], references: [id])
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id])
 
-  senderId  String
-  sender    User     @relation(fields: [senderId], references: [id])
+  senderId String
+  sender   User   @relation(fields: [senderId], references: [id])
 }
 
+model Application {
+  id        String   @id @default(uuid())
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
 
+  // Relação com o Aluno (user)
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  // Relação com Vaga (job)
+  jobId String
+  job   Job    @relation(fields: [jobId], references: [id])
+
+  // Utilizador para não poder se candidatar duas vezes
+  @@unique([userId, jobId])
+}
+
+model Like {
+  id     String @id @default(uuid())
+  postId String
+  userId String
+  
+  post   Post   @relation(fields: [postId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+  postId    String
+  userId    String
+
+  // Relações
+  post Post @relation(fields: [postId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+}

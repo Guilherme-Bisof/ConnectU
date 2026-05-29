@@ -30,11 +30,20 @@ export class UserController {
   async updateProfile(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { bio, skills, links, projects } = req.body;
+      const { bio, skills, links, projects, name, course, institution,avatarUrl, degreeType, startDate, endDate, resumeUrl } =
+        req.body;
 
       const updatedUser = await prisma.user.update({
         where: { id: String(id) },
         data: {
+          name,
+          course,
+          institution,
+          avatarUrl,
+          degreeType,
+          startDate,
+          endDate,
+          resumeUrl,
           bio,
           skills,
           ...(links && {
@@ -48,16 +57,23 @@ export class UserController {
             projects: {
               deleteMany: {},
               create: projects,
-            }
-          })
+            },
+          }),
         },
         select: {
           id: true,
           name: true,
           email: true,
           role: true,
+          companyId: true,
           course: true,
           institution: true,
+          avatarUrl: true,
+          degreeType: true,
+          startDate: true,
+          endDate: true,
+          resumeUrl: true,
+          isPioneer: true,
           bio: true,
           skills: true,
           links: true,
@@ -69,6 +85,43 @@ export class UserController {
     } catch (error) {
       console.error("Erro ao atualizar perfil:", error);
       res.status(500).json({ error: "Erro ao atualizar o perfil." });
+    }
+  }
+
+  async getUserById(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      const user = await prisma.user.findUnique({
+        where: { id: String(id) },
+        select: {
+          id: true,
+          name: true,
+          role: true,
+          companyId: true,
+          avatarUrl: true,
+          degreeType: true,
+          startDate: true,
+          endDate: true,
+          resumeUrl: true,
+          isPioneer: true,
+          course: true,
+          institution: true,
+          bio: true,
+          skills: true,
+          links: true,
+          projects: true,
+        },
+      });
+
+      if (!user) {
+        return res.status(400).json({ error: "Usuário não encontrado." });
+      }
+
+      res.json(user);
+    } catch (error) {
+      console.error("Erro ao buscar usuário:", error);
+      res.status(500).json({ error: "Erro interno ao buscar o perfil." });
     }
   }
 }

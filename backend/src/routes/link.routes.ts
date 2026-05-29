@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { LinkController } from "../controllers/LinkController.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
+
 
 const linkRoutes = Router();
 const linkController = new LinkController();
 
-linkRoutes.post("/", linkController.create);
+linkRoutes.post("/", authMiddleware, linkController.create);
 
 export { linkRoutes };

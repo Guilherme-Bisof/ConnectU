@@ -5,6 +5,7 @@ import { jobRoutes } from "./routes/job.routes.js";
 import { linkRoutes } from './routes/link.routes.js'; 
 import { postRoutes } from './routes/post.routes.js'; 
 import { authRoutes } from './routes/auth.routes.js';
+import { applicationRoutes } from "./routes/application.routes.js";
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use("/jobs", jobRoutes);
 app.use("/links", linkRoutes);
 app.use("/posts", postRoutes);
 app.use("/login", authRoutes);
+app.use("/applications", applicationRoutes);
 
 const PORT = process.env.PORT || 3333;
 

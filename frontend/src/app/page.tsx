@@ -40,13 +40,16 @@ export default function AuthPage() {
 
       if (response.ok) {
         if (isLogin) {
-          localStorage.setItem("connectu_user", JSON.stringify(data));
+          localStorage.setItem("connectu_user", JSON.stringify(data.user));
+          localStorage.setItem("connectu_token", data.token);
 
           router.push("/dashboard");
         } else {
           alert("Conta criada com sucesso! Agora faça o login.");
           setIsLogin(true);
         }
+      } else {
+        alert(data.error || "Erro ao processar requisição");
       }
     } catch (error) {
       console.error("Erro na conexão:", error);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FiThumbsUp, FiMessageSquare, FiTrash2 } from "react-icons/fi";
+import { FiThumbsUp, FiMessageSquare, FiTrash2, FiAward } from "react-icons/fi";
 
 interface UserData {
   id: string;
@@ -9,18 +9,32 @@ interface UserData {
   role: string;
   course?: string;
   institution?: string;
+  isPioneer?: boolean;
 }
 
 interface Post {
   id: string;
   content: string;
   createdAt: string;
-  authorId: string; 
+  authorId: string;
+  likes: { userId: string }[];
+  userId: string;
+  comments: {
+    id: string;
+    content: string;
+    userId: string;
+    user: {
+      id: string;
+      name: string;
+      isPioneer?: boolean;
+    };
+  }[];
   author: {
     name: string;
     role: string;
     course?: string;
     institution?: string;
+    isPioneer?: boolean;
   };
 }
 
@@ -45,7 +59,11 @@ export default function DashboardFeed() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [newPostText, setNewPostText] = useState("");
 
-  
+  const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(
+    null,
+  );
+  const [commentContent, setCommentContent] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [feedback, setFeedback] = useState<{
@@ -66,16 +84,21 @@ export default function DashboardFeed() {
   async function fetchPosts() {
     setIsFetching(true);
     try {
-      const res = await fetch("http://localhost:3333/posts");
+      const token = localStorage.getItem("connectu_token");
+      const res = await fetch("http://localhost:3333/posts", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const data = await res.json();
-      
+
       if (Array.isArray(data)) {
         setPosts(data);
       } else {
         console.warn("O backend não retornou uma lista:", data);
         setPosts([]);
       }
-
     } catch (error) {
       console.error("Erro ao buscar feed:", error);
       setPosts([]);
@@ -90,9 +113,13 @@ export default function DashboardFeed() {
     setFeedback(null);
 
     try {
+      const token = localStorage.getItem("connectu_token");
       const res = await fetch("http://localhost:3333/posts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           content: newPostText,
           authorId: user.id,
@@ -106,7 +133,7 @@ export default function DashboardFeed() {
           msg: "Publicação enviada com sucesso!",
         });
         fetchPosts();
-        setTimeout(() => setFeedback(null), 3000); 
+        setTimeout(() => setFeedback(null), 3000);
       } else {
         setFeedback({
           type: "error",
@@ -124,15 +151,73 @@ export default function DashboardFeed() {
     if (!confirm("Tem certeza que deseja excluir esta publicação?")) return;
 
     try {
+      const token = localStorage.getItem("connectu_token");
       const res = await fetch(`http://localhost:3333/posts/${postId}`, {
         method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res.ok) {
-        fetchPosts(); // Recarrega o feed sem o post apagado
+        fetchPosts();
       }
     } catch (error) {
       console.error("Erro ao deletar:", error);
+    }
+  }
+
+  async function handleComment(postId: string) {
+    const token = localStorage.getItem("connectu_token");
+    try {
+      const res = await fetch(`http://localhost:3333/posts/${postId}/comment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content: commentContent }),
+      });
+
+      if (res.ok) {
+        setCommentContent("");
+        setActiveCommentPostId(null);
+        await fetchPosts();
+      }
+    } catch (error) {
+      console.error("Erro ao comentar:", error);
+    }
+  }
+
+  async function handleLike(postId: string) {
+    if (!user) return;
+    const token = localStorage.getItem("connectu_token");
+
+    try {
+      const res = await fetch(`http://localhost:3333/posts/${postId}/like`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        await fetchPosts();
+      }
+    } catch (error) {
+      console.error("Erro ao curtir:", error);
+    }
+  }
+
+  async function handleDeleteComment(commentId: string) {
+    const token = localStorage.getItem("connectu_token");
+    try {
+      const res = await fetch(
+        `http://localhost:3333/posts/comment/${commentId}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (res.ok) fetchPosts();
+    } catch (error) {
+      console.error("Erro ao deletar comentário:", error);
     }
   }
 
@@ -160,7 +245,6 @@ export default function DashboardFeed() {
               rows={2}
             />
 
-            {/* Mensagem de Feedback Premium */}
             {feedback && (
               <p
                 className={`text-sm mt-2 ${feedback.type === "success" ? "text-emerald-400" : "text-red-400"}`}
@@ -189,7 +273,6 @@ export default function DashboardFeed() {
       </div>
 
       <div className="flex flex-col gap-4">
-        {/* Skeleton Loading (Se estiver carregando) */}
         {isFetching ? (
           [1, 2, 3].map((n) => (
             <div
@@ -224,10 +307,25 @@ export default function DashboardFeed() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800 font-bold text-zinc-300 uppercase">
                     {post.author.name.charAt(0)}
                   </div>
+
+                  {/* Bloco do Autor Corrigido com Flexbox */}
                   <div>
-                    <h3 className="text-sm font-medium text-zinc-100">
-                      {post.author.name}
-                    </h3>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h3 className="text-sm font-medium text-zinc-100">
+                        {post.author.name}
+                      </h3>
+                      {post.author.isPioneer && (
+                        <div
+                          className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-linear-to-r from-amber-900/40 via-yellow-900/20 to-amber-900/40 px-2 py-0.5 shadow-[0_0_10px_rgba(245,158,11,0.2)] backdrop-blur-md"
+                          title="Membro Fundador"
+                        >
+                          <FiAward className="text-amber-400" size={10} />
+                          <span className="text-[9px] font-black uppercase tracking-widest text-transparent bg-clip-text bg-linear-to-r from-amber-200 to-yellow-500">
+                            Pioneiro
+                          </span>
+                        </div>
+                      )}
+                    </div>
                     <p className="text-xs text-zinc-500">
                       {post.author.role === "STUDENT"
                         ? `${post.author.course} na ${post.author.institution}`
@@ -240,7 +338,6 @@ export default function DashboardFeed() {
                   <span className="text-xs text-zinc-600">
                     {formatTimeAgo(post.createdAt)}
                   </span>
-                  {/* Botão de Excluir: Só aparece se o post for do usuário logado */}
                   {post.authorId === user.id && (
                     <button
                       onClick={() => handleDeletePost(post.id)}
@@ -257,14 +354,91 @@ export default function DashboardFeed() {
                 {post.content}
               </p>
 
-              <div className="flex items-center gap-6 text-xs font-medium text-zinc-500">
-                <button className="flex items-center gap-2 transition-colors hover:text-blue-400">
-                  <FiThumbsUp className="text-base" /> Curtir
+              <div className="mb-4 flex items-center gap-6 text-xs font-medium text-zinc-500">
+                <button
+                  onClick={() => handleLike(post.id)}
+                  className={`flex items-center gap-2 transition-colors ${
+                    post.likes.some((like) => like.userId === user?.id)
+                      ? "text-blue-500 font-bold"
+                      : "text-zinc-500 hover:text-blue-400"
+                  }`}
+                >
+                  <FiThumbsUp
+                    className={`text-base ${post.likes.some((like) => like.userId === user?.id) ? "fill-current" : ""}`}
+                  />{" "}
+                  Curtir ({post.likes.length})
                 </button>
-                <button className="flex items-center gap-2 transition-colors hover:text-blue-400">
+                <button
+                  onClick={() =>
+                    setActiveCommentPostId(
+                      post.id === activeCommentPostId ? null : post.id,
+                    )
+                  }
+                  className="flex items-center gap-2 transition-colors hover:text-blue-400"
+                >
                   <FiMessageSquare className="text-base" /> Comentar
                 </button>
               </div>
+
+              {activeCommentPostId === post.id && (
+                <div className="mb-4 flex gap-2">
+                  <input
+                    value={commentContent}
+                    onChange={(e) => setCommentContent(e.target.value)}
+                    className="flex-1 bg-zinc-800 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="Escreva um comentário..."
+                  />
+                  <button
+                    onClick={() => handleComment(post.id)}
+                    className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md text-white text-sm transition-colors"
+                  >
+                    Enviar
+                  </button>
+                </div>
+              )}
+
+              {post.comments && post.comments.length > 0 && (
+                <div className="space-y-3 border-t border-zinc-800 pt-4 mt-2">
+                  {post.comments.map((comment) => (
+                    <div key={comment.id} className="flex gap-3 group">
+                      <div className="h-8 w-8 shrink-0 flex items-center justify-center rounded-full bg-zinc-800 text-[10px] font-bold text-zinc-400 uppercase">
+                        {comment.user.name.charAt(0)}
+                      </div>
+                      <div className="flex-1 rounded-2xl bg-zinc-800/50 px-4 py-2 text-sm text-zinc-300 relative">
+                        {/* Bloco do Comentário Corrigido */}
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-bold text-zinc-200 text-xs">
+                            {comment.user.name}
+                          </p>
+                          {comment.user.isPioneer && (
+                            <div
+                              className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-linear-to-r from-amber-900/40 via-yellow-900/20 to-amber-900/40 px-1.5 py-0.5 shadow-[0_0_10px_rgba(245,158,11,0.2)] backdrop-blur-sm"
+                              title="Membro Fundador"
+                            >
+                              <FiAward className="text-amber-400" size={10} />
+                              <span className="text-[9px] font-black uppercase tracking-widest text-transparent bg-clip-text bg-linear-to-r from-amber-200 to-yellow-500">
+                                Pioneiro
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        <p className="leading-relaxed">{comment.content}</p>
+
+                        {comment.userId === user?.id && (
+                          <button
+                            onClick={() => handleDeleteComment(comment.id)}
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-red-400 transition-opacity"
+                            title="Excluir comentário"
+                          >
+                            <FiTrash2 size={12} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))
         )}

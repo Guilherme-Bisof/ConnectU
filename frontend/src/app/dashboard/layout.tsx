@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
-
 interface UserData {
   id: string;
   name: string;
@@ -24,7 +23,6 @@ export default function DashboardLayout({
   const [user, setUser] = useState<UserData | null>(null);
 
   useEffect(() => {
-
     const checkAuth = () => {
       const storedUser = localStorage.getItem("connectu_user");
 
@@ -67,16 +65,32 @@ export default function DashboardLayout({
           >
             Feed Principal
           </Link>
-          <Link
-            href="/dashboard/vagas"
-            className={`rounded-md px-4 py-2.5 text-sm font-medium transition-colors ${
-              pathname === "/dashboard/vagas"
-                ? "bg-zinc-900 text-white hover:bg-zinc-800"
-                : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
-            }`}
-          >
-            Vagas & Match
-          </Link>
+
+          {/* Renderização Condicional: Aluno vê Vagas, Recrutador vê Minhas Vagas */}
+          {user.role === "STUDENT" ? (
+            <Link
+              href="/dashboard/vagas"
+              className={`rounded-md px-4 py-2.5 text-sm font-medium transition-colors ${
+                pathname === "/dashboard/vagas"
+                  ? "bg-zinc-900 text-white hover:bg-zinc-800"
+                  : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+              }`}
+            >
+              Vagas & Match
+            </Link>
+          ) : (
+            <Link
+              href="/dashboard/minhas-vagas"
+              className={`rounded-md px-4 py-2.5 text-sm font-medium transition-colors ${
+                pathname === "/dashboard/minhas-vagas"
+                  ? "bg-zinc-900 text-white hover:bg-zinc-800"
+                  : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+              }`}
+            >
+              Minhas Vagas
+            </Link>
+          )}
+
           <Link
             href="/dashboard/perfil"
             className={`rounded-md px-4 py-2.5 text-sm font-medium transition-colors ${
