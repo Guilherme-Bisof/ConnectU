@@ -173,8 +173,7 @@ export default function VagasPage() {
     <div className="mx-auto max-w-5xl pb-12">
       {/* Header da Página */}
       <div className="mb-8 rounded-2xl border border-blue-500/30 bg-blue-900/10 p-8 shadow-[0_0_30px_rgba(37,99,235,0.05)] backdrop-blur-md">
-        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-          <FiZap className="text-blue-400" /> Oportunidades & Match
+        <h1 className="text-3xl font-bold text-white flex items-center gap-3"> Oportunidades & Match
         </h1>
         <p className="mt-2 text-zinc-400 max-w-2xl">
           Nosso algoritmo cruzou o seu perfil com as vagas abertas. Aqui estão
