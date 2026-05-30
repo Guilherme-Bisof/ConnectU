@@ -91,7 +91,7 @@ export default function MinhasVagasPage() {
       const token = localStorage.getItem("connectu_token");
 
       const res = await fetch(
-        `http://localhost:3333/jobs/company/${companyId}`,
+        `https://connectu-gd1z.onrender.com/jobs/company/${companyId}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -133,10 +133,13 @@ export default function MinhasVagasPage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(`http://localhost:3333/jobs/${jobId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/jobs/${jobId}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       if (res.ok || res.status === 204) {
         setVagas((prev) => prev.filter((vaga) => vaga.id !== jobId));
       } else {
@@ -158,7 +161,7 @@ export default function MinhasVagasPage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `http://localhost:3333/jobs/${jobId}/applicants/${userId}`,
+        `https://connectu-gd1z.onrender.com/jobs/${jobId}/applicants/${userId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
@@ -191,14 +194,17 @@ export default function MinhasVagasPage() {
   const handleToggleStatus = async (jobId: string, currentStatus: boolean) => {
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(`http://localhost:3333/jobs/${jobId}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/jobs/${jobId}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ isActive: !currentStatus }),
         },
-        body: JSON.stringify({ isActive: !currentStatus }),
-      });
+      );
 
       if (res.ok) {
         setVagas((prev) =>
@@ -232,7 +238,7 @@ export default function MinhasVagasPage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch("http://localhost:3333/jobs", {
+      const res = await fetch("https://connectu-gd1z.onrender.com/jobs", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -304,21 +310,24 @@ export default function MinhasVagasPage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(`http://localhost:3333/jobs/${editingJobId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/jobs/${editingJobId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title: editJobData.title,
+            type: editJobData.type,
+            description: editJobData.description,
+            requiredSkills,
+            desirableSkills,
+            isInternship: newJobData.isInternship,
+          }),
         },
-        body: JSON.stringify({
-          title: editJobData.title,
-          type: editJobData.type,
-          description: editJobData.description,
-          requiredSkills,
-          desirableSkills,
-          isInternship: newJobData.isInternship,
-        }),
-      });
+      );
 
       if (res.ok) {
         const updatedJob = await res.json();

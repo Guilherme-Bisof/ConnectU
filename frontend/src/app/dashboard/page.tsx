@@ -85,7 +85,7 @@ export default function DashboardFeed() {
     setIsFetching(true);
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch("http://localhost:3333/posts", {
+      const res = await fetch("https://connectu-gd1z.onrender.com/posts", {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -114,7 +114,7 @@ export default function DashboardFeed() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch("http://localhost:3333/posts", {
+      const res = await fetch("https://connectu-gd1z.onrender.com/posts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -152,10 +152,13 @@ export default function DashboardFeed() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(`http://localhost:3333/posts/${postId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/posts/${postId}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
       if (res.ok) {
         fetchPosts();
@@ -168,14 +171,17 @@ export default function DashboardFeed() {
   async function handleComment(postId: string) {
     const token = localStorage.getItem("connectu_token");
     try {
-      const res = await fetch(`http://localhost:3333/posts/${postId}/comment`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/posts/${postId}/comment`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ content: commentContent }),
         },
-        body: JSON.stringify({ content: commentContent }),
-      });
+      );
 
       if (res.ok) {
         setCommentContent("");
@@ -192,10 +198,13 @@ export default function DashboardFeed() {
     const token = localStorage.getItem("connectu_token");
 
     try {
-      const res = await fetch(`http://localhost:3333/posts/${postId}/like`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/posts/${postId}/like`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
       if (res.ok) {
         await fetchPosts();
@@ -209,7 +218,7 @@ export default function DashboardFeed() {
     const token = localStorage.getItem("connectu_token");
     try {
       const res = await fetch(
-        `http://localhost:3333/posts/comment/${commentId}`,
+        `https://connectu-gd1z.onrender.com/posts/comment/${commentId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },

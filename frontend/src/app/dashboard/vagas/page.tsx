@@ -70,7 +70,7 @@ export default function VagasPage() {
         try {
           const token = localStorage.getItem("connectu_token");
           const res = await fetch(
-            `http://localhost:3333/jobs/match/${user.id}`,
+            `https://connectu-gd1z.onrender.com/jobs/match/${user.id}`,
             {
               headers: { Authorization: `Bearer ${token}` },
             },
@@ -100,17 +100,20 @@ export default function VagasPage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const response = await fetch("http://localhost:3333/applications", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const response = await fetch(
+        "https://connectu-gd1z.onrender.com/applications",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            jobId: jobId,
+          }),
         },
-        body: JSON.stringify({
-          userId: user.id,
-          jobId: jobId,
-        }),
-      });
+      );
 
       if (response.ok) {
         alert("Candidatura enviada com sucesso! Boa sorte! 🚀");

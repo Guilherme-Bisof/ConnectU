@@ -164,7 +164,7 @@ export default function ProfilePage() {
 
         try {
           const res = await fetch(
-            `http://localhost:3333/users/${parsedUser.id}`,
+            `https://connectu-gd1z.onrender.com/users/${parsedUser.id}`,
           );
           if (res.ok) {
             const freshUser = await res.json();
@@ -203,7 +203,7 @@ export default function ProfilePage() {
         try {
           const token = localStorage.getItem("connectu_token");
           const res = await fetch(
-            `http://localhost:3333/jobs/company/${user.companyId}`,
+            `https://connectu-gd1z.onrender.com/jobs/company/${user.companyId}`,
             {
               method: "GET",
               headers: { Authorization: `Bearer ${token}` },
@@ -221,7 +221,7 @@ export default function ProfilePage() {
         try {
           const token = localStorage.getItem("connectu_token");
           const res = await fetch(
-            `http://localhost:3333/jobs/match/${user.id}`,
+            `https://connectu-gd1z.onrender.com/jobs/match/${user.id}`,
             {
               method: "GET",
               headers: { Authorization: `Bearer ${token}` },
@@ -265,16 +265,19 @@ export default function ProfilePage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(`http://localhost:3333/users/${user.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            skills: tempSkills,
+          }),
         },
-        body: JSON.stringify({
-          skills: tempSkills,
-        }),
-      });
+      );
 
       if (res.ok) {
         const updatedUser = await res.json();
@@ -303,14 +306,17 @@ export default function ProfilePage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(`http://localhost:3333/users/${user.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ bio: bioInput }),
         },
-        body: JSON.stringify({ bio: bioInput }),
-      });
+      );
 
       if (res.ok) {
         const updatedUser = await res.json();
@@ -356,14 +362,17 @@ export default function ProfilePage() {
     setIsSavingLinks(true);
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(`http://localhost:3333/users/${user.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ links: tempLinks }),
         },
-        body: JSON.stringify({ links: tempLinks }),
-      });
+      );
       if (res.ok) {
         const updatedUser = await res.json();
         setUser(updatedUser);
@@ -416,14 +425,17 @@ export default function ProfilePage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(`http://localhost:3333/users/${user.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ projects: tempProjects }),
         },
-        body: JSON.stringify({ projects: tempProjects }),
-      });
+      );
       if (res.ok) {
         const updatedUser = await res.json();
         setUser(updatedUser);
@@ -456,8 +468,8 @@ export default function ProfilePage() {
     try {
       const isEditing = editingJobId !== null;
       const url = isEditing
-        ? `http://localhost:3333/jobs/${editingJobId}`
-        : "http://localhost:3333/jobs";
+        ? `https://connectu-gd1z.onrender.com/jobs/${editingJobId}`
+        : "https://connectu-gd1z.onrender.com/jobs";
       const method = isEditing ? "PUT" : "POST";
 
       const token = localStorage.getItem("connectu_token");
@@ -522,12 +534,15 @@ export default function ProfilePage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const response = await fetch(`http://localhost:3333/jobs/${jobId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const response = await fetch(
+        `https://connectu-gd1z.onrender.com/jobs/${jobId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
 
       if (response.ok || response.status === 204) {
         // 1. Remove a vaga do array para ela sumir do ecrã instantaneamente
@@ -555,7 +570,7 @@ export default function ProfilePage() {
       try {
         const token = localStorage.getItem("connectu_token");
         const response = await fetch(
-          `http://localhost:3333/jobs/${jobId}/status`,
+          `https://connectu-gd1z.onrender.com/jobs/${jobId}/status`,
           {
             method: "PATCH",
             headers: {
@@ -625,23 +640,26 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
 
-      const res = await fetch(`http://localhost:3333/users/${user.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: editName,
+            avatarUrl: editAvatarUrl,
+            course: editCourse,
+            institution: editInstitution,
+            degreeType: editDegreeType,
+            startDate: editStartDate,
+            endDate: editEndDate,
+            resumeUrl: editResumeUrl,
+          }),
         },
-        body: JSON.stringify({
-          name: editName,
-          avatarUrl: editAvatarUrl,
-          course: editCourse,
-          institution: editInstitution,
-          degreeType: editDegreeType,
-          startDate: editStartDate,
-          endDate: editEndDate,
-          resumeUrl: editResumeUrl,
-        }),
-      });
+      );
 
       if (res.ok) {
         const updatedUser = await res.json();
