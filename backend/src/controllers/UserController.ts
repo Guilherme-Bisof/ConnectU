@@ -33,8 +33,20 @@ export class UserController {
   async updateProfile(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { bio, skills, links, projects, name, course, institution,avatarUrl, degreeType, startDate, endDate, resumeUrl } =
-        req.body;
+      const {
+        bio,
+        skills,
+        links,
+        projects,
+        name,
+        course,
+        institution,
+        avatarUrl,
+        degreeType,
+        startDate,
+        endDate,
+        resumeUrl,
+      } = req.body;
 
       const updatedUser = await prisma.user.update({
         where: { id: String(id) },
@@ -96,20 +108,42 @@ export class UserController {
       const { id } = req.params;
 
       if (!req.file) {
-        res.status(400).json({ error: "Nenhuma imagem enviada."});
+        res.status(400).json({ error: "Nenhuma imagem enviada." });
       }
 
       const imageUrl = req.file?.path as string;
 
       const updatedUser = await prisma.user.update({
-        where: {id: String(id)},
-        data: { avatarUrl: imageUrl},
+        where: { id: String(id) },
+        data: { avatarUrl: imageUrl },
       });
 
       res.json({ avatarUrl: updatedUser.avatarUrl });
-    } catch(error) {
+    } catch (error) {
       console.log("Erro no upload de avatar:", error);
-      res.status(500).json({ error: "Erro ao processar imagem."});
+      res.status(500).json({ error: "Erro ao processar imagem." });
+    }
+  }
+
+  async uploadUserResume(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      if (!req.file) {
+        return res.status(400).json({ error: "Nenhum arquivo enviado." });
+      }
+
+      const resumeUrl = req.file.path as string;
+
+      const updatedUser = await prisma.user.update({
+        where: { id: String(id) },
+        data: { resumeUrl: resumeUrl },
+      });
+
+      res.json({ resumeUrl: updatedUser.resumeUrl });
+    } catch (error) {
+      console.error("Erro no upload do currículo:", error);
+      res.status(500).json({ error: "Erro ao processar currículo." });
     }
   }
 
