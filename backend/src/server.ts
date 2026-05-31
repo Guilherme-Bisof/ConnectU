@@ -14,9 +14,12 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: ["https://localhost:3000", "https://connect-u-psi.vercel.app/"],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: ["http://localhost:3000", "https://connect-u-psi.vercel.app"],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
   }));
+
 app.use(express.json());
 
 app.get("/ping", (req, res) => {
