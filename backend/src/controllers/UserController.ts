@@ -91,6 +91,28 @@ export class UserController {
     }
   }
 
+  async uploadUserAvatar(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      if (!req.file) {
+        res.status(400).json({ error: "Nenhuma imagem enviada."});
+      }
+
+      const imageUrl = req.file?.path as string;
+
+      const updatedUser = await prisma.user.update({
+        where: {id: String(id)},
+        data: { avatarUrl: imageUrl},
+      });
+
+      res.json({ avatarUrl: updatedUser.avatarUrl });
+    } catch(error) {
+      console.log("Erro no upload de avatar:", error);
+      res.status(500).json({ error: "Erro ao processar imagem."});
+    }
+  }
+
   async getUserById(req: Request, res: Response) {
     try {
       const { id } = req.params;

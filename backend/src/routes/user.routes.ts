@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { UserController } from "../controllers/UserController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { uploadAvatar } from "../middlewares/uploadMiddleware.js";
 
 const userRoutes = Router();
 const userController = new UserController();
@@ -9,5 +10,6 @@ userRoutes.post("/", userController.create);
 userRoutes.get("/:id", userController.getUserById);
 
 userRoutes.put("/:id", authMiddleware, userController.updateProfile);
+userRoutes.post("/:id/avatar", uploadAvatar.single('file'), userController.uploadUserAvatar);
 
 export { userRoutes };
