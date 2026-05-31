@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../middlewares/authMiddleware.js";
+import bcrypt from "bcrypt";
 
 export class AuthController {
   async login(req: Request, res: Response) {
@@ -12,15 +13,32 @@ export class AuthController {
         where: { email },
       });
 
-
-      if (!user || user.password !== password) {
+      if (!user) {
         return res.status(401).json({ error: "E-mail ou senha inválidos." });
       }
 
+      let isPasswordValid = await bcrypt.compare(password, user.password);
+
+      if (!isPasswordValid) {
+        if (user.password === password) {
+          isPasswordValid = true;
+
+          const hashedPassword = await bcrypt.hash(password, 10);
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { password: hashedPassword },
+          });
+        }
+      }
+
+      if (!isPasswordValid) {
+        return res.status(401).json({ error: "E-mail ou senha inválidos."});
+      }
+
       const token = jwt.sign(
-        { id: user.id, role: user.role, companyId: user.companyId },
+        { id: user.id, Role: user.role, companyId: user.companyId },
         JWT_SECRET,
-        { expiresIn: "7d"}
+        { expiresIn: "7d" },
       );
 
       const { password: _, ...userWithoutPassword } = user;
