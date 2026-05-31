@@ -10,6 +10,7 @@ interface UserData {
   course?: string;
   institution?: string;
   isPioneer?: boolean;
+  avatarUrl?: string;
 }
 
 interface Post {
@@ -27,6 +28,7 @@ interface Post {
       id: string;
       name: string;
       isPioneer?: boolean;
+      avatarUrl?: string;
     };
   }[];
   author: {
@@ -35,6 +37,7 @@ interface Post {
     course?: string;
     institution?: string;
     isPioneer?: boolean;
+    avatarUrl?: string;
   };
 }
 
@@ -81,8 +84,8 @@ export default function DashboardFeed() {
     fetchPosts();
   }, []);
 
-  async function fetchPosts() {
-    setIsFetching(true);
+  async function fetchPosts(isSilent = false) {
+    if (!isSilent) setIsFetching(true);
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch("https://connectu-gd1z.onrender.com/posts", {
@@ -103,7 +106,7 @@ export default function DashboardFeed() {
       console.error("Erro ao buscar feed:", error);
       setPosts([]);
     } finally {
-      setIsFetching(false);
+      if (!isSilent) setIsFetching(false);
     }
   }
 
@@ -132,7 +135,7 @@ export default function DashboardFeed() {
           type: "success",
           msg: "Publicação enviada com sucesso!",
         });
-        fetchPosts();
+        fetchPosts(true);
         setTimeout(() => setFeedback(null), 3000);
       } else {
         setFeedback({
@@ -161,7 +164,7 @@ export default function DashboardFeed() {
       );
 
       if (res.ok) {
-        fetchPosts();
+        fetchPosts(true);
       }
     } catch (error) {
       console.error("Erro ao deletar:", error);
@@ -186,7 +189,7 @@ export default function DashboardFeed() {
       if (res.ok) {
         setCommentContent("");
         setActiveCommentPostId(null);
-        await fetchPosts();
+        await fetchPosts(true);
       }
     } catch (error) {
       console.error("Erro ao comentar:", error);
@@ -207,7 +210,7 @@ export default function DashboardFeed() {
       );
 
       if (res.ok) {
-        await fetchPosts();
+        await fetchPosts(true);
       }
     } catch (error) {
       console.error("Erro ao curtir:", error);
@@ -224,7 +227,7 @@ export default function DashboardFeed() {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-      if (res.ok) fetchPosts();
+      if (res.ok) fetchPosts(true);
     } catch (error) {
       console.error("Erro ao deletar comentário:", error);
     }
@@ -241,9 +244,17 @@ export default function DashboardFeed() {
 
       <div className="mb-8 rounded-xl border border-zinc-800 bg-zinc-900 p-4 shadow-sm">
         <div className="flex gap-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 font-bold text-white uppercase">
-            {user.name.charAt(0)}
-          </div>
+          {user.avatarUrl ? (
+            <img
+              src={user.avatarUrl}
+              alt={user.name}
+              className="h-10 w-10 shrink-0 rounded-full object-cover border border-zinc-800"
+            />
+          ) : (
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 font-bold text-white uppercase">
+              {user.name.charAt(0)}
+            </div>
+          )}
 
           <div className="flex-1">
             <textarea
@@ -311,21 +322,28 @@ export default function DashboardFeed() {
               key={post.id}
               className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 transition-colors hover:bg-zinc-900 group"
             >
-              <div className="mb-3 flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800 font-bold text-zinc-300 uppercase">
-                    {post.author.name.charAt(0)}
-                  </div>
+              <div className="mb-3 flex items-start justify-between gap-2">
+                <div className="flex items-center gap-3 min-w-0">
+                  {post.author.avatarUrl ? (
+                    <img
+                      src={post.author.avatarUrl}
+                      alt={post.author.name}
+                      className="h-10 w-10 shrink-0 rounded-full object-cover border border-zinc-800"
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-800 font-bold text-zinc-300 uppercase">
+                      {post.author.name.charAt(0)}
+                    </div>
+                  )}
 
-                  {/* Bloco do Autor Corrigido com Flexbox */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <h3 className="text-sm font-medium text-zinc-100">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                      <h3 className="text-sm font-medium text-zinc-100 truncate max-w-full">
                         {post.author.name}
                       </h3>
                       {post.author.isPioneer && (
                         <div
-                          className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-linear-to-r from-amber-900/40 via-yellow-900/20 to-amber-900/40 px-2 py-0.5 shadow-[0_0_10px_rgba(245,158,11,0.2)] backdrop-blur-md"
+                          className="shrink-0 inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-linear-to-r from-amber-900/40 via-yellow-900/20 to-amber-900/40 px-2 py-0.5 shadow-[0_0_10px_rgba(245,158,11,0.2)] backdrop-blur-md"
                           title="Membro Fundador"
                         >
                           <FiAward className="text-amber-400" size={10} />
@@ -335,7 +353,7 @@ export default function DashboardFeed() {
                         </div>
                       )}
                     </div>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-xs text-zinc-500 truncate">
                       {post.author.role === "STUDENT"
                         ? `${post.author.course} na ${post.author.institution}`
                         : "Empresa"}
@@ -343,14 +361,14 @@ export default function DashboardFeed() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex shrink-0 items-center gap-3">
                   <span className="text-xs text-zinc-600">
                     {formatTimeAgo(post.createdAt)}
                   </span>
                   {post.authorId === user.id && (
                     <button
                       onClick={() => handleDeletePost(post.id)}
-                      className="text-zinc-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                      className="text-zinc-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 md:opacity-0 opacity-100"
                       title="Excluir post"
                     >
                       <FiTrash2 />
@@ -410,9 +428,17 @@ export default function DashboardFeed() {
                 <div className="space-y-3 border-t border-zinc-800 pt-4 mt-2">
                   {post.comments.map((comment) => (
                     <div key={comment.id} className="flex gap-3 group">
-                      <div className="h-8 w-8 shrink-0 flex items-center justify-center rounded-full bg-zinc-800 text-[10px] font-bold text-zinc-400 uppercase">
-                        {comment.user.name.charAt(0)}
-                      </div>
+                      {comment.user.avatarUrl ? (
+                        <img
+                          src={comment.user.avatarUrl}
+                          alt={comment.user.name}
+                          className="h-8 w-8 shrink-0 rounded-full object-cover border border-zinc-800"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 shrink-0 flex items-center justify-center rounded-full bg-zinc-800 text-[10px] font-bold text-zinc-400 uppercase">
+                          {comment.user.name.charAt(0)}
+                        </div>
+                      )}
                       <div className="flex-1 rounded-2xl bg-zinc-800/50 px-4 py-2 text-sm text-zinc-300 relative">
                         {/* Bloco do Comentário Corrigido */}
                         <div className="flex items-center gap-2 mb-1">

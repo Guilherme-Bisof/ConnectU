@@ -21,6 +21,8 @@ export default function DashboardLayout({
   const pathname = usePathname();
 
   const [user, setUser] = useState<UserData | null>(null);
+  // Estado Menu Mobile
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -103,7 +105,7 @@ export default function DashboardLayout({
           </Link>
         </nav>
 
-        {/* Rodapé da Sidebar (Dados do Usuário e Sair) */}
+        {/* Rodapé da Sidebar */}
         <div className="mt-auto border-t border-zinc-800 pt-6">
           <div className="mb-4">
             <p className="text-sm font-medium text-white">{user.name}</p>
@@ -123,16 +125,74 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      {/* ÁREA PRINCIPAL (Onde o conteúdo das páginas vai aparecer) */}
+      {/* ÁREA PRINCIPAL*/}
       <main className="flex-1 flex flex-col min-h-screen overflow-y-auto">
-        {/* Header Mobile (Visível apenas em telas pequenas) */}
+        {/* Header Mobile */}
         <header className="flex items-center justify-between border-b border-zinc-800 bg-zinc-950 p-4 md:hidden">
           <h1 className="text-xl font-bold text-white italic">ConnectU</h1>
-          <button className="text-sm text-zinc-400">Menu</button>
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="text-sm font-medium text-zinc-300 hover:text-white bg-zinc-900 px-3 py-1.5 rounded-md border border-zinc-800"
+          >
+            {isMobileMenuOpen ? "Fechar" : "Menu"}
+          </button>
         </header>
 
-        {/* O conteúdo dinâmico entra aqui (Dashboard, Perfil, Vagas, etc) */}
-        <div className="p-8">{children}</div>
+        {isMobileMenuOpen && (
+          <div className="md:hidden flex flex-col border-b border-zinc-800 bg-zinc-950 px-4 py-4 absolute w-full z-50 shadow-2xl">
+            <nav className="flex flex-col gap-2">
+              <Link
+                href="/dashboard"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`rounded-md px-4 py-3 text-sm font-medium ${pathname === "/dashboard" ? "bg-zinc-900 text-white" : "text-zinc-400 hover:bg-zinc-900 hover:text-white"}`}
+              >
+                Feed Principal
+              </Link>
+
+              {user.role === "STUDENT" ? (
+                <Link
+                  href="/dashboard/vagas"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`rounded-md px-4 py-3 text-sm font-medium ${pathname === "/dashboard/vagas" ? "bg-zinc-900 text-white" : "text-zinc-400 hover:bg-zinc-900 hover:text-white"}`}
+                >
+                  {" "}
+                  Vagas & Match
+                </Link>
+              ) : (
+                <Link
+                  href="/dashboard/minhas-vagas"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`rounded-md px-4 py-3 text-sm font-medium ${pathname === "/dashboard/minhas-vagas" ? "bg-zinc-900 text-white" : "text-zinc-400 hover:bg-zinc-900 hover:text-white"}`}
+                >
+                  Minhas Vagas
+                </Link>
+              )}
+
+              <Link
+                href="/dashboard/perfil"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`rounded-md px-4 py-3 text-sm font-medium ${pathname === "/dashboard/perfil" ? "bg-zinc-900 text-white" : "text-zinc-400 hover:bg-zinc-900 hover:text-white"}`}
+              >
+                Meu Perfil
+              </Link>
+            </nav>
+
+            <div className="mt-4 border-t border-zinc-800 pt-4">
+              <button
+                onClick={() => {
+                  localStorage.removeItem("connectu_user");
+                  router.push("/");
+                }}
+                className="w-full rounded-md border border-zinc-800 px-4 py-3 text-sm font-medium text-zinc-300 hover:bg-zinc-900 hover:text-red-400"
+              >
+                Sair da Conta
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* (Dashboard, Perfil, Vagas, etc) */}
+        <div className="p-4 md:p-8">{children}</div>
       </main>
     </div>
   );
