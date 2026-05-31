@@ -112,6 +112,7 @@ export default function ProfilePage() {
   const [editEndDate, setEditEndDate] = useState("");
   const [editResumeUrl, setEditResumeUrl] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   // Estados do Modal de Sobre (Bio)
   const [isBioModalOpen, setIsBioModalOpen] = useState(false);
@@ -640,6 +641,29 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
 
+      if (avatarFile) {
+        const formData = new FormData();
+        formData.append("file", avatarFile);
+
+        try {
+          await fetch(
+            `https://connectu-gd1z.onrender.com/users/${user.id}/avatar`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+              body: formData,
+            },
+          );
+        } catch (uploadError) {
+          console.error("Erro no upload da imagem:", uploadError);
+          alert(
+            "Aviso: Os dados serão salvos, mas houve um erro ao enviar a foto.",
+          );
+        }
+      }
+
       const res = await fetch(
         `https://connectu-gd1z.onrender.com/users/${user.id}`,
         {
@@ -650,7 +674,6 @@ export default function ProfilePage() {
           },
           body: JSON.stringify({
             name: editName,
-            avatarUrl: editAvatarUrl,
             course: editCourse,
             institution: editInstitution,
             degreeType: editDegreeType,
@@ -662,14 +685,16 @@ export default function ProfilePage() {
       );
 
       if (res.ok) {
-        const updatedUser = await res.json();
+        const userRes = await fetch(
+          `https://connectu-gd1z.onrender.com/users/${user.id}`);
+        const updatedUser = await userRes.json();
+
         setUser(updatedUser);
         localStorage.setItem("connectu_user", JSON.stringify(updatedUser));
-
-        // Atualizar barra lateral caso tenha mudado o nome
         window.dispatchEvent(new Event("storage"));
 
         setIsEditProfileModalOpen(false);
+        setAvatarFile(null);
       } else {
         alert("Erro ao salvar perfil.");
       }
@@ -747,7 +772,7 @@ export default function ProfilePage() {
                   )}
                 </div>
 
-                {/* Badge da Empresa (Fica por fora para não ser cortado pela foto) */}
+                {/* Badge da Empresa */}
                 {user.role === "RECRUITER" && (
                   <div
                     className="absolute -bottom-3 -right-3 flex h-8 w-8 items-center justify-center rounded-full border-2 border-zinc-900 bg-purple-600 text-white z-10"
@@ -1658,15 +1683,18 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="text-sm font-medium text-zinc-300 mb-1 block">
+                  <label className="block text-sm font-medium text-zinc-300 mb-1">
                     URL da Foto de Perfil (Opcional)
                   </label>
                   <input
-                    type="text"
-                    value={editAvatarUrl}
-                    onChange={(e) => setEditAvatarUrl(e.target.value)}
-                    placeholder="Cole o link de uma imagem (ex: LinkedIn)"
-                    className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
+                    type="file"
+                    accept="image/*" // Aceita apenas imagens
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        setAvatarFile(e.target.files[0]);
+                      }
+                    }}
+                    className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition-all cursor-pointer"
                   />
                   <p className="text-xs text-zinc-500 mt-1">
                     Deixe em branco para usar sua inicial colorida.
