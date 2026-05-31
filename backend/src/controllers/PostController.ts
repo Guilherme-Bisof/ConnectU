@@ -6,10 +6,11 @@ interface AuthenticatedRequest extends Request {
 }
 
 export class PostController {
-  // Criar uma nova publicação
   async create(req: Request, res: Response) {
     try {
-      const { content, imageUrl, authorId } = req.body;
+      const { content, authorId } = req.body;
+
+      const imageUrl = req.file?.path || req.body.imageUrl;
 
       const newPost = await prisma.post.create({
         data: {
@@ -29,7 +30,13 @@ export class PostController {
   // Listar o Feed
   async listFeed(req: Request, res: Response) {
     try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = 10;
+      const skip = (page - 1) * limit;
+
       const posts = await prisma.post.findMany({
+        take: limit,
+        skip: skip,
         orderBy: {
           createdAt: "desc",
         },
@@ -47,11 +54,12 @@ export class PostController {
           likes: true,
           comments: {
             include: { user: true },
+            orderBy: { createdAt: "asc" },
           },
         },
       });
 
-      res.json(posts);
+      return res.json(posts || []);
     } catch (error) {
       console.error("Erro ao carregar feed:", error);
       res.status(500).json({ error: "Erro interno ao carregar o feed." });
@@ -61,6 +69,16 @@ export class PostController {
   async delete(req: Request, res: Response) {
     try {
       const { id } = req.params;
+
+      const postExists = await prisma.post.findUnique({
+        where: { id: String(id) },
+      });
+
+      if (!postExists) {
+        return res
+          .status(404)
+          .json({ error: "Esta publicação já não existe." });
+      }
 
       await prisma.post.delete({
         where: { id: String(id) },

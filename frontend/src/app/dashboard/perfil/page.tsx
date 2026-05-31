@@ -170,7 +170,7 @@ export default function ProfilePage() {
 
         try {
           const res = await fetch(
-            `https://connectu-gd1z.onrender.com/users/${parsedUser.id}`,
+            `http://localhost:3333/users/${parsedUser.id}`,
           );
           if (res.ok) {
             const freshUser = await res.json();
@@ -209,7 +209,7 @@ export default function ProfilePage() {
         try {
           const token = localStorage.getItem("connectu_token");
           const res = await fetch(
-            `https://connectu-gd1z.onrender.com/jobs/company/${user.companyId}`,
+            `http://localhost:3333/jobs/company/${user.companyId}`,
             {
               method: "GET",
               headers: { Authorization: `Bearer ${token}` },
@@ -227,7 +227,7 @@ export default function ProfilePage() {
         try {
           const token = localStorage.getItem("connectu_token");
           const res = await fetch(
-            `https://connectu-gd1z.onrender.com/jobs/match/${user.id}`,
+            `http://localhost:3333/jobs/match/${user.id}`,
             {
               method: "GET",
               headers: { Authorization: `Bearer ${token}` },
@@ -272,7 +272,7 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        `http://localhost:3333/users/${user.id}`,
         {
           method: "PUT",
           headers: {
@@ -313,7 +313,7 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        `http://localhost:3333/users/${user.id}`,
         {
           method: "PUT",
           headers: {
@@ -369,7 +369,7 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        `http://localhost:3333/users/${user.id}`,
         {
           method: "PUT",
           headers: {
@@ -432,7 +432,7 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        `http://localhost:3333/users/${user.id}`,
         {
           method: "PUT",
           headers: {
@@ -474,8 +474,8 @@ export default function ProfilePage() {
     try {
       const isEditing = editingJobId !== null;
       const url = isEditing
-        ? `https://connectu-gd1z.onrender.com/jobs/${editingJobId}`
-        : "https://connectu-gd1z.onrender.com/jobs";
+        ? `http://localhost:3333/jobs/${editingJobId}`
+        : "http://localhost:3333/jobs";
       const method = isEditing ? "PUT" : "POST";
 
       const token = localStorage.getItem("connectu_token");
@@ -541,7 +541,7 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const response = await fetch(
-        `https://connectu-gd1z.onrender.com/jobs/${jobId}`,
+        `http://localhost:3333/jobs/${jobId}`,
         {
           method: "DELETE",
           headers: {
@@ -576,7 +576,7 @@ export default function ProfilePage() {
       try {
         const token = localStorage.getItem("connectu_token");
         const response = await fetch(
-          `https://connectu-gd1z.onrender.com/jobs/${jobId}/status`,
+          `http://localhost:3333/jobs/${jobId}/status`,
           {
             method: "PATCH",
             headers: {
@@ -652,7 +652,7 @@ export default function ProfilePage() {
 
         try {
           await fetch(
-            `https://connectu-gd1z.onrender.com/users/${user.id}/avatar`,
+            `http://localhost:3333/users/${user.id}/avatar`,
             {
               method: "POST",
               headers: {
@@ -675,7 +675,7 @@ export default function ProfilePage() {
 
         try {
           await fetch(
-            `https://connectu-gd1z.onrender.com/users/${user.id}/resume`,
+            `http://localhost:3333/users/${user.id}/resume`,
             {
               method: "POST",
               headers: { Authorization: `Bearer ${token}` },
@@ -688,7 +688,7 @@ export default function ProfilePage() {
       }
 
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        `http://localhost:3333/users/${user.id}`,
         {
           method: "PUT",
           headers: {
@@ -709,7 +709,7 @@ export default function ProfilePage() {
 
       if (res.ok) {
         const userRes = await fetch(
-          `https://connectu-gd1z.onrender.com/users/${user.id}`);
+          `http://localhost:3333/users/${user.id}`);
         const updatedUser = await userRes.json();
 
         setUser(updatedUser);

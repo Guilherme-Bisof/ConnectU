@@ -23,7 +23,7 @@ export default function AuthPage() {
     setLoading(true);
 
     const endpoint = isLogin ? "/login" : "/users";
-    const url = `https://connectu-gd1z.onrender.com${endpoint}`;
+    const url = `http://localhost:3333${endpoint}`;
 
     try {
       const response = await fetch(url, {
@@ -64,7 +64,7 @@ export default function AuthPage() {
       {/* LADO ESQUERDO: Branding */}
       <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-zinc-900 p-12 lg:flex">
         {/* Efeito visual: */}
-        <div className="absolute -left-[10%] -top-[10%] h-96 w-96 rounded-full bg-blue-600/20 blur-[120px]"></div>
+        <div className="absolute left-[10%] top-[10%] h-96 w-96 rounded-full bg-blue-600/20 blur-[120px]"></div>
 
         <div className="z-10">
           <h1 className="text-4xl font-bold tracking-tight text-white">

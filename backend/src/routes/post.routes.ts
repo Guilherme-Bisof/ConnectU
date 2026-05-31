@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { PostController } from "../controllers/PostController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { uploadAvatar } from "../middlewares/uploadMiddleware.js";
 
 const postRoutes = Router();
 const postController = new PostController();
@@ -10,6 +11,7 @@ postRoutes.get("/", authMiddleware, postController.listFeed);
 
 postRoutes.post("/:postId/like", authMiddleware, postController.toggleLike);
 postRoutes.post("/:postId/comment", authMiddleware, postController.comment);
+postRoutes.post("/", uploadAvatar.single('file'), postController.create);
 postRoutes.delete("/comment/:commentId", authMiddleware, postController.deleteComment, );
 
 postRoutes.delete("/:id", authMiddleware, postController.delete);

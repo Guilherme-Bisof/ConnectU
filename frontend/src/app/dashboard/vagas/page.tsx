@@ -70,7 +70,7 @@ export default function VagasPage() {
         try {
           const token = localStorage.getItem("connectu_token");
           const res = await fetch(
-            `https://connectu-gd1z.onrender.com/jobs/match/${user.id}`,
+            `http://localhost:3333/jobs/match/${user.id}`,
             {
               headers: { Authorization: `Bearer ${token}` },
             },
@@ -101,7 +101,7 @@ export default function VagasPage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const response = await fetch(
-        "https://connectu-gd1z.onrender.com/applications",
+        "http://localhost:3333/applications",
         {
           method: "POST",
           headers: {

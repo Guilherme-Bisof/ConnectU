@@ -91,7 +91,7 @@ export default function MinhasVagasPage() {
       const token = localStorage.getItem("connectu_token");
 
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/jobs/company/${companyId}`,
+        `http://localhost:3333/jobs/company/${companyId}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -134,7 +134,7 @@ export default function MinhasVagasPage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/jobs/${jobId}`,
+        `http://localhost:3333/jobs/${jobId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
@@ -161,7 +161,7 @@ export default function MinhasVagasPage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/jobs/${jobId}/applicants/${userId}`,
+        `http://localhost:3333/jobs/${jobId}/applicants/${userId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
@@ -195,7 +195,7 @@ export default function MinhasVagasPage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/jobs/${jobId}/status`,
+        `http://localhost:3333/jobs/${jobId}/status`,
         {
           method: "PATCH",
           headers: {
@@ -238,7 +238,7 @@ export default function MinhasVagasPage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch("https://connectu-gd1z.onrender.com/jobs", {
+      const res = await fetch("http://localhost:3333/jobs", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -311,7 +311,7 @@ export default function MinhasVagasPage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/jobs/${editingJobId}`,
+        `http://localhost:3333/jobs/${editingJobId}`,
         {
           method: "PUT",
           headers: {

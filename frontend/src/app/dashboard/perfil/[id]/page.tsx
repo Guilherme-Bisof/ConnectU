@@ -69,7 +69,7 @@ export default function PublicProfilePage() {
 
       try {
         const res = await fetch(
-          `https://connectu-gd1z.onrender.com/users/${id}`,
+          `http://localhost:3333/users/${id}`,
         );
         if (res.ok) {
           const data = await res.json();
