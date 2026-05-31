@@ -22,4 +22,15 @@ const storage = new CloudinaryStorage({
   },
 });
 
+const resumeStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: async (req, file) => {
+        return {
+            folder: 'connectu_resumes',
+            resource_type: 'auto'
+        } as any
+    },
+});
+
+export const uploadResume = multer({ storage: resumeStorage});
 export const uploadAvatar = multer({ storage: storage });

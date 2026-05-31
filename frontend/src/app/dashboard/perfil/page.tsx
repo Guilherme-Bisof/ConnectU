@@ -17,6 +17,9 @@ import {
   FiAward,
 } from "react-icons/fi";
 
+import { FaBehance } from "react-icons/fa";
+
+
 interface UserProject {
   id?: string;
   title: string;
@@ -82,6 +85,7 @@ interface Applicant {
 function getLinkIcon(label: string) {
   const lowerLabel = label.toLowerCase();
   if (lowerLabel.includes("github")) return <FiGithub className="text-lg" />;
+  if (lowerLabel.includes("behance")) return <FaBehance className="text-lg"/>;
   if (lowerLabel.includes("linkedin"))
     return <FiLinkedin className="text-lg" />;
   if (lowerLabel.includes("youtube")) return <FiYoutube className="text-lg" />;
@@ -103,6 +107,7 @@ export default function ProfilePage() {
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [editName, setEditName] = useState("");
   const [editAvatarUrl, setEditAvatarUrl] = useState("");
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
 
   // Especificos para Alunos
   const [editCourse, setEditCourse] = useState("");
@@ -661,6 +666,24 @@ export default function ProfilePage() {
           alert(
             "Aviso: Os dados serão salvos, mas houve um erro ao enviar a foto.",
           );
+        }
+      }
+
+      if (resumeFile) {
+        const resumeData = new FormData();
+        resumeData.append("file", resumeFile);
+
+        try {
+          await fetch(
+            `https://connectu-gd1z.onrender.com/users/${user.id}/resume`,
+            {
+              method: "POST",
+              headers: { Authorization: `Bearer ${token}` },
+              body: resumeData,
+            },
+          );
+        } catch (error) {
+          console.error("Erro no upload do currículo:", error);
         }
       }
 
@@ -1784,11 +1807,14 @@ export default function ProfilePage() {
                         Link do Currículo (Opcional)
                       </label>
                       <input
-                        type="text"
-                        value={editResumeUrl}
-                        onChange={(e) => setEditResumeUrl(e.target.value)}
-                        placeholder="Cole aqui o link do seu PDF (Google Drive, Canva, etc)"
-                        className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files.length > 0) {
+                            setResumeFile(e.target.files[0]);
+                          }
+                        }}
+                        className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-zinc-700 file:text-white hover:file:bg-zinc-600 transition-all cursor-pointer"
                       />
                     </div>
                   </div>
