@@ -16,6 +16,7 @@ interface UserData {
 interface Post {
   id: string;
   content: string;
+  imageUrl?: string;
   createdAt: string;
   authorId: string;
   likes: { userId: string }[];
@@ -59,6 +60,7 @@ function formatTimeAgo(dateString: string) {
 export default function DashboardFeed() {
   const [user, setUser] = useState<UserData | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [postFile, setPostFile] = useState<File | null>(null);
   const [newPostText, setNewPostText] = useState("");
 
   const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(
@@ -86,7 +88,7 @@ export default function DashboardFeed() {
         const currentPage = reset ? 1 : page;
 
         const res = await fetch(
-          `http://localhost:3333/posts?page=${currentPage}`,
+          `https://connectu-gd1z.onrender.com/posts?page=${currentPage}`,
           {
             method: "GET",
             headers: { Authorization: `Bearer ${token}` },
@@ -147,7 +149,9 @@ export default function DashboardFeed() {
     return () => {
       active = false;
     };
-  }, [fetchPosts]);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -159,7 +163,7 @@ export default function DashboardFeed() {
     return () => {
       active = false;
     };
-  });
+  }, [page, fetchPosts]);
 
   async function handleCreatePost() {
     if (!newPostText.trim() || !user) return;
@@ -168,20 +172,25 @@ export default function DashboardFeed() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch("http://localhost:3333/posts", {
+
+      const formData = new FormData();
+      formData.append("content", newPostText);
+      formData.append("authorId", user.id);
+      if (postFile) {
+        formData.append("file", postFile);
+      }
+
+      const res = await fetch("https://connectu-gd1z.onrender.com/posts", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          content: newPostText,
-          authorId: user.id,
-        }),
+        body: formData,
       });
 
       if (res.ok) {
         setNewPostText("");
+        setPostFile(null);
         setFeedback({
           type: "success",
           msg: "Publicação enviada com sucesso!",
@@ -208,7 +217,7 @@ export default function DashboardFeed() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(`http://localhost:3333/posts/${postId}`, {
+      const res = await fetch(`https://connectu-gd1z.onrender.com/posts/${postId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -224,7 +233,7 @@ export default function DashboardFeed() {
   async function handleComment(postId: string) {
     const token = localStorage.getItem("connectu_token");
     try {
-      const res = await fetch(`http://localhost:3333/posts/${postId}/comment`, {
+      const res = await fetch(`https://connectu-gd1z.onrender.com/posts/${postId}/comment`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -235,9 +244,9 @@ export default function DashboardFeed() {
 
       if (res.ok) {
         setCommentContent("");
-        setActiveCommentPostId(null); 
-        setPage(1); 
-        fetchPosts(true,true);
+        setActiveCommentPostId(null);
+        setPage(1);
+        fetchPosts(true, true);
       }
     } catch (error) {
       console.error("Erro ao comentar:", error);
@@ -249,13 +258,28 @@ export default function DashboardFeed() {
     const token = localStorage.getItem("connectu_token");
 
     try {
-      const res = await fetch(`http://localhost:3333/posts/${postId}/like`, {
+      const res = await fetch(`https://connectu-gd1z.onrender.com/posts/${postId}/like`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res.ok) {
-        await fetchPosts(true);
+        setPosts((prev) =>
+          prev.map((post) => {
+            if (post.id === postId) {
+              const alreadyLiked = post.likes.some(
+                (like) => like.userId === user.id,
+              );
+
+              const newLikes = alreadyLiked
+                ? post.likes.filter((like) => like.userId !== user.id)
+                : [...post.likes, { userId: user.id }];
+
+              return { ...post, likes: newLikes };
+            }
+            return post;
+          }),
+        );
       }
     } catch (error) {
       console.error("Erro ao curtir:", error);
@@ -266,15 +290,16 @@ export default function DashboardFeed() {
     const token = localStorage.getItem("connectu_token");
     try {
       const res = await fetch(
-        `http://localhost:3333/posts/comment/${commentId}`,
+        `https://connectu-gd1z.onrender.com/posts/comment/${commentId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-      if (res.ok) 
-      setPage(1);
-      fetchPosts(true, true);
+      if (res.ok) {
+        setPage(1);
+        fetchPosts(true, true);
+      }
     } catch (error) {
       console.error("Erro ao deletar comentário:", error);
     }
@@ -348,6 +373,22 @@ export default function DashboardFeed() {
                   {user.role === "STUDENT" ? "Talento" : "Empresa"}
                 </strong>
               </span>
+
+              {/* Input de arquivo para imagens do post */}
+              <label className="cursor-pointer text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2 py-1 rounded transition-colors">
+                {postFile ? "📸 Imagem adicionada" : "Adicionar Imagem"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      setPostFile(e.target.files[0]);
+                    }
+                  }}
+                />
+              </label>
+
               <button
                 onClick={handleCreatePost}
                 disabled={loading || !newPostText.trim()}
@@ -449,6 +490,17 @@ export default function DashboardFeed() {
               <p className="mb-4 text-sm leading-relaxed text-zinc-300 whitespace-pre-wrap">
                 {post.content}
               </p>
+
+              {post.imageUrl && (
+                <div className="mb-4 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={post.imageUrl}
+                    alt="Imagem da publicação"
+                    className="max-h-125 w-full object-contain"
+                  />
+                </div>
+              )}
 
               <div className="mb-4 flex items-center gap-6 text-xs font-medium text-zinc-500">
                 <button

@@ -10,13 +10,44 @@ export class PostController {
     try {
       const { content, authorId } = req.body;
 
-      const imageUrl = req.file?.path || req.body.imageUrl;
+      if (!content || !authorId) {
+        return res
+          .status(400)
+          .json({ error: "Conteúdo e autor são obrigatórios." });
+      }
+
+      const imageUrl = req.file ? (req.file.path as string) : null;
 
       const newPost = await prisma.post.create({
         data: {
           content,
           imageUrl,
           authorId,
+        },
+        include: {
+          author: {
+            select: {
+              name: true,
+              role: true,
+              course: true,
+              institution: true,
+              avatarUrl: true,
+              isPioneer: true,
+            },
+          },
+          likes: true,
+          comments: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatarUrl: true,
+                  isPioneer: true,
+                },
+              },
+            },
+          },
         },
       });
 

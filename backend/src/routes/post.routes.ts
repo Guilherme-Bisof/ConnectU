@@ -2,11 +2,12 @@ import { Router } from "express";
 import { PostController } from "../controllers/PostController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { uploadAvatar } from "../middlewares/uploadMiddleware.js";
+import { uploadPost } from "../middlewares/uploadMiddleware.js";
 
 const postRoutes = Router();
 const postController = new PostController();
 
-postRoutes.post("/", authMiddleware, postController.create);
+postRoutes.post("/", authMiddleware, uploadPost.single('file'),postController.create);
 postRoutes.get("/", authMiddleware, postController.listFeed);
 
 postRoutes.post("/:postId/like", authMiddleware, postController.toggleLike);

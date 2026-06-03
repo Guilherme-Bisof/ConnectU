@@ -19,7 +19,6 @@ import {
 
 import { FaBehance } from "react-icons/fa";
 
-
 interface UserProject {
   id?: string;
   title: string;
@@ -37,6 +36,7 @@ interface UserData {
   id: string;
   name: string;
   avatarUrl?: string;
+  bannerUrl?: string;
   role: string;
   companyId?: string;
   course?: string;
@@ -85,7 +85,7 @@ interface Applicant {
 function getLinkIcon(label: string) {
   const lowerLabel = label.toLowerCase();
   if (lowerLabel.includes("github")) return <FiGithub className="text-lg" />;
-  if (lowerLabel.includes("behance")) return <FaBehance className="text-lg"/>;
+  if (lowerLabel.includes("behance")) return <FaBehance className="text-lg" />;
   if (lowerLabel.includes("linkedin"))
     return <FiLinkedin className="text-lg" />;
   if (lowerLabel.includes("youtube")) return <FiYoutube className="text-lg" />;
@@ -107,6 +107,7 @@ export default function ProfilePage() {
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [editName, setEditName] = useState("");
   const [editAvatarUrl, setEditAvatarUrl] = useState("");
+  const [editBannerUrl, setEditBannerUrl] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
 
   // Especificos para Alunos
@@ -118,6 +119,7 @@ export default function ProfilePage() {
   const [editResumeUrl, setEditResumeUrl] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
 
   // Estados do Modal de Sobre (Bio)
   const [isBioModalOpen, setIsBioModalOpen] = useState(false);
@@ -170,7 +172,7 @@ export default function ProfilePage() {
 
         try {
           const res = await fetch(
-            `http://localhost:3333/users/${parsedUser.id}`,
+            `https://connectu-gd1z.onrender.com/users/${parsedUser.id}`,
           );
           if (res.ok) {
             const freshUser = await res.json();
@@ -209,7 +211,7 @@ export default function ProfilePage() {
         try {
           const token = localStorage.getItem("connectu_token");
           const res = await fetch(
-            `http://localhost:3333/jobs/company/${user.companyId}`,
+            `https://connectu-gd1z.onrender.com/jobs/company/${user.companyId}`,
             {
               method: "GET",
               headers: { Authorization: `Bearer ${token}` },
@@ -227,7 +229,7 @@ export default function ProfilePage() {
         try {
           const token = localStorage.getItem("connectu_token");
           const res = await fetch(
-            `http://localhost:3333/jobs/match/${user.id}`,
+            `https://connectu-gd1z.onrender.com/jobs/match/${user.id}`,
             {
               method: "GET",
               headers: { Authorization: `Bearer ${token}` },
@@ -271,19 +273,16 @@ export default function ProfilePage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(
-        `http://localhost:3333/users/${user.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            skills: tempSkills,
-          }),
+      const res = await fetch(`https://connectu-gd1z.onrender.com/users/${user.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          skills: tempSkills,
+        }),
+      });
 
       if (res.ok) {
         const updatedUser = await res.json();
@@ -312,17 +311,14 @@ export default function ProfilePage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(
-        `http://localhost:3333/users/${user.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ bio: bioInput }),
+      const res = await fetch(`https://connectu-gd1z.onrender.com/users/${user.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({ bio: bioInput }),
+      });
 
       if (res.ok) {
         const updatedUser = await res.json();
@@ -368,17 +364,14 @@ export default function ProfilePage() {
     setIsSavingLinks(true);
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(
-        `http://localhost:3333/users/${user.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ links: tempLinks }),
+      const res = await fetch(`https://connectu-gd1z.onrender.com/users/${user.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({ links: tempLinks }),
+      });
       if (res.ok) {
         const updatedUser = await res.json();
         setUser(updatedUser);
@@ -431,17 +424,14 @@ export default function ProfilePage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(
-        `http://localhost:3333/users/${user.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ projects: tempProjects }),
+      const res = await fetch(`https://connectu-gd1z.onrender.com/users/${user.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({ projects: tempProjects }),
+      });
       if (res.ok) {
         const updatedUser = await res.json();
         setUser(updatedUser);
@@ -474,8 +464,8 @@ export default function ProfilePage() {
     try {
       const isEditing = editingJobId !== null;
       const url = isEditing
-        ? `http://localhost:3333/jobs/${editingJobId}`
-        : "http://localhost:3333/jobs";
+        ? `https://connectu-gd1z.onrender.com/jobs/${editingJobId}`
+        : "https://connectu-gd1z.onrender.com/jobs";
       const method = isEditing ? "PUT" : "POST";
 
       const token = localStorage.getItem("connectu_token");
@@ -540,15 +530,12 @@ export default function ProfilePage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const response = await fetch(
-        `http://localhost:3333/jobs/${jobId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const response = await fetch(`https://connectu-gd1z.onrender.com/jobs/${jobId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
 
       if (response.ok || response.status === 204) {
         // 1. Remove a vaga do array para ela sumir do ecrã instantaneamente
@@ -576,7 +563,7 @@ export default function ProfilePage() {
       try {
         const token = localStorage.getItem("connectu_token");
         const response = await fetch(
-          `http://localhost:3333/jobs/${jobId}/status`,
+          `https://connectu-gd1z.onrender.com/jobs/${jobId}/status`,
           {
             method: "PATCH",
             headers: {
@@ -629,6 +616,7 @@ export default function ProfilePage() {
   function openEditProfileModal() {
     setEditName(user?.name || "");
     setEditAvatarUrl(user?.avatarUrl || "");
+    setEditBannerUrl(user?.bannerUrl || "");
     setEditCourse(user?.course || "");
     setEditInstitution(user?.institution || "");
     setEditDegreeType(user?.degreeType || "");
@@ -651,16 +639,13 @@ export default function ProfilePage() {
         formData.append("file", avatarFile);
 
         try {
-          await fetch(
-            `http://localhost:3333/users/${user.id}/avatar`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-              body: formData,
+          await fetch(`https://connectu-gd1z.onrender.com/users/${user.id}/avatar`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
             },
-          );
+            body: formData,
+          });
         } catch (uploadError) {
           console.error("Erro no upload da imagem:", uploadError);
           alert(
@@ -674,42 +659,50 @@ export default function ProfilePage() {
         resumeData.append("file", resumeFile);
 
         try {
-          await fetch(
-            `http://localhost:3333/users/${user.id}/resume`,
-            {
-              method: "POST",
-              headers: { Authorization: `Bearer ${token}` },
-              body: resumeData,
-            },
-          );
+          await fetch(`https://connectu-gd1z.onrender.com/users/${user.id}/resume`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: resumeData,
+          });
         } catch (error) {
           console.error("Erro no upload do currículo:", error);
         }
       }
 
-      const res = await fetch(
-        `http://localhost:3333/users/${user.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            name: editName,
-            course: editCourse,
-            institution: editInstitution,
-            degreeType: editDegreeType,
-            startDate: editStartDate,
-            endDate: editEndDate,
-            resumeUrl: editResumeUrl,
-          }),
+      if (bannerFile) {
+        const bannerData = new FormData();
+        bannerData.append("file", bannerFile);
+
+        try {
+          await fetch(`https://connectu-gd1z.onrender.com/users/${user.id}/banner`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: bannerData,
+          });
+        } catch (error) {
+          console.error("Erro no upload do banner:", error);
+        }
+      }
+
+      const res = await fetch(`https://connectu-gd1z.onrender.com/users/${user.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          name: editName,
+          course: editCourse,
+          institution: editInstitution,
+          degreeType: editDegreeType,
+          startDate: editStartDate,
+          endDate: editEndDate,
+          resumeUrl: editResumeUrl,
+        }),
+      });
 
       if (res.ok) {
-        const userRes = await fetch(
-          `http://localhost:3333/users/${user.id}`);
+        const userRes = await fetch(`https://connectu-gd1z.onrender.com/users/${user.id}`);
         const updatedUser = await userRes.json();
 
         setUser(updatedUser);
@@ -743,7 +736,6 @@ export default function ProfilePage() {
             missingFields.push("Habilidades/Skills");
 
           if (missingFields.length > 0) {
-            // Exibe a caixinha amarela do seu Mockup 2
             return (
               <div className="mb-6 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-400 flex flex-col md:flex-row md:items-center justify-between gap-2 shadow-md animate-fadeIn">
                 <p className="font-medium">
@@ -762,7 +754,6 @@ export default function ProfilePage() {
               </div>
             );
           } else {
-            // Se preencheu tudo, exibe a caixinha verde do seu Mockup 2
             return (
               <div className="mb-6 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400 font-semibold shadow-md animate-fadeIn">
                 Perfil completo! Suas vagas já foram liberadas. 🎉
@@ -773,46 +764,51 @@ export default function ProfilePage() {
       {/* Header */}
       <div className="relative mb-8 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl">
         <div
-          className={`h-32 w-full bg-linear-to-r ${user.role === "RECRUITER" ? "from-purple-900 to-zinc-900" : "from-blue-900 to-zinc-800"}`}
+          className={`h-32 sm:h-48 w-full bg-cover bg-center bg-no-repeat ${!user.bannerUrl ? (user.role === "RECRUITER" ? "bg-linear-to-r from-purple-900 to-zinc-900" : "bg-linear-to-r from-blue-900 to-zinc-800") : ""}`}
+          style={
+            user.bannerUrl
+              ? { backgroundImage: `url('${user.bannerUrl}')` }
+              : {}
+          }
         ></div>
 
-        <div className="relative px-8 pb-8">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between">
-            <div className="flex items-end gap-6">
-              <div className="relative -top-12 flex h-28 w-28 shrink-0 items-center justify-center">
-                {/* Container da Imagem ou Inicial */}
-                <div
-                  className={`flex h-full w-full items-center justify-center rounded-2xl border-4 border-zinc-900 text-3xl font-bold text-white shadow-2xl overflow-hidden ${user.role === "RECRUITER" ? "bg-zinc-800" : "bg-blue-600"}`}
-                >
-                  {user.avatarUrl ? (
-                    <img
-                      src={user.avatarUrl}
-                      alt="Perfil"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    user.name.charAt(0)
-                  )}
-                </div>
-
-                {/* Badge da Empresa */}
-                {user.role === "RECRUITER" && (
-                  <div
-                    className="absolute -bottom-3 -right-3 flex h-8 w-8 items-center justify-center rounded-full border-2 border-zinc-900 bg-purple-600 text-white z-10"
-                    title="Conta Verificada"
-                  >
-                    <FiZap size={14} />
-                  </div>
+        <div className="relative px-4 sm:px-8 pb-6">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+            {/* Foto e Emblema (Único com margem negativa para subir no banner) */}
+            <div className="relative -mt-12 sm:-mt-16 flex h-24 w-24 sm:h-32 sm:w-32 shrink-0 items-center justify-center mx-auto sm:mx-0">
+              <div
+                className={`flex h-full w-full items-center justify-center rounded-2xl border-4 border-zinc-900 text-3xl font-bold text-white shadow-2xl overflow-hidden ${user.role === "RECRUITER" ? "bg-zinc-800" : "bg-blue-600"}`}
+              >
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt="Perfil"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  user.name.charAt(0)
                 )}
               </div>
+              {user.role === "RECRUITER" && (
+                <div
+                  className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full border-2 border-zinc-900 bg-purple-600 text-white z-10"
+                  title="Conta Verificada"
+                >
+                  <FiZap size={14} />
+                </div>
+              )}
+            </div>
 
-              <div className="-mt-10 mb-2">
+            {/* Container do Texto e Botão (Fica sempre protegido abaixo do banner) */}
+            <div className="flex flex-col md:flex-row md:items-start justify-between flex-1 mt-2 sm:mt-4 gap-4">
+              {/* Textos */}
+              <div className="text-center sm:text-left">
                 <h1 className="text-2xl sm:text-3xl font-bold text-white">
                   {user.name}
                 </h1>
                 {user.isPioneer && (
                   <div
-                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-linear-to-r from-amber-900/40  via-yellow-900/40 px-3 py-1 shadow[0_0_15px_rgba(245,158,11,0.2)] backdrop-blur-md"
+                    className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-linear-to-r from-amber-900/40 via-yellow-900/40 px-3 py-1 shadow-md backdrop-blur-md"
                     title="Membro Fundador do ConnectU"
                   >
                     <FiAward className="text-amber-400" size={14} />
@@ -821,7 +817,7 @@ export default function ProfilePage() {
                     </span>
                   </div>
                 )}
-                <div className="mt-1 flex flex-col sm:flex-row sm:items-center gap-2 font-medium text-zinc-400">
+                <div className="mt-2 flex flex-col sm:flex-row sm:items-center justify-center sm:justify-start gap-2 font-medium text-zinc-400">
                   {user.role === "STUDENT" ? (
                     <>
                       <span>
@@ -839,21 +835,22 @@ export default function ProfilePage() {
                       )}
                     </>
                   ) : (
-                    <span className="flex items-center gap-2 text-purple-400 bg-purple-500/10 px-3 py-1 rounded-full text-sm border border-purple-500/20">
+                    <span className="flex w-fit items-center gap-2 text-purple-400 bg-purple-500/10 px-3 py-1 rounded-full text-sm border border-purple-500/20 mx-auto sm:mx-0">
                       <FiBriefcase size={14} /> Equipe de Talentos
                     </span>
                   )}
                 </div>
               </div>
-            </div>
 
-            <div className="mt-6 md:mt-0 md:mb-2">
-              <button
-                onClick={openEditProfileModal}
-                className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/50 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 hover:border-zinc-600 backdrop-blur-sm"
-              >
-                <FiEdit2 /> Editar Perfil
-              </button>
+              {/* Botão de Editar */}
+              <div className="flex justify-center sm:justify-start shrink-0">
+                <button
+                  onClick={openEditProfileModal}
+                  className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/50 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 hover:border-zinc-600 backdrop-blur-sm"
+                >
+                  <FiEdit2 /> Editar Perfil
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1707,7 +1704,7 @@ export default function ProfilePage() {
 
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-zinc-300 mb-1">
-                    URL da Foto de Perfil (Opcional)
+                    Foto de Perfil (Opcional)
                   </label>
                   <input
                     type="file"
@@ -1722,6 +1719,47 @@ export default function ProfilePage() {
                   <p className="text-xs text-zinc-500 mt-1">
                     Deixe em branco para usar sua inicial colorida.
                   </p>
+
+                  {/* Botão para remover foto atual */}
+                  {editAvatarUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setEditAvatarUrl("")}
+                      className="mt-2 text-xs font-bold text-red-500 hover:text-red-400"
+                    >
+                      Remover foto atual
+                    </button>
+                  )}
+                </div>
+
+                <div className="sm:col-span-2 mt-4">
+                  <label className="block text-sm font-medium text-zinc-300 mb-1">
+                    Imagem de Capa (Banner)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        setBannerFile(e.target.files[0]);
+                      }
+                    }}
+                    className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-400 file:mr-4 file:py-2
+                  file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition-all cursor-pointer"
+                  />{" "}
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Recomendamos imagens horizontais comboa resolução.
+                  </p>
+                  {/* Botão para Remover o banner atual */}
+                  {editBannerUrl && !bannerFile && (
+                    <button
+                      type="button"
+                      onClick={() => setEditBannerUrl("")}
+                      className="mt-2 text-xs font-bold text-red-500 hover:text-red-400"
+                    >
+                      Remover banner atual
+                    </button>
+                  )}
                 </div>
               </div>
 

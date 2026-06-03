@@ -58,7 +58,7 @@ npm install
 2. **Configurar variáveis de ambiente**
 Crie um arquivo `.env.local` na raiz do projeto:
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3333
+NEXT_PUBLIC_API_URL=https://connectu-gd1z.onrender.com
 ```
 
 3. **Executar em desenvolvimento**

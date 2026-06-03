@@ -32,5 +32,28 @@ const resumeStorage = new CloudinaryStorage({
     },
 });
 
+const bannerStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => {
+    return {
+      folder: 'connectu_banners',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    } as any
+  },
+});
+
+const postStorage = new CloudinaryStorage ({
+  cloudinary: cloudinary,
+  params: async (req, file) => {
+    return {
+      folder: 'connectu_banners',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+    } as any
+  }
+})
+
+
+export const uploadBanner = multer({ storage: bannerStorage});
 export const uploadResume = multer({ storage: resumeStorage});
 export const uploadAvatar = multer({ storage: storage });
+export const uploadPost = multer ({ storage: postStorage});

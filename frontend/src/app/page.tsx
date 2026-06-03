@@ -23,7 +23,7 @@ export default function AuthPage() {
     setLoading(true);
 
     const endpoint = isLogin ? "/login" : "/users";
-    const url = `http://localhost:3333${endpoint}`;
+    const url = `https://connectu-gd1z.onrender.com${endpoint}`;
 
     try {
       const response = await fetch(url, {
