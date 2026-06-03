@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { FiThumbsUp, FiMessageSquare, FiTrash2, FiAward } from "react-icons/fi";
 
 interface UserData {
@@ -16,6 +16,7 @@ interface UserData {
 interface Post {
   id: string;
   content: string;
+  imageUrl?: string;
   createdAt: string;
   authorId: string;
   likes: { userId: string }[];
@@ -41,7 +42,6 @@ interface Post {
   };
 }
 
-// Função para calcular o tempo relativo (Ex: "Há 5 min")
 function formatTimeAgo(dateString: string) {
   const date = new Date(dateString);
   const now = new Date();
@@ -60,6 +60,7 @@ function formatTimeAgo(dateString: string) {
 export default function DashboardFeed() {
   const [user, setUser] = useState<UserData | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [postFile, setPostFile] = useState<File | null>(null);
   const [newPostText, setNewPostText] = useState("");
 
   const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(
@@ -74,41 +75,95 @@ export default function DashboardFeed() {
     msg: string;
   } | null>(null);
 
-  useEffect(() => {
-    const loadUser = () => {
-      const storedUser = localStorage.getItem("connectu_user");
-      if (storedUser) setUser(JSON.parse(storedUser));
-    };
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-    loadUser();
-    fetchPosts();
+  const fetchPosts = useCallback(
+    async (isSilent = false, reset = false) => {
+      if (!isSilent) {
+        queueMicrotask(() => setIsFetching(true));
+      }
+      try {
+        const token = localStorage.getItem("connectu_token");
+        const currentPage = reset ? 1 : page;
+
+        const res = await fetch(
+          `https://connectu-gd1z.onrender.com/posts?page=${currentPage}`,
+          {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+
+        const data = await res.json();
+
+        if (Array.isArray(data)) {
+          queueMicrotask(() => {
+            if (data.length === 0 && !reset) {
+              setHasMore(false);
+              return;
+            }
+
+            setPosts((prev) => {
+              if (reset) {
+                setHasMore(data.length > 0);
+                return data;
+              }
+
+              const allPosts = [...prev, ...data];
+              const uniquePosts = allPosts.filter(
+                (post, index, self) =>
+                  self.findIndex((p) => p.id === post.id) === index,
+              );
+
+              return uniquePosts;
+            });
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao buscar feed:", error);
+      } finally {
+        if (!isSilent) {
+          queueMicrotask(() => setIsFetching(false));
+        }
+      }
+    },
+    [page],
+  );
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("connectu_user");
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      queueMicrotask(() => setUser(parsedUser));
+    }
   }, []);
 
-  async function fetchPosts(isSilent = false) {
-    if (!isSilent) setIsFetching(true);
-    try {
-      const token = localStorage.getItem("connectu_token");
-      const res = await fetch("https://connectu-gd1z.onrender.com/posts", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await res.json();
+  useEffect(() => {
+    let active = true;
 
-      if (Array.isArray(data)) {
-        setPosts(data);
-      } else {
-        console.warn("O backend não retornou uma lista:", data);
-        setPosts([]);
-      }
-    } catch (error) {
-      console.error("Erro ao buscar feed:", error);
-      setPosts([]);
-    } finally {
-      if (!isSilent) setIsFetching(false);
+    if (active) {
+      fetchPosts(false, true);
     }
-  }
+
+    return () => {
+      active = false;
+    };
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    if (page > 1 && active) {
+      fetchPosts(true);
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [page, fetchPosts]);
 
   async function handleCreatePost() {
     if (!newPostText.trim() || !user) return;
@@ -117,25 +172,32 @@ export default function DashboardFeed() {
 
     try {
       const token = localStorage.getItem("connectu_token");
+
+      const formData = new FormData();
+      formData.append("content", newPostText);
+      formData.append("authorId", user.id);
+      if (postFile) {
+        formData.append("file", postFile);
+      }
+
       const res = await fetch("https://connectu-gd1z.onrender.com/posts", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          content: newPostText,
-          authorId: user.id,
-        }),
+        body: formData,
       });
 
       if (res.ok) {
         setNewPostText("");
+        setPostFile(null);
         setFeedback({
           type: "success",
           msg: "Publicação enviada com sucesso!",
         });
-        fetchPosts(true);
+        setPage(1);
+        fetchPosts(true, true);
+
         setTimeout(() => setFeedback(null), 3000);
       } else {
         setFeedback({
@@ -143,7 +205,7 @@ export default function DashboardFeed() {
           msg: "Não foi possível publicar. Tente novamente.",
         });
       }
-    } catch (error) {
+    } catch (_) {
       setFeedback({ type: "error", msg: "Erro de conexão com o servidor." });
     } finally {
       setLoading(false);
@@ -155,16 +217,13 @@ export default function DashboardFeed() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(
-        `https://connectu-gd1z.onrender.com/posts/${postId}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const res = await fetch(`https://connectu-gd1z.onrender.com/posts/${postId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (res.ok) {
-        fetchPosts(true);
+        setPosts((prev) => prev.filter((post) => post.id !== postId));
       }
     } catch (error) {
       console.error("Erro ao deletar:", error);
@@ -174,22 +233,20 @@ export default function DashboardFeed() {
   async function handleComment(postId: string) {
     const token = localStorage.getItem("connectu_token");
     try {
-      const res = await fetch(
-        `https://connectu-gd1z.onrender.com/posts/${postId}/comment`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ content: commentContent }),
+      const res = await fetch(`https://connectu-gd1z.onrender.com/posts/${postId}/comment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({ content: commentContent }),
+      });
 
       if (res.ok) {
         setCommentContent("");
         setActiveCommentPostId(null);
-        await fetchPosts(true);
+        setPage(1);
+        fetchPosts(true, true);
       }
     } catch (error) {
       console.error("Erro ao comentar:", error);
@@ -201,16 +258,28 @@ export default function DashboardFeed() {
     const token = localStorage.getItem("connectu_token");
 
     try {
-      const res = await fetch(
-        `https://connectu-gd1z.onrender.com/posts/${postId}/like`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const res = await fetch(`https://connectu-gd1z.onrender.com/posts/${postId}/like`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (res.ok) {
-        await fetchPosts(true);
+        setPosts((prev) =>
+          prev.map((post) => {
+            if (post.id === postId) {
+              const alreadyLiked = post.likes.some(
+                (like) => like.userId === user.id,
+              );
+
+              const newLikes = alreadyLiked
+                ? post.likes.filter((like) => like.userId !== user.id)
+                : [...post.likes, { userId: user.id }];
+
+              return { ...post, likes: newLikes };
+            }
+            return post;
+          }),
+        );
       }
     } catch (error) {
       console.error("Erro ao curtir:", error);
@@ -227,11 +296,34 @@ export default function DashboardFeed() {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-      if (res.ok) fetchPosts(true);
+      if (res.ok) {
+        setPage(1);
+        fetchPosts(true, true);
+      }
     } catch (error) {
       console.error("Erro ao deletar comentário:", error);
     }
   }
+
+  useEffect(() => {
+    if (isFetching || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      {
+        rootMargin: "200px",
+      },
+    );
+
+    const target = document.querySelector("#feed-sentinel");
+    if (target) observer.observe(target);
+
+    return () => observer.disconnect();
+  }, [isFetching, hasMore]);
 
   if (!user) return null;
 
@@ -245,6 +337,7 @@ export default function DashboardFeed() {
       <div className="mb-8 rounded-xl border border-zinc-800 bg-zinc-900 p-4 shadow-sm">
         <div className="flex gap-4">
           {user.avatarUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={user.avatarUrl}
               alt={user.name}
@@ -280,6 +373,22 @@ export default function DashboardFeed() {
                   {user.role === "STUDENT" ? "Talento" : "Empresa"}
                 </strong>
               </span>
+
+              {/* Input de arquivo para imagens do post */}
+              <label className="cursor-pointer text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2 py-1 rounded transition-colors">
+                {postFile ? "📸 Imagem adicionada" : "Adicionar Imagem"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      setPostFile(e.target.files[0]);
+                    }
+                  }}
+                />
+              </label>
+
               <button
                 onClick={handleCreatePost}
                 disabled={loading || !newPostText.trim()}
@@ -325,6 +434,7 @@ export default function DashboardFeed() {
               <div className="mb-3 flex items-start justify-between gap-2">
                 <div className="flex items-center gap-3 min-w-0">
                   {post.author.avatarUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={post.author.avatarUrl}
                       alt={post.author.name}
@@ -368,7 +478,7 @@ export default function DashboardFeed() {
                   {post.authorId === user.id && (
                     <button
                       onClick={() => handleDeletePost(post.id)}
-                      className="text-zinc-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 md:opacity-0 opacity-100"
+                      className="text-zinc-600 hover:text-red-400 transition-colors group-hover:opacity-100 md:opacity-0 opacity-100"
                       title="Excluir post"
                     >
                       <FiTrash2 />
@@ -380,6 +490,17 @@ export default function DashboardFeed() {
               <p className="mb-4 text-sm leading-relaxed text-zinc-300 whitespace-pre-wrap">
                 {post.content}
               </p>
+
+              {post.imageUrl && (
+                <div className="mb-4 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={post.imageUrl}
+                    alt="Imagem da publicação"
+                    className="max-h-125 w-full object-contain"
+                  />
+                </div>
+              )}
 
               <div className="mb-4 flex items-center gap-6 text-xs font-medium text-zinc-500">
                 <button
@@ -429,6 +550,7 @@ export default function DashboardFeed() {
                   {post.comments.map((comment) => (
                     <div key={comment.id} className="flex gap-3 group">
                       {comment.user.avatarUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={comment.user.avatarUrl}
                           alt={comment.user.name}
@@ -477,6 +599,19 @@ export default function DashboardFeed() {
             </div>
           ))
         )}
+
+        {/* Elemento Sentinela para o Infinite Scroll */}
+        <div
+          id="feed-sentinel"
+          className="h-10 w-full flex items-center justify-center p-4 text-sm text-zinc-600"
+        >
+          {isFetching && hasMore && (
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-700 border-t-blue-500" />
+          )}
+          {!hasMore && posts.length > 0 && (
+            <span>Você chegou ao fim do feed.</span>
+          )}
+        </div>
       </div>
     </div>
   );

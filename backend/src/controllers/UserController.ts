@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
-import bcrypt from 'bcrypt';
+import bcrypt from "bcrypt";
 
 export class UserController {
   async create(req: Request, res: Response) {
@@ -42,6 +42,7 @@ export class UserController {
         course,
         institution,
         avatarUrl,
+        bannerUrl,
         degreeType,
         startDate,
         endDate,
@@ -55,6 +56,7 @@ export class UserController {
           course,
           institution,
           avatarUrl,
+          bannerUrl,
           degreeType,
           startDate,
           endDate,
@@ -84,6 +86,7 @@ export class UserController {
           course: true,
           institution: true,
           avatarUrl: true,
+          bannerUrl: true,
           degreeType: true,
           startDate: true,
           endDate: true,
@@ -147,6 +150,28 @@ export class UserController {
     }
   }
 
+  async uploadUserBanner(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      if (!req.file) {
+        return res.status(400).json({ error: "Nenhuma imagem enviada." });
+      }
+
+      const bannerUrl = req.file.path as string;
+
+      const updatedUser = await prisma.user.update({
+        where: { id: String(id) },
+        data: { bannerUrl: bannerUrl },
+      });
+
+      res.json({ bannerUrl: updatedUser.bannerUrl });
+    } catch (error) {
+      console.error("Erro no upload do banner:", error);
+      res.status(500).json({ error: "Erro ao processar o banner." });
+    }
+  }
+
   async getUserById(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -159,6 +184,7 @@ export class UserController {
           role: true,
           companyId: true,
           avatarUrl: true,
+          bannerUrl: true,
           degreeType: true,
           startDate: true,
           endDate: true,

@@ -37,6 +37,7 @@ model User {
   password   String
   role       Role    @default(STUDENT)
   avatarUrl  String?
+  bannerUrl  String?
   degreeType String?
   startDate  String?
   endDate    String?
