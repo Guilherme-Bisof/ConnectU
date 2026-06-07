@@ -64,6 +64,7 @@ model User {
 
   // Relacionamentos
   posts    Post[]
+  rooms    Room[]    @relation("UserRooms")
   messages Message[]
   likes    Like[]
   comments Comment[]
@@ -82,16 +83,16 @@ model Link {
 }
 
 model Job {
-  id             String   @id @default(uuid())
-  title          String
-  type           String
-  description    String?
-  requiredSkills String[]
+  id              String   @id @default(uuid())
+  title           String
+  type            String
+  description     String?
+  requiredSkills  String[]
   desirableSkills String[]
-  isInternship    Boolean @default(false)
+  isInternship    Boolean  @default(false)
 
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id])
@@ -138,6 +139,8 @@ model Room {
   jobId     String? // Atrelado a uma vaga se for profissional
   messages  Message[]
   createdAt DateTime    @default(now())
+
+  users User[]          @relation("UserRooms")
 }
 
 model Message {
@@ -173,9 +176,9 @@ model Like {
   id     String @id @default(uuid())
   postId String
   userId String
-  
-  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id])
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
 }
 
 model Comment {
