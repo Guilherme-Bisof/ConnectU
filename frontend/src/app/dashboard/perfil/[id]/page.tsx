@@ -56,20 +56,28 @@ export default function PublicProfilePage() {
   const router = useRouter();
 
   const [profile, setProfile] = useState<PublicProfile | null>(null);
+  const [viewerRole, setViewerRole] = useState<string | null>(null);
   const [isConnectingChat, setIsConnectingChat] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Novo estado para o Modal de Projetos
   const [selectedProject, setSelectedProject] = useState<UserProject | null>(
     null,
   );
 
   useEffect(() => {
+    const storedUser = localStorage.getItem("connectu_user");
+    if (storedUser) {
+      queueMicrotask(() =>{
+              setViewerRole(JSON.parse(storedUser).role);
+      });
+    }
     async function fetchProfile() {
       if (!id) return;
 
       try {
-        const res = await fetch(`https://connectu-gd1z.onrender.com/users/${id}`);
+        const res = await fetch(
+          `https://connectu-gd1z.onrender.com/users/${id}`,
+        );
         if (res.ok) {
           const data = await res.json();
           setProfile(data);
@@ -93,14 +101,17 @@ export default function PublicProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
 
-      const res = await fetch("https://connectu-gd1z.onrender.com/conversations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        "https://connectu-gd1z.onrender.com/conversations",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ participantId: id }),
         },
-        body: JSON.stringify({ participantId: id }),
-      });
+      );
 
       if (!res.ok) throw new Error("Erro ao iniciar conversa");
 
@@ -136,7 +147,7 @@ export default function PublicProfilePage() {
           onClick={() => router.back()}
           className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-medium transition-colors"
         >
-          Voltar para Vagas
+          Voltar
         </button>
       </div>
     );
@@ -157,12 +168,12 @@ export default function PublicProfilePage() {
 
   return (
     <div className="mx-auto max-w-4xl pb-12 animate-fadeIn relative">
-      {/* Botão Voltar */}
+      {/* Botão Voltar Dinâmico */}
       <button
         onClick={() => router.back()}
         className="flex items-center gap-2 text-zinc-400 hover:text-white mb-6 transition-colors"
       >
-        <FiArrowLeft /> Voltar para Minhas Vagas
+        <FiArrowLeft /> Voltar
       </button>
 
       {/* Header do Perfil */}
@@ -170,12 +181,12 @@ export default function PublicProfilePage() {
         <div className="absolute top-0 left-0 right-0 h-32 bg-linear-to-r from-blue-900/40 to-purple-900/40 border-b border-zinc-800/50"></div>
 
         <div className="relative flex flex-col sm:flex-row items-center sm:items-end gap-6 mt-12">
-          <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-zinc-950 border-4 border-zinc-900 flex items-center justify-center text-4xl sm:text-5xl font-black text-blue-500 shadow-2xl">
+          <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-zinc-950 border-4 border-zinc-900 flex items-center justify-center text-4xl sm:text-5xl font-black text-blue-500 shadow-2xl overflow-hidden">
             {profile.avatarUrl ? (
               <img
                 src={profile.avatarUrl}
                 alt={`Foto de ${profile.name}`}
-                className="w-full h-full object-cover rounded-full"
+                className="w-full h-full object-cover"
               />
             ) : (
               profile.name.charAt(0)
@@ -199,30 +210,16 @@ export default function PublicProfilePage() {
                 </div>
               )}
             </div>
-            <div className="flex flex-col sm:flex-row items-center gap-3 mt-2 justify-center sm:justify-start">
-              <p className="text-blue-400 flex items-center gap-2 font-medium">
-                <FiUser /> Candidato(a)
-              </p>
 
-              {/*Botão do currículo */}
-              {profile.resumeUrl && (
-                <>
-                  <span className="hidden sm:block text-zinc-700"></span>
-                  <a
-                    href={
-                      profile.resumeUrl.startsWith("http")
-                        ? profile.resumeUrl
-                        : `https://${profile.resumeUrl}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-1.5 rounded-md transition-colors"
-                  >
-                    <FiExternalLink /> Ver Currículo
-                  </a>
-                </>
-              )}
+            {/* Subtítulo dinâmico*/}
+            <p className="text-sm text-zinc-400 mt-1">
+              {profile.role === "STUDENT"
+                ? `${profile.course || "Estudante"} na ${profile.institution || "Instituição não informada"}`
+                : "Recrutador / Empresa"}
+            </p>
 
+            <div className="flex flex-col sm:flex-row items-center gap-3 mt-4 justify-center sm:justify-start">
+              {/* Botão Mensagem */}
               <button
                 onClick={startChat}
                 disabled={isConnectingChat}
@@ -236,6 +233,22 @@ export default function PublicProfilePage() {
                   </>
                 )}
               </button>
+
+              {/* Botão do Currículo VISÍVEL APENAS PARA RECRUTADORES */}
+              {profile.resumeUrl && viewerRole === "RECRUITER" && (
+                <a
+                  href={
+                    profile.resumeUrl.startsWith("http")
+                      ? profile.resumeUrl
+                      : `https://${profile.resumeUrl}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-4 py-2 rounded-lg transition-colors border border-zinc-700"
+                >
+                  <FiExternalLink /> Ver Currículo
+                </a>
+              )}
             </div>
           </div>
 
@@ -264,58 +277,86 @@ export default function PublicProfilePage() {
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
-        {/* Coluna da Esquerda (Informações Básicas e Skills) */}
+        {/* COLUNA DA ESQUERDA */}
         <div className="space-y-6 md:col-span-1">
-          {/* Formação */}
+          {/* Resumo Profissional (Bio) */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
             <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4 border-b border-zinc-800 pb-2">
-              Formação
+              Sobre Mim
             </h3>
+            {profile.bio ? (
+              <p className="text-zinc-300 leading-relaxed whitespace-pre-wrap text-sm">
+                {profile.bio}
+              </p>
+            ) : (
+              <p className="text-sm text-zinc-500 italic">
+                Nenhuma biografia adicionada.
+              </p>
+            )}
+          </div>
 
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <FiBookOpen className="text-blue-400 mt-1 shrink-0" size={18} />
-                <div>
-                  <p className="text-sm text-zinc-400">
-                    Curso {profile.degreeType ? `(${profile.degreeType})` : ""}
-                  </p>
-                  <p className="text-white font-medium">
-                    {profile.course || "Não informado"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <FiMapPin className="text-purple-400 mt-1 shrink-0" size={18} />
-                <div>
-                  <p className="text-sm text-zinc-400">Instituição</p>
-                  <p className="text-white font-medium">
-                    {profile.institution || "Não informada"}
-                  </p>
-                </div>
-              </div>
+          {/* Formação */}
+          {profile.role === "STUDENT" && (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+              <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4 border-b border-zinc-800 pb-2">
+                Formação
+              </h3>
 
-              {(profile.startDate || profile.endDate) && (
-                <div className="flex items-start gap-3 pt-3 border-t border-zinc-800/50 mt-2">
-                  <FiCalendar
-                    className="text-emerald-400 mt-1 shrink-0"
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <FiBookOpen
+                    className="text-blue-400 mt-1 shrink-0"
                     size={18}
                   />
                   <div>
-                    <p className="text-sm text-zinc-400">Período Acadêmico</p>
-                    <p className="text-white font-medium">
-                      {profile.startDate || "?"} até{" "}
-                      {profile.endDate || "Atual"}
+                    <p className="text-sm text-zinc-400">
+                      Curso{" "}
+                      {profile.degreeType ? `(${profile.degreeType})` : ""}
+                    </p>
+                    <p className="text-white font-medium text-sm">
+                      {profile.course || "Não informado"}
                     </p>
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
+                <div className="flex items-start gap-3">
+                  <FiMapPin
+                    className="text-purple-400 mt-1 shrink-0"
+                    size={18}
+                  />
+                  <div>
+                    <p className="text-sm text-zinc-400">Instituição</p>
+                    <p className="text-white font-medium text-sm">
+                      {profile.institution || "Não informada"}
+                    </p>
+                  </div>
+                </div>
 
+                {(profile.startDate || profile.endDate) && (
+                  <div className="flex items-start gap-3 pt-3 border-t border-zinc-800/50 mt-2">
+                    <FiCalendar
+                      className="text-emerald-400 mt-1 shrink-0"
+                      size={18}
+                    />
+                    <div>
+                      <p className="text-sm text-zinc-400">Período</p>
+                      <p className="text-white font-medium text-sm">
+                        {profile.startDate || "?"} até{" "}
+                        {profile.endDate || "Atual"}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* COLUNA DA DIREITA */}
+        <div className="space-y-6 md:col-span-2">
           {/* Competências (Skills) */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
             <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4 border-b border-zinc-800 pb-2">
-              Competências Técnicas
+              Competências & Tecnologias
             </h3>
 
             {profile.skills && profile.skills.length > 0 ? (
@@ -323,7 +364,7 @@ export default function PublicProfilePage() {
                 {profile.skills.map((skill, index) => (
                   <span
                     key={index}
-                    className="bg-blue-500/10 border border-blue-500/20 text-blue-300 px-2.5 py-1 rounded text-xs font-medium"
+                    className="bg-blue-500/10 border border-blue-500/20 text-blue-300 px-3 py-1.5 rounded-md text-sm font-medium"
                   >
                     {skill}
                   </span>
@@ -335,31 +376,11 @@ export default function PublicProfilePage() {
               </p>
             )}
           </div>
-        </div>
-
-        {/* Coluna da Direita (Bio e Projetos) */}
-        <div className="space-y-6 md:col-span-2">
-          {/* Resumo Profissional (Bio) */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-            <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4 border-b border-zinc-800 pb-2">
-              Sobre o Profissional
-            </h3>
-
-            {profile.bio ? (
-              <p className="text-zinc-300 leading-relaxed whitespace-pre-wrap text-sm">
-                {profile.bio}
-              </p>
-            ) : (
-              <p className="text-sm text-zinc-500 italic">
-                Este candidato ainda não escreveu um resumo sobre si.
-              </p>
-            )}
-          </div>
 
           {/* Portfólio / Projetos */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
             <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4 border-b border-zinc-800 pb-2">
-              Portfólio & Projetos
+              Vitrine de Projetos
             </h3>
 
             {profile.projects && profile.projects.length > 0 ? (
@@ -383,7 +404,7 @@ export default function PublicProfilePage() {
                           }
                           target="_blank"
                           rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()} // Impede que o clique no link abra o modal também
+                          onClick={(e) => e.stopPropagation()}
                           className="text-zinc-500 hover:text-blue-400 ml-2 shrink-0 p-1 bg-zinc-900 rounded-md"
                           title="Acessar link direto"
                         >
@@ -391,11 +412,11 @@ export default function PublicProfilePage() {
                         </a>
                       )}
                     </div>
-                    <p className="text-xs text-zinc-400 line-clamp-3">
+                    <p className="text-sm text-zinc-400 line-clamp-3">
                       {project.description}
                     </p>
                     <p className="text-[10px] text-blue-500 font-semibold mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      Ver detalhes
+                      Ver detalhes do projeto
                     </p>
                   </div>
                 ))}
@@ -404,7 +425,7 @@ export default function PublicProfilePage() {
               <div className="bg-zinc-950 border border-dashed border-zinc-800 p-8 rounded-xl text-center">
                 <FiBriefcase className="mx-auto text-3xl text-zinc-600 mb-2" />
                 <p className="text-sm text-zinc-500">
-                  Nenhum projeto cadastrado no portfólio.
+                  Nenhum projeto adicionado à vitrine.
                 </p>
               </div>
             )}
@@ -416,7 +437,6 @@ export default function PublicProfilePage() {
       {selectedProject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-2xl shadow-2xl relative flex flex-col max-h-[90vh]">
-            {/* Header do Modal */}
             <div className="flex items-start justify-between mb-6 border-b border-zinc-800 pb-4">
               <h2 className="text-2xl font-bold text-white pr-8">
                 {selectedProject.title}
@@ -429,14 +449,7 @@ export default function PublicProfilePage() {
               </button>
             </div>
 
-            {/* Conteúdo do Modal (Rolável se for muito grande) */}
             <div className="flex-1 overflow-y-auto pr-2 space-y-6 custom-scrollbar">
-              {/* Espaço reservado para futura Imagem */}
-              {/* <div className="w-full h-48 bg-zinc-800 rounded-lg border border-zinc-700 flex items-center justify-center text-zinc-500">
-                Área reservada para imagem do projeto
-              </div> 
-              */}
-
               <div>
                 <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
                   Descrição Completa
@@ -449,7 +462,7 @@ export default function PublicProfilePage() {
               {selectedProject.link && (
                 <div className="pt-4 border-t border-zinc-800/50">
                   <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">
-                    Link do Projeto
+                    Link Oficial
                   </h3>
                   <a
                     href={
