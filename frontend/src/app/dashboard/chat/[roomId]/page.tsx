@@ -20,6 +20,8 @@ const socket = io("https://connectu-gd1z.onrender.com", {
     token: token,
   },
   autoConnect: true,
+  transports: ["websocket"],
+  withCredentials: true
 });
 
 interface Participant {
@@ -54,17 +56,38 @@ export default function ChatRoomPage() {
   const { roomId } = useParams();
   const router = useRouter();
 
-  const [conversations, setConversations] = useState<Room[]>([]);
+  const [conversations, setConversations] = useState<Room[]>(() => {
+    if (typeof window !== "undefined") {
+      const cached = sessionStorage.getItem("connectu_conversations_cache");
+      return cached ? JSON.parse(cached) : [];
+    }
+    return [];
+  });
+
   const [activeFilter, setActiveFilter] = useState<
     "TODOS" | "STUDENT" | "RECRUITER"
   >("TODOS");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isListLoading, setIsListLoading] = useState(true);
+
+  const [isListLoading, setIsListLoading] = useState(
+    conversations.length === 0,
+  );
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
+
   const [activeChatUser, setActiveChatUser] = useState<Participant | null>(
-    null,
+    () => {
+      if (typeof window !== "undefined") {
+        const cached = sessionStorage.getItem("connectu_conversations_cache");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          const currentRoom = parsed.find((r: Room) => r.id === roomId);
+          if (currentRoom && currentRoom.users[0]) return currentRoom.users[0];
+        }
+      }
+      return null;
+    },
   );
 
   const [user] = useState<UserData | null>(() => {
@@ -77,19 +100,27 @@ export default function ChatRoomPage() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // 1. Buscar a lista de conversas da esquerda
+  // Buscar a lista de conversas
   useEffect(() => {
     async function fetchConversations() {
       try {
         const tokenStr = localStorage.getItem("connectu_token");
-        const res = await fetch("https://connectu-gd1z.onrender.com/conversations", {
-          method: "GET",
-          headers: { Authorization: `Bearer ${tokenStr}` },
-        });
+        const res = await fetch(
+          "https://connectu-gd1z.onrender.com/conversations",
+          {
+            method: "GET",
+            headers: { Authorization: `Bearer ${tokenStr}` },
+          },
+        );
 
         if (res.ok) {
           const data = await res.json();
           setConversations(data);
+
+          sessionStorage.setItem(
+            "connectu_conversations_cache",
+            JSON.stringify(data),
+          );
 
           const currentRoom = data.find((r: Room) => r.id === roomId);
           if (currentRoom && currentRoom.users[0]) {
@@ -106,7 +137,7 @@ export default function ChatRoomPage() {
     fetchConversations();
   }, [roomId]);
 
-  // 2. Filtro derivado (Corrigindo erro ESLint)
+  // Filtro derivado
   const filteredConversations = conversations.filter((room) => {
     const matchRole =
       activeFilter === "TODOS" ||
@@ -116,11 +147,10 @@ export default function ChatRoomPage() {
       room.users.some((u) =>
         u.name.toLowerCase().includes(searchQuery.toLowerCase()),
       );
-
     return matchRole && matchSearch;
   });
 
-  // 3. Lógica do seu Chat / Socket.io original
+  // Lógica Socket.io 
   useEffect(() => {
     if (roomId) {
       socket.emit("join_room", roomId);
@@ -292,7 +322,7 @@ export default function ChatRoomPage() {
 
           <div>
             <h2 className="font-bold text-sm text-zinc-100">
-              {activeChatUser?.name || "Carregando..."}
+              {activeChatUser?.name || "..."}
             </h2>
             <p className="text-[10px] text-zinc-500 uppercase tracking-wider">
               {activeChatUser?.role === "RECRUITER" ? "Recrutador" : "Aluno"}
