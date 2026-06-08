@@ -103,6 +103,18 @@ export default function DashboardLayout({
           >
             Meu Perfil
           </Link>
+
+          {/* ABA MENSAGENS ADICIONADA AQUI NO DESKTOP */}
+          <Link
+            href="/dashboard/chat"
+            className={`rounded-md px-4 py-2.5 text-sm font-medium transition-colors ${
+              pathname.startsWith("/dashboard/chat")
+                ? "bg-zinc-900 text-white hover:bg-zinc-800"
+                : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+            }`}
+          >
+            Mensagens
+          </Link>
         </nav>
 
         {/* Rodapé da Sidebar */}
@@ -178,7 +190,8 @@ export default function DashboardLayout({
 
               <Link
                 href="/dashboard/chat"
-                className={`rounded-md px-4 py-2.5 text-sm font-medium transition-colors ${
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`rounded-md px-4 py-3 text-sm font-medium transition-colors ${
                   pathname.startsWith("/dashboard/chat")
                     ? "bg-zinc-900 text-white hover:bg-zinc-800"
                     : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
