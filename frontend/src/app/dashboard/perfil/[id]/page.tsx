@@ -69,7 +69,7 @@ export default function PublicProfilePage() {
       if (!id) return;
 
       try {
-        const res = await fetch(`http://localhost:3333/users/${id}`);
+        const res = await fetch(`https://connectu-gd1z.onrender.com/users/${id}`);
         if (res.ok) {
           const data = await res.json();
           setProfile(data);
@@ -93,7 +93,7 @@ export default function PublicProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
 
-      const res = await fetch("http://localhost:3333/conversations", {
+      const res = await fetch("https://connectu-gd1z.onrender.com/conversations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

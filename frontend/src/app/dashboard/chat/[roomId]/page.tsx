@@ -15,7 +15,7 @@ import {
 const token =
   typeof window !== "undefined" ? localStorage.getItem("connectu_token") : "";
 
-const socket = io("http://localhost:3333", {
+const socket = io("https://connectu-gd1z.onrender.com", {
   auth: {
     token: token,
   },
@@ -82,7 +82,7 @@ export default function ChatRoomPage() {
     async function fetchConversations() {
       try {
         const tokenStr = localStorage.getItem("connectu_token");
-        const res = await fetch("http://localhost:3333/conversations", {
+        const res = await fetch("https://connectu-gd1z.onrender.com/conversations", {
           method: "GET",
           headers: { Authorization: `Bearer ${tokenStr}` },
         });
@@ -142,7 +142,7 @@ export default function ChatRoomPage() {
       try {
         const tokenStr = localStorage.getItem("connectu_token");
         const res = await fetch(
-          `http://localhost:3333/conversations/${roomId}/messages`,
+          `https://connectu-gd1z.onrender.com/conversations/${roomId}/messages`,
           {
             headers: { Authorization: `Bearer ${tokenStr}` },
           },

@@ -38,7 +38,7 @@ export default function ChatPage() {
     async function fetchConversations() {
       try {
         const token = localStorage.getItem("connectu_token");
-        const res = await fetch("http://localhost:3333/conversations", {
+        const res = await fetch("https://connectu-gd1z.onrender.com/conversations", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
