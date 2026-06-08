@@ -49,9 +49,9 @@ const httpServer = createServer(app);
 // Acoplamento do socket.io ao http
 const io = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:3000", "https://connectu-gd1z.onrender.com"],
+    origin: ["http://localhost:3000", "https://connect-u-psi.vercel.app"],
     methods: ["GET", "POST"],
-    credentials: true
+    credentials: true,
   },
 });
 
