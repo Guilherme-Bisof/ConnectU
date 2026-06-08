@@ -87,13 +87,10 @@ export default function DashboardFeed() {
         const token = localStorage.getItem("connectu_token");
         const currentPage = reset ? 1 : page;
 
-        const res = await fetch(
-          `https://connectu-gd1z.onrender.com/posts?page=${currentPage}`,
-          {
-            method: "GET",
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
+        const res = await fetch(`https://connectu-gd1z.onrender.com/posts?page=${currentPage}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         const data = await res.json();
 
@@ -289,13 +286,10 @@ export default function DashboardFeed() {
   async function handleDeleteComment(commentId: string) {
     const token = localStorage.getItem("connectu_token");
     try {
-      const res = await fetch(
-        `https://connectu-gd1z.onrender.com/posts/comment/${commentId}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const res = await fetch(`https://connectu-gd1z.onrender.com/posts/comment/${commentId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (res.ok) {
         setPage(1);
         fetchPosts(true, true);

@@ -175,6 +175,17 @@ export default function DashboardLayout({
               >
                 Meu Perfil
               </Link>
+
+              <Link
+                href="/dashboard/chat"
+                className={`rounded-md px-4 py-2.5 text-sm font-medium transition-colors ${
+                  pathname.startsWith("/dashboard/chat")
+                    ? "bg-zinc-900 text-white hover:bg-zinc-800"
+                    : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                }`}
+              >
+                Mensagens
+              </Link>
             </nav>
 
             <div className="mt-4 border-t border-zinc-800 pt-4">

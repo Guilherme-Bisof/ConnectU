@@ -69,9 +69,7 @@ export default function PublicProfilePage() {
       if (!id) return;
 
       try {
-        const res = await fetch(
-          `https://connectu-gd1z.onrender.com/users/${id}`,
-        );
+        const res = await fetch(`http://localhost:3333/users/${id}`);
         if (res.ok) {
           const data = await res.json();
           setProfile(data);
@@ -95,17 +93,14 @@ export default function PublicProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
 
-      const res = await fetch(
-        "https://connectu-gd1z.onrender.com/conversations",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ participantId: id }),
+      const res = await fetch("http://localhost:3333/conversations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({ participantId: id }),
+      });
 
       if (!res.ok) throw new Error("Erro ao iniciar conversa");
 
@@ -147,7 +142,6 @@ export default function PublicProfilePage() {
     );
   }
 
-  // Função super robusta para identificar o ícone (checa o Título e a URL em minúsculo)
   const getLinkIcon = (label: string, url: string) => {
     const searchStr = `${label} ${url}`.toLowerCase();
 
