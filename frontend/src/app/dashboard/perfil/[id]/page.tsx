@@ -16,8 +16,8 @@ import {
   FiGlobe,
   FiX,
   FiCalendar,
-  FiZap,
   FiAward,
+  FiMessageSquare,
 } from "react-icons/fi";
 
 interface UserLink {
@@ -56,6 +56,7 @@ export default function PublicProfilePage() {
   const router = useRouter();
 
   const [profile, setProfile] = useState<PublicProfile | null>(null);
+  const [isConnectingChat, setIsConnectingChat] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Novo estado para o Modal de Projetos
@@ -68,9 +69,7 @@ export default function PublicProfilePage() {
       if (!id) return;
 
       try {
-        const res = await fetch(
-          `https://connectu-gd1z.onrender.com/users/${id}`,
-        );
+        const res = await fetch(`https://connectu-gd1z.onrender.com/users/${id}`);
         if (res.ok) {
           const data = await res.json();
           setProfile(data);
@@ -86,6 +85,34 @@ export default function PublicProfilePage() {
 
     fetchProfile();
   }, [id]);
+
+  const startChat = async () => {
+    if (!id) return;
+    setIsConnectingChat(true);
+
+    try {
+      const token = localStorage.getItem("connectu_token");
+
+      const res = await fetch("https://connectu-gd1z.onrender.com/conversations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ participantId: id }),
+      });
+
+      if (!res.ok) throw new Error("Erro ao iniciar conversa");
+
+      const room = await res.json();
+
+      router.push(`/dashboard/chat/${room.id}`);
+    } catch (error) {
+      console.error("Erro ao iniciar o chat:", error);
+    } finally {
+      setIsConnectingChat(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -115,7 +142,6 @@ export default function PublicProfilePage() {
     );
   }
 
-  // Função super robusta para identificar o ícone (checa o Título e a URL em minúsculo)
   const getLinkIcon = (label: string, url: string) => {
     const searchStr = `${label} ${url}`.toLowerCase();
 
@@ -196,6 +222,20 @@ export default function PublicProfilePage() {
                   </a>
                 </>
               )}
+
+              <button
+                onClick={startChat}
+                disabled={isConnectingChat}
+                className="flex items-center gap-2 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all disabled:opacity-50"
+              >
+                {isConnectingChat ? (
+                  "Iniciando..."
+                ) : (
+                  <>
+                    <FiMessageSquare size={14} /> Mensagem
+                  </>
+                )}
+              </button>
             </div>
           </div>
 

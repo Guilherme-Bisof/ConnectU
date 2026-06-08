@@ -56,29 +56,17 @@ interface JobData {
   id: string;
   title: string;
   type: string;
+  desirableSkills?: string[];
   description?: string;
   requiredSkills: string[];
   isActive: boolean;
+  isInternship: boolean;
 }
 
 interface MatchedJobData extends JobData {
   matchPercentage: number;
   company: {
     name: string;
-  };
-}
-
-interface Applicant {
-  applicationId: string;
-  status: string;
-  matchPercentage: number;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    skills: string[];
-    course?: string;
-    institution?: string;
   };
 }
 
@@ -142,11 +130,15 @@ export default function ProfilePage() {
 
   // Estados do modal de criação de vagas
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
-  const [jobTitle, setJobTitle] = useState("");
-  const [jobType, setJobType] = useState("Remoto");
-  const [jobDesc, setJobDesc] = useState("");
-  const [jobSkillInput, setJobSkillInput] = useState("");
-  const [jobSkills, setJobSkills] = useState<string[]>([]);
+  const [jobFormData, setJobFormData] = useState({
+    title: "",
+    type: "Tempo Integral",
+    description: "",
+    skillsInput: "",
+    desirableSkillsInput: "",
+    isInternship: false,
+  });
+  const [isSubmittingJob, setIsSubmittingJob] = useState(false);
 
   // Estado para guardar as vagas (recrutador ou empresa)
   const [companyJobs, setCompanyJobs] = useState<JobData[]>([]);
@@ -273,16 +265,19 @@ export default function ProfilePage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(`https://connectu-gd1z.onrender.com/users/${user.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            skills: tempSkills,
+          }),
         },
-        body: JSON.stringify({
-          skills: tempSkills,
-        }),
-      });
+      );
 
       if (res.ok) {
         const updatedUser = await res.json();
@@ -311,14 +306,17 @@ export default function ProfilePage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(`https://connectu-gd1z.onrender.com/users/${user.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ bio: bioInput }),
         },
-        body: JSON.stringify({ bio: bioInput }),
-      });
+      );
 
       if (res.ok) {
         const updatedUser = await res.json();
@@ -364,14 +362,17 @@ export default function ProfilePage() {
     setIsSavingLinks(true);
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(`https://connectu-gd1z.onrender.com/users/${user.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ links: tempLinks }),
         },
-        body: JSON.stringify({ links: tempLinks }),
-      });
+      );
       if (res.ok) {
         const updatedUser = await res.json();
         setUser(updatedUser);
@@ -424,14 +425,17 @@ export default function ProfilePage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(`https://connectu-gd1z.onrender.com/users/${user.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ projects: tempProjects }),
         },
-        body: JSON.stringify({ projects: tempProjects }),
-      });
+      );
       if (res.ok) {
         const updatedUser = await res.json();
         setUser(updatedUser);
@@ -445,21 +449,19 @@ export default function ProfilePage() {
     }
   }
 
-  function handleAddJobSkill(e: React.FormEvent) {
-    e.preventDefault();
-    const skill = jobSkillInput.trim();
-    if (skill && !jobSkills.includes(skill)) {
-      setJobSkills([...jobSkills, skill]);
-    }
-    setJobSkillInput("");
-  }
-
-  function handleRemoveJobSkill(skillToRemove: string) {
-    setJobSkills(jobSkills.filter((s) => s !== skillToRemove));
-  }
-
   async function handleSaveJob() {
     if (!user) return;
+    setIsSubmittingJob(true);
+
+    const requiredSkills = jobFormData.skillsInput
+      .split(",")
+      .map((skill) => skill.trim())
+      .filter((skill) => skill !== "");
+
+    const desirableSkills = jobFormData.desirableSkillsInput
+      .split(",")
+      .map((skill) => skill.trim())
+      .filter((skill) => skill !== "");
 
     try {
       const isEditing = editingJobId !== null;
@@ -476,10 +478,12 @@ export default function ProfilePage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          title: jobTitle,
-          type: jobType,
-          description: jobDesc,
-          requiredSkills: jobSkills,
+          title: jobFormData.title,
+          type: jobFormData.type,
+          description: jobFormData.description,
+          requiredSkills,
+          desirableSkills,
+          isInternship: jobFormData.isInternship,
           companyId: user.companyId || user.id,
         }),
       });
@@ -488,28 +492,20 @@ export default function ProfilePage() {
         const savedJob = await response.json();
 
         if (isEditing) {
-          // Se estava a editar, atualiza a vaga no array atual
           setCompanyJobs((prevJobs) =>
             prevJobs.map((job) => (job.id === editingJobId ? savedJob : job)),
           );
-          // Atualiza também a vaga selecionada caso o utilizador a abra de novo
           if (selectedJob && selectedJob.id === editingJobId) {
             setSelectedJob(savedJob);
           }
           alert("Vaga atualizada com sucesso!");
         } else {
-          // Se estava a criar, adiciona no topo da lista
           setCompanyJobs((prevJobs) => [savedJob, ...prevJobs]);
           alert("Vaga criada com sucesso!");
         }
 
-        // Limpa os campos e reseta o modo de edição
-        setJobTitle("");
-        setJobType("Remoto");
-        setJobDesc("");
-        setJobSkills([]);
-        setEditingJobId(null);
         setIsJobModalOpen(false);
+        setEditingJobId(null);
       } else {
         const errorData = await response.json();
         alert(`Erro do servidor: ${errorData.error}`);
@@ -517,6 +513,8 @@ export default function ProfilePage() {
     } catch (error) {
       console.error("Erro de rede ao salvar vaga:", error);
       alert("Erro ao conectar com o servidor.");
+    } finally {
+      setIsSubmittingJob(false);
     }
   }
 
@@ -530,12 +528,15 @@ export default function ProfilePage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const response = await fetch(`https://connectu-gd1z.onrender.com/jobs/${jobId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const response = await fetch(
+        `https://connectu-gd1z.onrender.com/jobs/${jobId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
 
       if (response.ok || response.status === 204) {
         // 1. Remove a vaga do array para ela sumir do ecrã instantaneamente
@@ -596,11 +597,14 @@ export default function ProfilePage() {
 
   function handleEditJob(job: JobData) {
     setEditingJobId(job.id);
-    setJobTitle(job.title);
-    setJobType(job.type);
-    setJobDesc(job.description || "");
-    setJobSkills(job.requiredSkills);
-
+    setJobFormData({
+      title: job.title,
+      type: job.type,
+      description: job.description || "",
+      skillsInput: job.requiredSkills.join(", "),
+      desirableSkillsInput: job.desirableSkills?.join(", ") || "",
+      isInternship: job.isInternship || false,
+    });
     setIsViewJobModalOpen(false);
     setIsJobModalOpen(true);
   }
@@ -634,18 +638,23 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
 
+      let finalResumeUrl = editResumeUrl;
+
       if (avatarFile) {
         const formData = new FormData();
         formData.append("file", avatarFile);
 
         try {
-          await fetch(`https://connectu-gd1z.onrender.com/users/${user.id}/avatar`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
+          await fetch(
+            `https://connectu-gd1z.onrender.com/users/${user.id}/avatar`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+              body: formData,
             },
-            body: formData,
-          });
+          );
         } catch (uploadError) {
           console.error("Erro no upload da imagem:", uploadError);
           alert(
@@ -657,16 +666,16 @@ export default function ProfilePage() {
       if (resumeFile) {
         const resumeData = new FormData();
         resumeData.append("file", resumeFile);
-
-        try {
-          await fetch(`https://connectu-gd1z.onrender.com/users/${user.id}/resume`, {
+        const uploadRes = await fetch(
+          `https://connectu-gd1z.onrender.com/users/${user.id}/resume`,
+          {
             method: "POST",
             headers: { Authorization: `Bearer ${token}` },
             body: resumeData,
-          });
-        } catch (error) {
-          console.error("Erro no upload do currículo:", error);
-        }
+          },
+        );
+        const data = await uploadRes.json();
+        finalResumeUrl = data.resumeUrl;
       }
 
       if (bannerFile) {
@@ -674,43 +683,45 @@ export default function ProfilePage() {
         bannerData.append("file", bannerFile);
 
         try {
-          await fetch(`https://connectu-gd1z.onrender.com/users/${user.id}/banner`, {
-            method: "POST",
-            headers: { Authorization: `Bearer ${token}` },
-            body: bannerData,
-          });
+          await fetch(
+            `https://connectu-gd1z.onrender.com/users/${user.id}/banner`,
+            {
+              method: "POST",
+              headers: { Authorization: `Bearer ${token}` },
+              body: bannerData,
+            },
+          );
         } catch (error) {
           console.error("Erro no upload do banner:", error);
         }
       }
 
-      const res = await fetch(`https://connectu-gd1z.onrender.com/users/${user.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: editName,
+            course: editCourse,
+            institution: editInstitution,
+            degreeType: editDegreeType,
+            startDate: editStartDate,
+            endDate: editEndDate,
+            resumeUrl: finalResumeUrl,
+          }),
         },
-        body: JSON.stringify({
-          name: editName,
-          course: editCourse,
-          institution: editInstitution,
-          degreeType: editDegreeType,
-          startDate: editStartDate,
-          endDate: editEndDate,
-          resumeUrl: editResumeUrl,
-        }),
-      });
+      );
 
       if (res.ok) {
-        const userRes = await fetch(`https://connectu-gd1z.onrender.com/users/${user.id}`);
-        const updatedUser = await userRes.json();
-
+        const updatedUser = await res.json();
         setUser(updatedUser);
         localStorage.setItem("connectu_user", JSON.stringify(updatedUser));
         window.dispatchEvent(new Event("storage"));
-
         setIsEditProfileModalOpen(false);
-        setAvatarFile(null);
       } else {
         alert("Erro ao salvar perfil.");
       }
@@ -1056,13 +1067,17 @@ export default function ProfilePage() {
                 <button
                   onClick={() => {
                     setEditingJobId(null);
-                    setJobTitle("");
-                    setJobType("Remoto");
-                    setJobDesc("");
-                    setJobSkills([]);
+                    setJobFormData({
+                      title: "",
+                      type: "Tempo Integral",
+                      description: "",
+                      skillsInput: "",
+                      desirableSkillsInput: "",
+                      isInternship: false,
+                    });
                     setIsJobModalOpen(true);
                   }}
-                  className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-purple-700 hover:shadow[0_0_15px_rgba(168,85,247,0.4)]"
+                  className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-purple-700"
                 >
                   <FiPlus /> Criar Vaga
                 </button>
@@ -1090,9 +1105,28 @@ export default function ProfilePage() {
                           <span className="rounded-md bg-zinc-800 px-2.5 py-1 text-xs font-medium text-zinc-300 border border-zinc-700">
                             {job.type}
                           </span>
-                          <span className="rounded-md bg-zinc-800 px-2.5 py-1 text-xs font-medium text-zinc-300 border border-zinc-700">
-                            {job.requiredSkills.join(", ")}
-                          </span>
+                          {job.isInternship && (
+                            <span className="rounded-md bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-400 border border-amber-500/20">
+                              Estágio
+                            </span>
+                          )}
+                          {job.requiredSkills.map((skill, i) => (
+                            <span
+                              key={i}
+                              className="rounded-md bg-zinc-800 px-2.5 py-1 text-xs font-medium text-zinc-300 border border-zinc-700"
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                          {job.desirableSkills?.map((skill, i) => (
+                            <span
+                              key={`des-${i}`}
+                              className="rounded-md bg-purple-900/20 px-2.5 py-1 text-xs font-medium text-purple-300 border border-purple-900/30"
+                              title="Desejável (Plus)"
+                            >
+                              +{skill}
+                            </span>
+                          ))}
                         </div>
 
                         {/* Nova Descrição com Ver Mais / Ver Menos */}
@@ -1435,10 +1469,10 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/*Modal de Criar Vagas (Exclusivo para recrutadores ou empresas) */}
+      {/*Modal de Criar/Editar Vagas (Exclusivo para recrutadores ou empresas) */}
       {isJobModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-xl border border-purple-500/30 bg-zinc-900 p-6 shadow-[0_0_30px_rgba(168,85,247,015)] max-h-[90vh] overflow-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl max-h-[90vh] overflow-auto">
             <div className="mb-6 flex items-center justify-between border-b border-zinc-800 pb-4">
               <div>
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -1452,118 +1486,147 @@ export default function ProfilePage() {
               </div>
               <button
                 onClick={() => setIsJobModalOpen(false)}
-                className="text-zinc-400 hover:text-white transition-colors"
+                className="text-zinc-400 hover:text-white bg-zinc-800 p-1.5 rounded-md transition-colors"
               >
                 <FiX className="text-xl" />
               </button>
             </div>
 
             <div className="space-y-4">
-              {/*Título */}
               <div>
-                <label className="text-sm font-medium text-zinc-300 mb-1 block">
-                  Título da vaga
+                <label className="block text-sm font-medium text-zinc-300 mb-1">
+                  Título da Vaga
+                </label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Ex: Desenvolvedor Front-end Junior"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
+                  value={jobFormData.title}
+                  onChange={(e) =>
+                    setJobFormData({ ...jobFormData, title: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-1">
+                  Tipo / Modelo
+                </label>
+                <select
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
+                  value={jobFormData.type}
+                  onChange={(e) =>
+                    setJobFormData({ ...jobFormData, type: e.target.value })
+                  }
+                >
+                  <option value="Tempo Integral">Tempo Integral</option>
+                  <option value="Meio Período">Meio Período</option>
+                  <option value="Estágio">Estágio</option>
+                  <option value="Remoto">Remoto</option>
+                  <option value="Híbrido">Híbrido</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-1">
+                  Descrição
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Descreva as responsabilidades e requisitos básicos..."
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 resize-none"
+                  value={jobFormData.description}
+                  onChange={(e) =>
+                    setJobFormData({
+                      ...jobFormData,
+                      description: e.target.value,
+                    })
+                  }
+                ></textarea>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-1">
+                  Skills Necessárias (separadas por vírgula)
+                </label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Ex: React, JavaScript, Figma"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
+                  value={jobFormData.skillsInput}
+                  onChange={(e) =>
+                    setJobFormData({
+                      ...jobFormData,
+                      skillsInput: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-zinc-300 ml-1">
+                  Skills Desejáveis / Plus (separadas por vírgula)
                 </label>
                 <input
                   type="text"
-                  value={jobTitle}
-                  onChange={(e) => setJobTitle(e.target.value)}
-                  placeholder="Ex: Desenvolvedor Front-end Pleno"
-                  className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                  placeholder="Ex: Docker, AWS, UI/UX"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
+                  value={jobFormData.desirableSkillsInput}
+                  onChange={(e) =>
+                    setJobFormData({
+                      ...jobFormData,
+                      desirableSkillsInput: e.target.value,
+                    })
+                  }
                 />
               </div>
 
-              {/* Modelo de Trabalho */}
-              <div>
-                <label className="text-sm font-medium text-zinc-300 mb-1 block">
-                  Modelo de Trabalho
-                </label>
-                <div className="flex gap-2">
-                  {["Remoto", "Híbrido", "Presencial"].map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => setJobType(type)}
-                      className={`flex-1 rounded-md py-2 text-sm font-medium transition-all border ${jobType === type ? "bg-purple-600/20 border-purple-500 text-purple-400" : "bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"}`}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/*Descrição */}
-              <div>
-                <label className="text-sm font-medium text-zinc-300 mb-1 block">
-                  Descrição Rápida (Opcional)
-                </label>
-                <textarea
-                  value={jobDesc}
-                  onChange={(e) => setJobDesc(e.target.value)}
-                  placeholder="Explique sobre a vaga..."
-                  className="w-full h-20 resize-none rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+              <div className="flex items-center gap-3 pt-2">
+                <input
+                  type="checkbox"
+                  id="profileIsInternship"
+                  checked={jobFormData.isInternship}
+                  onChange={(e) =>
+                    setJobFormData({
+                      ...jobFormData,
+                      isInternship: e.target.checked,
+                    })
+                  }
+                  className="w-5 h-5 border-zinc-700 bg-zinc-900 text-purple-600 focus:ring-purple-500 focus:ring-offset-zinc-950"
                 />
-              </div>
-
-              {/* Competências Exigidas (Required Skills) */}
-              <div>
-                <label className="text-sm font-medium text-zinc-300 mb-1 block">
-                  Competências Exigidas
+                <label
+                  htmlFor="profileIsInternship"
+                  className="text-sm font-medium text-zinc-300 cursor-pointer"
+                >
+                  Esta vaga é exclusiva para Estágio?
                 </label>
-                <form onSubmit={handleAddJobSkill} className="flex gap-2 mb-3">
-                  <input
-                    type="text"
-                    value={jobSkillInput}
-                    onChange={(e) => setJobSkillInput(e.target.value)}
-                    placeholder="Ex: React, Node.js..."
-                    className="flex-1 rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
-                  />
-                  <button
-                    type="submit"
-                    className="rounded-md bg-zinc-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
-                  >
-                    Add
-                  </button>
-                </form>
-
-                <div className="flex flex-wrap gap-2">
-                  {jobSkills.length === 0 ? (
-                    <p className="text-xs text-zinc-500 italic">
-                      Nenhuma competência adicionada.
-                    </p>
-                  ) : (
-                    jobSkills.map((skill, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-1 rounded-full bg-purple-900/30 border border-purple-800/50 pl-3 pr-1 py-1 text-sm text-purple-300"
-                      >
-                        {skill}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveJobSkill(skill)}
-                          className="ml-1 rounded-full p-1 hover:bg-purple-800/50 hover:text-white transition-colors"
-                        >
-                          <FiX size={12} />
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
               </div>
             </div>
 
             <div className="mt-8 flex justify-end gap-3 border-t border-zinc-800 pt-4">
               <button
                 onClick={() => setIsJobModalOpen(false)}
-                className="rounded-md px-4 py-2 text-sm font-medium text-zinc-400 transition-colors hover:text-white"
+                className="rounded-lg px-4 py-2 text-sm font-medium text-zinc-400 transition-colors hover:text-white hover:bg-zinc-800"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSaveJob}
-                disabled={!jobTitle || jobSkills.length === 0}
-                className="rounded-md bg-purple-600 px-6 py-2 text-sm font-bold text-white transition-all hover:bg-purple-700 disabled:opacity-50 disabled:hover:bg-purple-600"
+                disabled={
+                  isSubmittingJob ||
+                  !jobFormData.title ||
+                  !jobFormData.skillsInput
+                }
+                className="rounded-lg bg-purple-600 px-6 py-2 text-sm font-bold text-white transition-all hover:bg-purple-700 disabled:opacity-50 disabled:hover:bg-purple-600"
               >
-                {editingJobId ? "Guardar Alterações" : "Salvar Vaga"}
+                {isSubmittingJob
+                  ? "Salvando..."
+                  : editingJobId
+                    ? "Guardar Alterações"
+                    : "Salvar Vaga"}
               </button>
             </div>
           </div>
