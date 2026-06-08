@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { FiThumbsUp, FiMessageSquare, FiTrash2, FiAward } from "react-icons/fi";
+import Link from "next/link";
 
 interface UserData {
   id: string;
@@ -87,10 +88,13 @@ export default function DashboardFeed() {
         const token = localStorage.getItem("connectu_token");
         const currentPage = reset ? 1 : page;
 
-        const res = await fetch(`https://connectu-gd1z.onrender.com/posts?page=${currentPage}`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(
+          `https://connectu-gd1z.onrender.com/posts?page=${currentPage}`,
+          {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
 
         const data = await res.json();
 
@@ -214,10 +218,13 @@ export default function DashboardFeed() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(`https://connectu-gd1z.onrender.com/posts/${postId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/posts/${postId}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
       if (res.ok) {
         setPosts((prev) => prev.filter((post) => post.id !== postId));
@@ -230,14 +237,17 @@ export default function DashboardFeed() {
   async function handleComment(postId: string) {
     const token = localStorage.getItem("connectu_token");
     try {
-      const res = await fetch(`https://connectu-gd1z.onrender.com/posts/${postId}/comment`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/posts/${postId}/comment`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ content: commentContent }),
         },
-        body: JSON.stringify({ content: commentContent }),
-      });
+      );
 
       if (res.ok) {
         setCommentContent("");
@@ -255,10 +265,13 @@ export default function DashboardFeed() {
     const token = localStorage.getItem("connectu_token");
 
     try {
-      const res = await fetch(`https://connectu-gd1z.onrender.com/posts/${postId}/like`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/posts/${postId}/like`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
       if (res.ok) {
         setPosts((prev) =>
@@ -286,10 +299,13 @@ export default function DashboardFeed() {
   async function handleDeleteComment(commentId: string) {
     const token = localStorage.getItem("connectu_token");
     try {
-      const res = await fetch(`https://connectu-gd1z.onrender.com/posts/comment/${commentId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/posts/comment/${commentId}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       if (res.ok) {
         setPage(1);
         fetchPosts(true, true);
@@ -423,26 +439,29 @@ export default function DashboardFeed() {
           posts.map((post) => (
             <div
               key={post.id}
-              className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 transition-colors hover:bg-zinc-900 group"
+              className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 transition-colors hover:bg-zinc-900"
             >
               <div className="mb-3 flex items-start justify-between gap-2">
-                <div className="flex items-center gap-3 min-w-0">
+                <Link
+                  href={`/dashboard/perfil/${post.authorId}`}
+                  className="flex items-center gap-3 min-w-0 group cursor-pointer"
+                >
                   {post.author.avatarUrl ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={post.author.avatarUrl}
                       alt={post.author.name}
-                      className="h-10 w-10 shrink-0 rounded-full object-cover border border-zinc-800"
+                      className="h-10 w-10 shrink-0 rounded-full object-cover border border-zinc-800 group-hover:ring-2 ring-blue-500 transition-all"
                     />
                   ) : (
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-800 font-bold text-zinc-300 uppercase">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-800 font-bold text-zinc-300 uppercase group-hover:ring-2 ring-blue-500 transition-all">
                       {post.author.name.charAt(0)}
                     </div>
                   )}
 
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                      <h3 className="text-sm font-medium text-zinc-100 truncate max-w-full">
+                      <h3 className="text-sm font-medium text-zinc-100 truncate max-w-full group-hover:text-blue-400 group-hover:underline transition-colors">
                         {post.author.name}
                       </h3>
                       {post.author.isPioneer && (
@@ -463,7 +482,7 @@ export default function DashboardFeed() {
                         : "Empresa"}
                     </p>
                   </div>
-                </div>
+                </Link>
 
                 <div className="flex shrink-0 items-center gap-3">
                   <span className="text-xs text-zinc-600">
@@ -472,7 +491,7 @@ export default function DashboardFeed() {
                   {post.authorId === user.id && (
                     <button
                       onClick={() => handleDeletePost(post.id)}
-                      className="text-zinc-600 hover:text-red-400 transition-colors group-hover:opacity-100 md:opacity-0 opacity-100"
+                      className="text-zinc-600 hover:text-red-400 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
                       title="Excluir post"
                     >
                       <FiTrash2 />
@@ -542,25 +561,35 @@ export default function DashboardFeed() {
               {post.comments && post.comments.length > 0 && (
                 <div className="space-y-3 border-t border-zinc-800 pt-4 mt-2">
                   {post.comments.map((comment) => (
-                    <div key={comment.id} className="flex gap-3 group">
-                      {comment.user.avatarUrl ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src={comment.user.avatarUrl}
-                          alt={comment.user.name}
-                          className="h-8 w-8 shrink-0 rounded-full object-cover border border-zinc-800"
-                        />
-                      ) : (
-                        <div className="h-8 w-8 shrink-0 flex items-center justify-center rounded-full bg-zinc-800 text-[10px] font-bold text-zinc-400 uppercase">
-                          {comment.user.name.charAt(0)}
-                        </div>
-                      )}
+                    <div key={comment.id} className="flex gap-3 group/comment">
+                      <Link
+                        href={`/dashboard/perfil/${comment.userId}`}
+                        className="shrink-0"
+                      >
+                        {comment.user.avatarUrl ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={comment.user.avatarUrl}
+                            alt={comment.user.name}
+                            className="h-8 w-8 rounded-full object-cover border border-zinc-800 hover:ring-2 ring-blue-500 transition-all"
+                          />
+                        ) : (
+                          <div className="h-8 w-8 flex items-center justify-center rounded-full bg-zinc-800 text-[10px] font-bold text-zinc-400 uppercase hover:ring-2 ring-blue-500 transition-all">
+                            {comment.user.name.charAt(0)}
+                          </div>
+                        )}
+                      </Link>
+
                       <div className="flex-1 rounded-2xl bg-zinc-800/50 px-4 py-2 text-sm text-zinc-300 relative">
-                        {/* Bloco do Comentário Corrigido */}
                         <div className="flex items-center gap-2 mb-1">
-                          <p className="font-bold text-zinc-200 text-xs">
-                            {comment.user.name}
-                          </p>
+                          <Link
+                            href={`/dashboard/perfil/${comment.userId}`}
+                            className="hover:underline"
+                          >
+                            <p className="font-bold text-zinc-200 text-xs hover:text-blue-400 transition-colors">
+                              {comment.user.name}
+                            </p>
+                          </Link>
                           {comment.user.isPioneer && (
                             <div
                               className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-linear-to-r from-amber-900/40 via-yellow-900/20 to-amber-900/40 px-1.5 py-0.5 shadow-[0_0_10px_rgba(245,158,11,0.2)] backdrop-blur-sm"
@@ -579,7 +608,7 @@ export default function DashboardFeed() {
                         {comment.userId === user?.id && (
                           <button
                             onClick={() => handleDeleteComment(comment.id)}
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-red-400 transition-opacity"
+                            className="absolute top-2 right-2 opacity-0 group-hover/comment:opacity-100 text-zinc-500 hover:text-red-400 transition-opacity"
                             title="Excluir comentário"
                           >
                             <FiTrash2 size={12} />
@@ -594,7 +623,6 @@ export default function DashboardFeed() {
           ))
         )}
 
-        {/* Elemento Sentinela para o Infinite Scroll */}
         <div
           id="feed-sentinel"
           className="h-10 w-full flex items-center justify-center p-4 text-sm text-zinc-600"
