@@ -10,14 +10,31 @@ export class UserController {
 
       const hashedPassword = await bcrypt.hash(password, 10);
 
+      let companyId = null;
+
+      if (role === "RECRUITER") {
+        let defaultCompany = await prisma.company.findFirst({
+          where: { name: "ConnectU Labs"},
+        });
+
+        if (!defaultCompany) {
+          defaultCompany = await prisma.company.create({
+            data: { name: "ConnectU Labs"},
+          });
+        }
+
+        companyId = defaultCompany.id;
+      }
+
       const newUser = await prisma.user.create({
         data: {
           name,
           email,
           password: hashedPassword,
           role,
-          course,
-          institution,
+          companyId,
+          course: role === "STUDENT" ? course : null,
+          institution: role === "STUDENT" ? institution: null,
           skills,
         },
       });

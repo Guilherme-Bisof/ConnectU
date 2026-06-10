@@ -17,10 +17,12 @@ export default function AuthPage() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg(null);
 
     const endpoint = isLogin ? "/login" : "/users";
     const url = `https://connectu-gd1z.onrender.com${endpoint}`;
@@ -46,14 +48,13 @@ export default function AuthPage() {
           router.push("/dashboard");
         } else {
           alert("Conta criada com sucesso! Agora faça o login.");
-          setIsLogin(true);
         }
       } else {
-        alert(data.error || "Erro ao processar requisição");
+        setErrorMsg(data.error || "Ocorreu um erro.");
       }
     } catch (error) {
-      console.error("Erro na conexão:", error);
-      alert("Não foi possível conectar ao servidor.");
+      console.error(error);
+      setErrorMsg("Erro de conexão com o servidor.");
     } finally {
       setLoading(false);
     }
@@ -100,27 +101,35 @@ export default function AuthPage() {
 
           {/* Abas de Escolha: */}
           {!isLogin && (
-            <div className="mb-6 flex rounded-lg bg-zinc-900 p-1">
+            <div className="mb-6 flex rounded-lg bg-zinc-950 p-1 border border-zinc-800/60">
               <button
+                type="button"
                 onClick={() => setRole("STUDENT")}
-                className={`w-1/2 rounded-md py-2 text-sm font-medium transition-all ${
+                className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${
                   role === "STUDENT"
-                    ? "bg-blue-600 text-white shadow"
-                    : "text-zinc-400 hover:text-white"
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/10"
+                    : "text-zinc-400 hover:text-zinc-200"
                 }`}
               >
-                Sou Talento
+                Sou Aluno
               </button>
               <button
+                type="button"
                 onClick={() => setRole("RECRUITER")}
-                className={`w-1/2 rounded-md py-2 text-sm font-medium transition-all ${
+                className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${
                   role === "RECRUITER"
-                    ? "bg-blue-600 text-white shadow"
-                    : "text-zinc-400 hover:text-white"
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/10"
+                    : "text-zinc-400 hover:text-zinc-200"
                 }`}
               >
-                Sou Empresa
+                Sou Recrutador
               </button>
+            </div>
+          )}
+
+          {errorMsg && (
+            <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-center text-sm text-red-400">
+              {errorMsg}
             </div>
           )}
 
@@ -128,105 +137,106 @@ export default function AuthPage() {
           <form className="space-y-4" onSubmit={handleSubmit}>
             {/* Nome */}
             {!isLogin && (
-              <div>
-                <label className="mb-1 block text-sm font-medium text-zinc-300">
-                  {role === "STUDENT" ? "Nome Completo" : "Nome da Empresa"}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                  {role === "STUDENT" ? "Nome Completo" : "Nome do Recrutador"}
                 </label>
                 <input
-                  required
                   type="text"
+                  required
                   value={formData.name}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      name: e.target.value,
-                    })
+                    setFormData({ ...formData, name: e.target.value })
                   }
-                  className="w-full rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-3 text-white placeholder-zinc-500 transition-colors focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder={role === "STUDENT" ? "Ex: Joao" : "Ex: Nubank"}
+                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2 text-sm text-white placeholder-zinc-600 outline-none transition-all focus:border-blue-500"
+                  placeholder={
+                    role === "STUDENT" ? "Seu nome completo" : "Seu nome (Ex: João do RH)"
+                  }
                 />
               </div>
             )}
 
-            <div>
-              <label className="mb-1 block text-sm font-medium text-zinc-300">
+            {/* Email */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
                 E-mail
               </label>
               <input
-                required
                 type="email"
+                required
                 value={formData.email}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
                 }
-                className="w-full rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-3 text-white placeholder-zinc-500 transition-colors focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="seu@email.com"
+                className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-white placeholder-zinc-600  outline-none transition-all focus:border-blue-500"
+                placeholder="exemplo@email.com"
               />
             </div>
 
-            <div>
-              <label className="mb-1 block text-sm font-medium text-zinc-300">
+            {/* Senha */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
                 Senha
               </label>
               <input
-                required
                 type="password"
+                required
                 value={formData.password}
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
-                className="w-full rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-3 text-white placeholder-zinc-500 transition-colors focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-white placeholder-zinc-600 outline-none transition-all focus:border-blue-500"
                 placeholder="••••••••"
               />
             </div>
 
             {/* Curso e Instituição */}
             {!isLogin && role === "STUDENT" && (
-              <>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-zinc-300">
+              <div className="space-y-4 animate-fadeIn">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
                     Curso
                   </label>
                   <input
-                    required
                     type="text"
+                    required={role === "STUDENT"}
                     value={formData.course}
                     onChange={(e) =>
                       setFormData({ ...formData, course: e.target.value })
                     }
-                    className="w-full rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-3 text-white placeholder-zinc-500 transition-colors focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    placeholder="Gestão de TI, Gestão Empresarial..."
-                  ></input>
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-white placeholder-zinc-600 outline-none transition-all focus:border-blue-500"
+                    placeholder="Nome do seu curso"
+                  />
                 </div>
 
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-zinc-300">
-                    Institução / Faculdade
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                    Instituição de Ensino
                   </label>
                   <input
-                    required
                     type="text"
+                    required={role === "STUDENT"}
                     value={formData.institution}
                     onChange={(e) =>
                       setFormData({ ...formData, institution: e.target.value })
                     }
-                    className="w-full rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-3 text-white placeholder-zinc-500 transition-colors focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    placeholder="Nome da Institução"
-                  ></input>
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-white placeholder-zinc-600 outline-none transition-all focus:border-blue-500"
+                    placeholder="Nome da Universidade / Faculdade"
+                  />
                 </div>
-              </>
+              </div>
             )}
 
             <button
               disabled={loading}
               type="submit"
-              className="mt-6 w-full rounded-md bg-blue-600 py-3 font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+              className="mt-2 w-full rounded-xl bg-blue-600 py-3.5 font-bold text-white transition-all hover:bg-blue-500 shadow-md shadow-blue-600/10 active:scale-[0.99] disabled:opacity-50"
             >
               {loading
                 ? "Processando..."
                 : isLogin
                   ? "Entrar na Plataforma"
-                  : "Criar Conta"}
+                  : "Criar Minha Conta"}
             </button>
           </form>
 
@@ -234,8 +244,11 @@ export default function AuthPage() {
           <p className="mt-6 text-center text-sm text-zinc-400">
             {isLogin ? "Ainda não tem uma conta?" : "Já possui uma conta?"}{" "}
             <button
-              onClick={() => setIsLogin(!isLogin)}
-              className="font-medium text-blue-500 hover:text-blue-400 hover:underline"
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setErrorMsg(null);
+              }}
+              className="font-bold text-blue-500 hover:text-blue-400 hover:underline transition-colors"
             >
               {isLogin ? "Cadastre-se" : "Faça Login"}
             </button>
