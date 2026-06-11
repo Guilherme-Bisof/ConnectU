@@ -14,12 +14,12 @@ export class UserController {
 
       if (role === "RECRUITER") {
         let defaultCompany = await prisma.company.findFirst({
-          where: { name: "ConnectU Labs"},
+          where: { name: "ConnectU Labs" },
         });
 
         if (!defaultCompany) {
           defaultCompany = await prisma.company.create({
-            data: { name: "ConnectU Labs"},
+            data: { name: "ConnectU Labs" },
           });
         }
 
@@ -34,7 +34,7 @@ export class UserController {
           role,
           companyId,
           course: role === "STUDENT" ? course : null,
-          institution: role === "STUDENT" ? institution: null,
+          institution: role === "STUDENT" ? institution : null,
           skills,
         },
       });
@@ -224,6 +224,47 @@ export class UserController {
     } catch (error) {
       console.error("Erro ao buscar usuário:", error);
       res.status(500).json({ error: "Erro interno ao buscar o perfil." });
+    }
+  }
+
+  async searchUsers(req: Request, res: Response) {
+    try {
+      const { q } = req.query;
+
+      if (!q || String(q).trim() === "") {
+        return res
+          .status(400)
+          .json({ error: "O termo de busca não pode estar vazio." });
+      }
+
+      const searchFilter = String(q).trim();
+
+      const users = await prisma.user.findMany({
+        where: {
+          OR: [
+            { name: { contains: searchFilter, mode: "insensitive" } },
+            { course: { contains: searchFilter, mode: "insensitive" } },
+            { institution: { contains: searchFilter, mode: "insensitive" } },
+            { skills: { has: searchFilter } },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          role: true,
+          companyId: true,
+          avatarUrl: true,
+          course: true,
+          institution: true,
+          skills: true,
+          isPioneer: true,
+        },
+      });
+
+      res.json(users);
+    } catch (error) {
+      console.error("Erro ao buscar usuários:", error);
+      res.status(500).json({ error: "Erro interno ao processar a buscar." });
     }
   }
 }
