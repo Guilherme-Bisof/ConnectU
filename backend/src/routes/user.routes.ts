@@ -7,7 +7,9 @@ const userRoutes = Router();
 const userController = new UserController();
 
 userRoutes.post("/", userController.create);
+userRoutes.get("/users/search", userController.searchUsers);
 userRoutes.get("/:id", userController.getUserById);
+
 
 userRoutes.put("/:id", authMiddleware, userController.updateProfile);
 userRoutes.post("/:id/banner", uploadBanner.single('file'), userController.uploadUserBanner);
