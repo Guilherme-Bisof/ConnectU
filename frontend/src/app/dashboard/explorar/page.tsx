@@ -193,8 +193,9 @@ export default function SearchPage() {
             Nenhum perfil ou competência corresponde à sua busca.
           </p>
           <p className="text-xs text-zinc-600 mt-1">
-            Tente pesquisar termos como &quotReact&quot, &quotNode&quot,
-            &quotDesign&quot ou outros nomes.
+            {
+              'Tente pesquisar termos como "React", "Node", "Design" ou outros nomes.'
+            }
           </p>
         </div>
       ) : (
