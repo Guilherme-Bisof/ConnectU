@@ -40,7 +40,7 @@ export default function SearchPage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `http://localhost:3333/users/search?q=${encodeURIComponent(searchTerm)}`,
+        `https://connectu-gd1z.onrender.com/users/search?q=${encodeURIComponent(searchTerm)}`,
         {
           method: "GET",
           headers: { Authorization: `Bearer ${token}` },
