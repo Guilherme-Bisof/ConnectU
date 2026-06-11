@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   FiArrowLeft,
   FiBookOpen,
@@ -11,7 +12,6 @@ import {
   FiGithub,
   FiLinkedin,
   FiExternalLink,
-  FiUser,
   FiYoutube,
   FiGlobe,
   FiX,
@@ -67,8 +67,8 @@ export default function PublicProfilePage() {
   useEffect(() => {
     const storedUser = localStorage.getItem("connectu_user");
     if (storedUser) {
-      queueMicrotask(() =>{
-              setViewerRole(JSON.parse(storedUser).role);
+      queueMicrotask(() => {
+        setViewerRole(JSON.parse(storedUser).role);
       });
     }
     async function fetchProfile() {
@@ -276,13 +276,16 @@ export default function PublicProfilePage() {
         </div>
       </div>
 
+      {/* Grid Dinâmico com base na Role */}
       <div className="grid md:grid-cols-3 gap-6">
-        {/* COLUNA DA ESQUERDA */}
-        <div className="space-y-6 md:col-span-1">
+        {/* COLUNA DA ESQUERDA: Se for Empresa ocupa o espaço inteiro (3 colunas), se for Aluno ocupa 1 coluna */}
+        <div
+          className={`space-y-6 ${profile.role === "STUDENT" ? "md:col-span-1" : "md:col-span-3"}`}
+        >
           {/* Resumo Profissional (Bio) */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
             <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4 border-b border-zinc-800 pb-2">
-              Sobre Mim
+              {profile.role === "STUDENT" ? "Sobre Mim" : "Sobre a Empresa"}
             </h3>
             {profile.bio ? (
               <p className="text-zinc-300 leading-relaxed whitespace-pre-wrap text-sm">
@@ -290,12 +293,12 @@ export default function PublicProfilePage() {
               </p>
             ) : (
               <p className="text-sm text-zinc-500 italic">
-                Nenhuma biografia adicionada.
+                Nenhuma descrição disponível.
               </p>
             )}
           </div>
 
-          {/* Formação */}
+          {/* Formação (Apenas para Alunos) */}
           {profile.role === "STUDENT" && (
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
               <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4 border-b border-zinc-800 pb-2">
@@ -351,86 +354,88 @@ export default function PublicProfilePage() {
           )}
         </div>
 
-        {/* COLUNA DA DIREITA */}
-        <div className="space-y-6 md:col-span-2">
-          {/* Competências (Skills) */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-            <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4 border-b border-zinc-800 pb-2">
-              Competências & Tecnologias
-            </h3>
+        {/* COLUNA DA DIREITA: Renderiza APENAS se o perfil for estudante */}
+        {profile.role === "STUDENT" && (
+          <div className="space-y-6 md:col-span-2">
+            {/* Competências (Skills) */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+              <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4 border-b border-zinc-800 pb-2">
+                Competências & Tecnologias
+              </h3>
 
-            {profile.skills && profile.skills.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {profile.skills.map((skill, index) => (
-                  <span
-                    key={index}
-                    className="bg-blue-500/10 border border-blue-500/20 text-blue-300 px-3 py-1.5 rounded-md text-sm font-medium"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-zinc-500 italic">
-                Nenhuma competência listada.
-              </p>
-            )}
-          </div>
-
-          {/* Portfólio / Projetos */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-            <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4 border-b border-zinc-800 pb-2">
-              Vitrine de Projetos
-            </h3>
-
-            {profile.projects && profile.projects.length > 0 ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {profile.projects.map((project) => (
-                  <div
-                    key={project.id}
-                    onClick={() => setSelectedProject(project)}
-                    className="group bg-zinc-950 border border-zinc-800/60 p-5 rounded-xl hover:border-blue-500/40 cursor-pointer transition-all"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-bold text-white leading-tight group-hover:text-blue-400 transition-colors">
-                        {project.title}
-                      </h4>
-                      {project.link && (
-                        <a
-                          href={
-                            project.link.startsWith("http")
-                              ? project.link
-                              : `https://${project.link}`
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-zinc-500 hover:text-blue-400 ml-2 shrink-0 p-1 bg-zinc-900 rounded-md"
-                          title="Acessar link direto"
-                        >
-                          <FiExternalLink size={14} />
-                        </a>
-                      )}
-                    </div>
-                    <p className="text-sm text-zinc-400 line-clamp-3">
-                      {project.description}
-                    </p>
-                    <p className="text-[10px] text-blue-500 font-semibold mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      Ver detalhes do projeto
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="bg-zinc-950 border border-dashed border-zinc-800 p-8 rounded-xl text-center">
-                <FiBriefcase className="mx-auto text-3xl text-zinc-600 mb-2" />
-                <p className="text-sm text-zinc-500">
-                  Nenhum projeto adicionado à vitrine.
+              {profile.skills && profile.skills.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {profile.skills.map((skill, index) => (
+                    <span
+                      key={index}
+                      className="bg-blue-500/10 border border-blue-500/20 text-blue-300 px-3 py-1.5 rounded-md text-sm font-medium"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-zinc-500 italic">
+                  Nenhuma competência listada.
                 </p>
-              </div>
-            )}
+              )}
+            </div>
+
+            {/* Portfólio / Projetos */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+              <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4 border-b border-zinc-800 pb-2">
+                Vitrine de Projetos
+              </h3>
+
+              {profile.projects && profile.projects.length > 0 ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {profile.projects.map((project) => (
+                    <div
+                      key={project.id}
+                      onClick={() => setSelectedProject(project)}
+                      className="group bg-zinc-950 border border-zinc-800/60 p-5 rounded-xl hover:border-blue-500/40 cursor-pointer transition-all"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-bold text-white leading-tight group-hover:text-blue-400 transition-colors">
+                          {project.title}
+                        </h4>
+                        {project.link && (
+                          <a
+                            href={
+                              project.link.startsWith("http")
+                                ? project.link
+                                : `https://${project.link}`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-zinc-500 hover:text-blue-400 ml-2 shrink-0 p-1 bg-zinc-900 rounded-md"
+                            title="Acessar link directo"
+                          >
+                            <FiExternalLink size={14} />
+                          </a>
+                        )}
+                      </div>
+                      <p className="text-sm text-zinc-400 line-clamp-3">
+                        {project.description}
+                      </p>
+                      <p className="text-[10px] text-blue-500 font-semibold mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        Ver detalhes do projeto
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-zinc-950 border border-dashed border-zinc-800 p-8 rounded-xl text-center">
+                  <FiBriefcase className="mx-auto text-3xl text-zinc-600 mb-2" />
+                  <p className="text-sm text-zinc-500">
+                    Nenhum projeto adicionado à vitrine.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* MODAL DE DETALHES DO PROJETO */}
