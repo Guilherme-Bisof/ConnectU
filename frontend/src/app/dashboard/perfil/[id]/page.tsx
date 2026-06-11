@@ -129,7 +129,7 @@ export default function PublicProfilePage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-zinc-400">
         <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        Carregando perfil do candidato...
+        Carregando perfil
       </div>
     );
   }

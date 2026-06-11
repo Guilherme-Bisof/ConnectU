@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import { FiSearch, FiHome, FiMessageSquare, FiUser, FiTarget, FiBriefcase } from "react-icons/fi";
 
 interface UserData {
   id: string;
@@ -65,7 +66,9 @@ export default function DashboardLayout({
                 : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
             }`}
           >
-            Feed Principal
+            <span className="flex items-center gap-2">
+              <FiHome className="textbase" /> Feed Principal
+            </span>
           </Link>
 
           {/* Renderização Condicional: Aluno vê Vagas, Recrutador vê Minhas Vagas */}
@@ -78,7 +81,7 @@ export default function DashboardLayout({
                   : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
               }`}
             >
-              Vagas & Match
+              <span className="flex items-center gap-2"><FiTarget className="text-base"/>Vagas & Match</span>
             </Link>
           ) : (
             <Link
@@ -89,19 +92,17 @@ export default function DashboardLayout({
                   : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
               }`}
             >
-              Minhas Vagas
+              <span className="flex items-center gap-2"> <FiBriefcase className="text-base"/>Minhas Vagas</span>
             </Link>
           )}
 
           <Link
-            href="/dashboard/perfil"
-            className={`rounded-md px-4 py-2.5 text-sm font-medium transition-colors ${
-              pathname === "/dashboard/perfil"
-                ? "bg-zinc-900 text-white hover:bg-zinc-800"
-                : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
-            }`}
+            href="/dashboard/explorar"
+            className={`rounded-xl px-4 py-3 text-sm font-semibold transition-all ${pathname.startsWith("/dashboard/chat") ? "bg-blue-600 text-white shadow-md shadow-blue-600/10" : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"}`}
           >
-            Meu Perfil
+            <span className="flex items-center gap-2">
+              <FiSearch className="text-base" /> Explorar
+            </span>
           </Link>
 
           {/* ABA MENSAGENS ADICIONADA AQUI NO DESKTOP */}
@@ -113,7 +114,23 @@ export default function DashboardLayout({
                 : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
             }`}
           >
-            Mensagens
+            <span className="flex items-center gap-2">
+              <FiMessageSquare className="text-base" /> Mensagens
+            </span>
+          </Link>
+
+          <Link
+            href="/dashboard/perfil"
+            className={`rounded-md px-4 py-2.5 text-sm font-medium transition-colors ${
+              pathname === "/dashboard/perfil"
+                ? "bg-zinc-900 text-white hover:bg-zinc-800"
+                : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <FiUser className="textbase" />
+              Meu Pefil
+            </span>
           </Link>
         </nav>
 
@@ -181,11 +198,12 @@ export default function DashboardLayout({
               )}
 
               <Link
-                href="/dashboard/perfil"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`rounded-md px-4 py-3 text-sm font-medium ${pathname === "/dashboard/perfil" ? "bg-zinc-900 text-white" : "text-zinc-400 hover:bg-zinc-900 hover:text-white"}`}
+                href="/dashboard/explorar"
+                className={`rounded-xl px-4 py-3 text-sm font-semibold transition-all ${pathname.startsWith("/dashboard/chat") ? "bg-blue-600 text-white shadow-md shadow-blue-600/10" : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"}`}
               >
-                Meu Perfil
+                <span className="flex items-center gap-2">
+                  <FiSearch className="text-base" /> Explorar
+                </span>
               </Link>
 
               <Link
@@ -198,6 +216,14 @@ export default function DashboardLayout({
                 }`}
               >
                 Mensagens
+              </Link>
+
+              <Link
+                href="/dashboard/perfil"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`rounded-md px-4 py-3 text-sm font-medium ${pathname === "/dashboard/perfil" ? "bg-zinc-900 text-white" : "text-zinc-400 hover:bg-zinc-900 hover:text-white"}`}
+              >
+                Meu Perfil
               </Link>
             </nav>
 
