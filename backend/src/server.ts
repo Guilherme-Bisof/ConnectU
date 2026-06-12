@@ -13,6 +13,7 @@ import { authRoutes } from "./routes/auth.routes.js";
 import { applicationRoutes } from "./routes/application.routes.js";
 import { chatRoutes } from "./routes/chat.routes.js";
 import { registerSocketEvents } from "./controllers/socketController.js";
+import { notificationRoutes } from "./routes/notification.routes.js";
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use("/users", userRoutes);
 app.use("/jobs", jobRoutes);
 app.use("/links", linkRoutes);
 app.use("/posts", postRoutes);
+app.use("/notifications", notificationRoutes);
 app.use("/login", authRoutes);
 app.use("/applications", applicationRoutes);
 app.use(chatRoutes);
