@@ -3,7 +3,11 @@ import { prisma } from "../lib/prisma.js";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../middlewares/authMiddleware.js";
 
+export let ioInstance: Server;
+
 export const registerSocketEvents = (io: Server) => {
+
+  ioInstance = io;
 
   io.use((socket, next) => {
     const token =
@@ -22,7 +26,7 @@ export const registerSocketEvents = (io: Server) => {
         ? token.split(" ")[1]
         : token;
       const decoded = jwt.verify(cleanToken, JWT_SECRET);
-      (socket as any).user = decoded; // Injeta os dados do usuário autenticado dentro do socket instance
+      (socket as any).user = decoded; 
       next();
     } catch (err) {
       return next(
@@ -37,8 +41,9 @@ export const registerSocketEvents = (io: Server) => {
       `Usuário autenticado conectado ao Socket: ${authUser.name} (${socket.id})`,
     );
 
+    socket.join(authUser.id);
+    
     socket.on("join_room", async (roomId: string) => {
-      // Validação de Contexto: Impede injeção de IDs de salas alheias
       const hasAccess = await prisma.room.findFirst({
         where: {
           id: roomId,
