@@ -52,4 +52,27 @@ export class NotificationController {
       res.status(500).json({ error: "Erro interno ao atualizar notificação." });
     }
   }
+
+  async markAllAsRead(req: Request, res: Response){
+    try {
+      const userId = (req as any).user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Usuário não encontrado."});
+      }
+
+      await prisma.notification.updateMany({
+        where: {
+          userId: userId,
+          read: false
+        },
+        data: { read: true},
+      });
+
+      res.json({message: "Todas as notificações foram marcadas como lidas."});
+    } catch(error){
+      console.error("Erro ao marcar todas como lidas:", error);
+      res.status(500).json({ error: "Erro interno ao atualizar notificações. "});
+    }
+  }
 }

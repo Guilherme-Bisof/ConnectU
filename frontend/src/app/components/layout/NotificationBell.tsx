@@ -135,6 +135,30 @@ export function NotificationBell({
     }
   };
 
+  const handleMarkAllAsRead = async () => {
+    const token = localStorage.getItem("connectu_token");
+    if (!token) return;
+
+    try {
+      const res = await fetch(
+        "https://connectu-gd1z.onrender.com/notifications/read-all",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (res.ok) {
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      }
+    } catch (error) {
+      console.error("Erro ao marcar todas como lidas:", error);
+    }
+  };
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Botão do Sino */}
@@ -158,9 +182,19 @@ export function NotificationBell({
           <div className="flex items-center justify-between p-4 border-b border-zinc-800 bg-zinc-900/50">
             <h3 className="text-sm font-bold text-white">Notificações</h3>
             {unreadCount > 0 && (
-              <span className="text-xs text-blue-500 font-medium">
-                {unreadCount} não lidas
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-blue-500 font-medium">
+                  {unreadCount} não lidas
+                </span>
+
+                <button
+                  onClick={handleMarkAllAsRead}
+                  className="flex items-center gap-1 text-[10px] uppercase font-bold text-zinc-400 hover:text-blue-400 transition-colors bg-zinc-800/50 hover:bg-zinc-800 px-2 py-1 rounded-md border border-zinc-800"
+                  title="Marcar todas como lidas"
+                >
+                  <FiCheck size={12} /> Lidas
+                </button>
+              </div>
             )}
           </div>
 

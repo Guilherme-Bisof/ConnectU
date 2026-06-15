@@ -151,14 +151,18 @@ export default function DashboardLayout({
 
         {/* Rodapé da Sidebar */}
         <div className="mt-auto border-t border-zinc-800 pt-6">
-          <div className="mb-4 flex items-center justify-between">
-            <p className="text-sm font-medium text-white">{user.name}</p>
-            <p className="text-xs text-zinc-500">
-              {user.role === "STUDENT" ? user.course : "Empresa"}
-            </p>
-          </div>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-white">{user.name}</p>
+              <p className="text-xs text-zinc-500">
+                {user.role === "STUDENT" ? user.course : "Empresa"}
+              </p>
+            </div>
 
-          <NotificationBell placement="bottom" />
+            <div className="shrink-0">
+              <NotificationBell placement="bottom" />
+            </div>
+          </div>
 
           <button
             onClick={() => {
@@ -179,7 +183,7 @@ export default function DashboardLayout({
           <h1 className="text-xl font-bold text-white italic">ConnectU</h1>
 
           <div className="flex items-center gap-3">
-            <NotificationBell  placement="top"/>
+            <NotificationBell placement="top" />
 
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
