@@ -11,6 +11,6 @@ notificationRoutes.get(
   notificationController.getUserNotifications,
 );
 
-notificationRoutes.patch("/:id/read", authMiddleware, notificationController.markAsRead);
+notificationRoutes.put("/:id/read", authMiddleware, notificationController.markAsRead);
 
 export { notificationRoutes };
