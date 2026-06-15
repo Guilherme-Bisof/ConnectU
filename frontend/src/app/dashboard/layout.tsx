@@ -3,7 +3,15 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { FiSearch, FiHome, FiMessageSquare, FiUser, FiTarget, FiBriefcase } from "react-icons/fi";
+import {
+  FiSearch,
+  FiHome,
+  FiMessageSquare,
+  FiUser,
+  FiTarget,
+  FiBriefcase,
+} from "react-icons/fi";
+import { NotificationBell } from "../components/layout/NotificationBell";
 
 interface UserData {
   id: string;
@@ -81,7 +89,10 @@ export default function DashboardLayout({
                   : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
               }`}
             >
-              <span className="flex items-center gap-2"><FiTarget className="text-base"/>Vagas & Match</span>
+              <span className="flex items-center gap-2">
+                <FiTarget className="text-base" />
+                Vagas & Match
+              </span>
             </Link>
           ) : (
             <Link
@@ -92,7 +103,11 @@ export default function DashboardLayout({
                   : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
               }`}
             >
-              <span className="flex items-center gap-2"> <FiBriefcase className="text-base"/>Minhas Vagas</span>
+              <span className="flex items-center gap-2">
+                {" "}
+                <FiBriefcase className="text-base" />
+                Minhas Vagas
+              </span>
             </Link>
           )}
 
@@ -136,12 +151,15 @@ export default function DashboardLayout({
 
         {/* Rodapé da Sidebar */}
         <div className="mt-auto border-t border-zinc-800 pt-6">
-          <div className="mb-4">
+          <div className="mb-4 flex items-center justify-between">
             <p className="text-sm font-medium text-white">{user.name}</p>
             <p className="text-xs text-zinc-500">
               {user.role === "STUDENT" ? user.course : "Empresa"}
             </p>
           </div>
+
+          <NotificationBell placement="bottom" />
+
           <button
             onClick={() => {
               localStorage.removeItem("connectu_user");
@@ -159,12 +177,17 @@ export default function DashboardLayout({
         {/* Header Mobile */}
         <header className="flex items-center justify-between border-b border-zinc-800 bg-zinc-950 p-4 md:hidden">
           <h1 className="text-xl font-bold text-white italic">ConnectU</h1>
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="text-sm font-medium text-zinc-300 hover:text-white bg-zinc-900 px-3 py-1.5 rounded-md border border-zinc-800"
-          >
-            {isMobileMenuOpen ? "Fechar" : "Menu"}
-          </button>
+
+          <div className="flex items-center gap-3">
+            <NotificationBell  placement="top"/>
+
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="text-sm font-medium text-zinc-300 hover:text-white bg-zinc-900 px-3 py-1.5 rounded-md border border-zinc-800"
+            >
+              {isMobileMenuOpen ? "Fechar" : "Menu"}
+            </button>
+          </div>
         </header>
 
         {isMobileMenuOpen && (

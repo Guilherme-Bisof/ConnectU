@@ -63,11 +63,12 @@ model User {
   applications Application[]
 
   // Relacionamentos
-  posts    Post[]
-  rooms    Room[]    @relation("UserRooms")
-  messages Message[]
-  likes    Like[]
-  comments Comment[]
+  posts         Post[]
+  rooms         Room[]         @relation("UserRooms")
+  messages      Message[]
+  likes         Like[]
+  comments      Comment[]
+  notifications Notification[]
 
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id])
@@ -140,7 +141,7 @@ model Room {
   messages  Message[]
   createdAt DateTime    @default(now())
 
-  users User[]          @relation("UserRooms")
+  users User[] @relation("UserRooms")
 }
 
 model Message {
@@ -191,4 +192,21 @@ model Comment {
   // Relações
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  senderId  String?
+  type      String
+  title     String
+  content   String
+  read      Boolean  @default(false)
+  postId    String?
+  createdAt DateTime @default(now())
+
+  // Relação
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

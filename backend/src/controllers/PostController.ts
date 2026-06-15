@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
+import { NotificationService } from "../services/NotificationService.js";
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string };
@@ -139,6 +140,21 @@ export class PostController {
       await prisma.like.create({
         data: { postId: String(postId), userId: String(userId) },
       });
+
+      const post = await prisma.post.findUnique({ where: { id: String(postId) } });
+      const sender = await prisma.user.findUnique({ where: { id: String(userId) } });
+
+      if (post && sender && post.authorId !== userId) {
+        await NotificationService.create({
+          userId: post.authorId,
+          senderId: String(userId),
+          type: "LIKE",
+          title: "Nova curtida no seu post!",
+          content: `${sender.name} curtiu sua publicação.`,
+          postId: String(postId)
+        });
+      }
+
       return res.json({ liked: true });
     }
   }
@@ -154,6 +170,20 @@ export class PostController {
       data: { content, postId: String(postId), userId: String(userId) },
       include: { user: true },
     });
+
+    const post = await prisma.post.findUnique({ where: { id: String(postId) } });
+
+    if (post && post.authorId !== userId){
+      await NotificationService.create({
+        userId: post.authorId,
+        senderId: String(userId),
+        type: "COMMENT",
+        title: "Novo comentário no seu post!",
+        content: `${comment.user.name} comentou: "${content.substring(0, 40)}${content.length > 40 ? "..." : ""}`,
+        postId: String(postId)
+      });
+    }
+    
     res.json(comment);
   }
 
