@@ -439,7 +439,7 @@ export default function DashboardFeed() {
           posts.map((post) => (
             <div
               key={post.id}
-              className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 transition-colors hover:bg-zinc-900"
+              className="group/post rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 transition-colors hover:bg-zinc-900"
             >
               <div className="mb-3 flex items-start justify-between gap-2">
                 <Link
@@ -491,7 +491,7 @@ export default function DashboardFeed() {
                   {post.authorId === user.id && (
                     <button
                       onClick={() => handleDeletePost(post.id)}
-                      className="text-zinc-600 hover:text-red-400 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                      className="text-zinc-600 hover:text-red-400 transition-colors opacity-100 md:opacity-0 md:group-hover/post:opacity-100"
                       title="Excluir post"
                     >
                       <FiTrash2 />
