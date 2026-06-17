@@ -9,6 +9,9 @@ import {
 import { ProfileHeader } from "@/app/components/profile/ProfileHeader";
 import { ProfileBio } from "@/app/components/profile/ProfileBio";
 import { ProfileSkills } from "@/app/components/profile/ProfileSkills";
+import { ProfileProjects } from "@/app/components/profile/ProfileProjects";
+import { EditBioModal } from "@/app/components/profile/EditBioModal";
+import { EditSkillModal } from "@/app/components/profile/EditSkillsModal";
 
 interface UserProject {
   id?: string;
@@ -773,58 +776,16 @@ export default function ProfilePage() {
             // Visão do Aluno
             <>
               {/* Skills */}
-              <ProfileSkills skills={user.skills} onOpenModal={openSkillModal} />
+              <ProfileSkills
+                skills={user.skills}
+                onOpenModal={openSkillModal}
+              />
 
-              <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/40 p-6 backdrop-blur-md shadow-lg">
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-white">
-                    Vitrine de Projetos
-                  </h3>
-                  <button
-                    onClick={openProjectModal}
-                    className="text-blue-500 hover:text-blue-400"
-                  >
-                    <FiPlus />
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {!user.projects || user.projects.length === 0 ? (
-                    <p className="text-sm text-zinc-500 italic col-span-2">
-                      Nenhum projeto cadastrado
-                    </p>
-                  ) : (
-                    user.projects.map((project, index) => (
-                      <div
-                        key={index}
-                        className="group relative flex flex-col justify-between overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 p-4 transition-all hover:border-blue-500"
-                      >
-                        <div>
-                          <h4 className="font-medium text-white group-hover:text-blue-400 transition-colors">
-                            {project.title}
-                          </h4>
-                          <p className="mt-1 text-xs text-zinc-400 line-clamp-3">
-                            {project.description}
-                          </p>
-                        </div>
-                        {project.link && (
-                          <a
-                            href={
-                              project.link.startsWith("http")
-                                ? project.link
-                                : `https://${project.link}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-4 flex items-center gap-1 text-xs font-medium text-blue-500 hover:text-blue-400"
-                          >
-                            Acessar Projeto <FiExternalLink />
-                          </a>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
+              {/* Vitrine de projetos */}
+              <ProfileProjects
+                projects={user.projects}
+                onOpenModal={openProjectModal}
+              />
             </>
           ) : (
             // Visão do Recrutador
@@ -946,113 +907,27 @@ export default function ProfilePage() {
 
       {/* Modais */}
       {/* Modal de Skills */}
-      {isSkillModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">
-                Editar Competências
-              </h2>
-              <button
-                onClick={() => setIsSkillModalOpen(false)}
-                className="text-zinc-400 hover:text-white transition-colors"
-              >
-                <FiX className="text-xl" />
-              </button>
-            </div>
-            <form onSubmit={handleAddTempSkill} className="mb-6 flex gap-2">
-              <input
-                type="text"
-                value={skillInput}
-                onChange={(e) => setSkillInput(e.target.value)}
-                placeholder="Ex: React, Figma, Python..."
-                className="flex-1 rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              />
-              <button
-                type="submit"
-                className="rounded-md bg-zinc-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
-              >
-                Adicionar
-              </button>
-            </form>
-            <div className="mb-8 flex flex-wrap gap-2 max-h-40 overflow-y-auto">
-              {tempSkills.length === 0 ? (
-                <p className="text-sm text-zinc-500">
-                  Nenhuma competência na lista.
-                </p>
-              ) : (
-                tempSkills.map((skill, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-1 rounded-full bg-blue-900/30 border border-blue-800 pl-3 pr-1 py-1 text-sm text-blue-300"
-                  >
-                    {skill}
-                    <button
-                      onClick={() => handleRemoveTempSkill(skill)}
-                      className="ml-1 rounded-full p-1 hover:bg-blue-800/50 hover:text-white transition-colors"
-                    >
-                      <FiX />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-            <div className="flex justify-end gap-3 border-t border-zinc-800 pt-4">
-              <button
-                onClick={() => setIsSkillModalOpen(false)}
-                className="rounded-md px-4 py-2 text-sm font-medium text-zinc-400 transition-colors hover:text-white"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveSkills}
-                disabled={isSaving}
-                className="rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-              >
-                {isSaving ? "Salvando..." : "Salvar Alterações"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <EditSkillModal
+        isOpen={isSkillModalOpen}
+        onClose={() => setIsSkillModalOpen(false)}
+        skillInput={skillInput}
+        setSkillInput={setSkillInput}
+        tempSkills={tempSkills}
+        onAddSkill={handleAddTempSkill}
+        onRemoveSkill={handleRemoveTempSkill}
+        onSave={handleSaveSkills}
+        isSaving={isSaving}
+      />
 
       {/* Modal de Bio */}
-      {isBioModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">Editar Resumo</h2>
-              <button
-                onClick={() => setIsBioModalOpen(false)}
-                className="text-zinc-400 hover:text-white transition-colors"
-              >
-                <FiX className="text-xl" />
-              </button>
-            </div>
-            <textarea
-              value={bioInput}
-              onChange={(e) => setBioInput(e.target.value)}
-              placeholder="Escreva um breve resumo..."
-              className="w-full h-40 resize-none rounded-md border border-zinc-800 bg-zinc-950 p-4 text-sm text-white placeholder-zinc-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            />
-            <div className="mt-6 flex justify-end gap-3 border-t border-zinc-800 pt-4">
-              <button
-                onClick={() => setIsBioModalOpen(false)}
-                className="rounded-md px-4 py-2 text-sm font-medium text-zinc-400 transition-colors hover:text-white"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveBio}
-                disabled={isSavingBio}
-                className="rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-              >
-                {isSavingBio ? "Salvando..." : "Salvar Alterações"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <EditBioModal
+        isOpen={isBioModalOpen}
+        onClose={() => setIsBioModalOpen(false)}
+        bioInput={bioInput}
+        setBioInput={setBioInput}
+        onSave={handleSaveBio}
+        isSaving={isSavingBio}
+      />
 
       {/* Modal de Links */}
       {isLinkModalOpen && (
