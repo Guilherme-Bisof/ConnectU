@@ -113,14 +113,13 @@ export default function DashboardLayout({
 
           <Link
             href="/dashboard/explorar"
-            className={`rounded-xl px-4 py-3 text-sm font-semibold transition-all ${pathname.startsWith("/dashboard/chat") ? "bg-blue-600 text-white shadow-md shadow-blue-600/10" : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"}`}
+            className={`rounded-xl px-4 py-3 text-sm font-semibold transition-all ${pathname.startsWith("/dashboard/explorar") ? "bg-zinc-900 text-white hover:bg-zinc-800" : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"}`}
           >
             <span className="flex items-center gap-2">
               <FiSearch className="text-base" /> Explorar
             </span>
           </Link>
 
-          {/* ABA MENSAGENS ADICIONADA AQUI NO DESKTOP */}
           <Link
             href="/dashboard/chat"
             className={`rounded-md px-4 py-2.5 text-sm font-medium transition-colors ${
@@ -226,7 +225,7 @@ export default function DashboardLayout({
 
               <Link
                 href="/dashboard/explorar"
-                className={`rounded-xl px-4 py-3 text-sm font-semibold transition-all ${pathname.startsWith("/dashboard/chat") ? "bg-blue-600 text-white shadow-md shadow-blue-600/10" : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"}`}
+                className={`rounded-xl px-4 py-3 text-sm font-semibold transition-all ${pathname.startsWith("/dashboard/explorar") ? "bg-blue-600 text-white shadow-md shadow-blue-600/10" : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"}`}
               >
                 <span className="flex items-center gap-2">
                   <FiSearch className="text-base" /> Explorar

@@ -15,6 +15,8 @@ import {
   FiTrash2,
 } from "react-icons/fi";
 
+import { StudentProfileModal } from "@/app/components/jobs/StudentProfileModal";
+
 interface UserData {
   id: string;
   name: string;
@@ -90,12 +92,15 @@ export default function MinhasVagasPage() {
     try {
       const token = localStorage.getItem("connectu_token");
 
-      const res = await fetch(`https://connectu-gd1z.onrender.com/jobs/company/${companyId}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/jobs/company/${companyId}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
       if (res.ok) {
         const data = await res.json();
         setVagas(data);
@@ -130,10 +135,13 @@ export default function MinhasVagasPage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(`https://connectu-gd1z.onrender.com/jobs/${jobId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/jobs/${jobId}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       if (res.ok || res.status === 204) {
         setVagas((prev) => prev.filter((vaga) => vaga.id !== jobId));
       } else {
@@ -188,14 +196,17 @@ export default function MinhasVagasPage() {
   const handleToggleStatus = async (jobId: string, currentStatus: boolean) => {
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(`https://connectu-gd1z.onrender.com/jobs/${jobId}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/jobs/${jobId}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ isActive: !currentStatus }),
         },
-        body: JSON.stringify({ isActive: !currentStatus }),
-      });
+      );
 
       if (res.ok) {
         setVagas((prev) =>
@@ -301,21 +312,24 @@ export default function MinhasVagasPage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch(`https://connectu-gd1z.onrender.com/jobs/${editingJobId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/jobs/${editingJobId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title: editJobData.title,
+            type: editJobData.type,
+            description: editJobData.description,
+            requiredSkills,
+            desirableSkills,
+            isInternship: newJobData.isInternship,
+          }),
         },
-        body: JSON.stringify({
-          title: editJobData.title,
-          type: editJobData.type,
-          description: editJobData.description,
-          requiredSkills,
-          desirableSkills,
-          isInternship: newJobData.isInternship,
-        }),
-      });
+      );
 
       if (res.ok) {
         const updatedJob = await res.json();
@@ -619,83 +633,11 @@ export default function MinhasVagasPage() {
       </div>
 
       {/* MODAL: PERFIL RESUMIDO DO ALUNO */}
-      {selectedStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl relative animate-fadeIn">
-            <button
-              onClick={() => setSelectedStudent(null)}
-              className="absolute top-4 right-4 text-zinc-400 hover:text-white bg-zinc-800 p-1.5 rounded-md"
-            >
-              <FiX />
-            </button>
-
-            <div className="text-center mb-6">
-              {/* Avatar "Fake" usando as Iniciais */}
-              <div className="w-16 h-16 bg-blue-900 text-blue-400 flex items-center justify-center rounded-full text-xl font-bold mx-auto mb-3 border-2 border-blue-500/30">
-                {selectedStudent.name.charAt(0)}
-              </div>
-              <h2 className="text-xl font-bold text-white">
-                {selectedStudent.name}
-              </h2>
-              <p className="text-sm text-blue-400 mt-1">Candidato(a)</p>
-            </div>
-
-            <div className="space-y-4 border-t border-zinc-800 pt-4">
-              <div>
-                <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">
-                  Formação Acadêmica
-                </p>
-                <div className="flex items-start gap-2 text-zinc-300 text-sm">
-                  <FiBookOpen className="mt-1 shrink-0 text-zinc-500" />
-                  <div>
-                    <p className="font-medium text-white">
-                      {selectedStudent.course || "Curso não preenchido"}
-                    </p>
-                    <p className="text-zinc-400">
-                      {selectedStudent.institution ||
-                        "Instituição não informada"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
-                  Todas as Competências
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {selectedStudent.skills &&
-                  selectedStudent.skills.length > 0 ? (
-                    selectedStudent.skills.map((s, i) => (
-                      <span
-                        key={i}
-                        className="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-300 border border-zinc-700"
-                      >
-                        {s}
-                      </span>
-                    ))
-                  ) : (
-                    <p className="text-sm text-zinc-500 italic">
-                      Nenhuma competência cadastrada.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-zinc-800">
-              <button
-                onClick={() =>
-                  router.push(`/dashboard/perfil/${selectedStudent.id}`)
-                }
-                className="w-full bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
-              >
-                Ver Perfil Completo
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <StudentProfileModal
+        isOpen={!!selectedStudent}
+        onClose={() => setSelectedStudent(null)}
+        student={selectedStudent}
+      />
 
       {/* MODAL DE NOVA VAGA */}
       {isModalOpen && (
@@ -823,7 +765,9 @@ export default function MinhasVagasPage() {
                 >
                   {" "}
                   Esta vaga é exclusiva para Estágio?{" "}
-                  <span className="text-xs text-zinc-500">(Filtra alunos que faltam 1+ anos para terminar o curso)</span>
+                  <span className="text-xs text-zinc-500">
+                    (Filtra alunos que faltam 1+ anos para terminar o curso)
+                  </span>
                 </label>
               </div>
 
