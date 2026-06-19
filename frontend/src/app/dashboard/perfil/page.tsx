@@ -1,23 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FiPlus, FiEdit2, FiX, FiExternalLink, FiTarget } from "react-icons/fi";
 import {
-  FiGithub,
-  FiLinkedin,
-  FiLink,
-  FiPlus,
-  FiEdit2,
-  FiX,
-  FiYoutube,
-  FiGlobe,
-  FiExternalLink,
-  FiBriefcase,
-  FiZap,
-  FiTarget,
-  FiAward,
-} from "react-icons/fi";
-
-import { FaBehance } from "react-icons/fa";
+  ProfileLinks,
+  getLinkIcon,
+} from "@/app/components/profile/ProfileLinks";
+import { ProfileHeader } from "@/app/components/profile/ProfileHeader";
+import { ProfileBio } from "@/app/components/profile/ProfileBio";
+import { ProfileSkills } from "@/app/components/profile/ProfileSkills";
+import { ProfileProjects } from "@/app/components/profile/ProfileProjects";
+import { EditBioModal } from "@/app/components/profile/EditBioModal";
+import { EditSkillModal } from "@/app/components/profile/EditSkillsModal";
+import { EditLinkModal } from "@/app/components/profile/EditLinkModal";
+import { EditProjectModal } from "@/app/components/profile/EditProjectModal";
+import { EditBasicProfileModal } from "@/app/components/profile/EditBasicModal";
+import { EditJobModal } from "@/app/components/profile/EditJobModal";
+import { ViewJobModal } from "@/app/components/profile/ViewJobModal";
 
 interface UserProject {
   id?: string;
@@ -68,18 +67,6 @@ interface MatchedJobData extends JobData {
   company: {
     name: string;
   };
-}
-
-function getLinkIcon(label: string) {
-  const lowerLabel = label.toLowerCase();
-  if (lowerLabel.includes("github")) return <FiGithub className="text-lg" />;
-  if (lowerLabel.includes("behance")) return <FaBehance className="text-lg" />;
-  if (lowerLabel.includes("linkedin"))
-    return <FiLinkedin className="text-lg" />;
-  if (lowerLabel.includes("youtube")) return <FiYoutube className="text-lg" />;
-  if (lowerLabel.includes("site") || lowerLabel.includes("port"))
-    return <FiGlobe className="text-lg" />;
-  return <FiLink className="text-lg" />;
 }
 
 export default function ProfilePage() {
@@ -773,191 +760,19 @@ export default function ProfilePage() {
           }
         })()}
       {/* Header */}
-      <div className="relative mb-8 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl">
-        <div
-          className={`h-32 sm:h-48 w-full bg-cover bg-center bg-no-repeat ${!user.bannerUrl ? (user.role === "RECRUITER" ? "bg-linear-to-r from-purple-900 to-zinc-900" : "bg-linear-to-r from-blue-900 to-zinc-800") : ""}`}
-          style={
-            user.bannerUrl
-              ? { backgroundImage: `url('${user.bannerUrl}')` }
-              : {}
-          }
-        ></div>
-
-        <div className="relative px-4 sm:px-8 pb-6">
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-            {/* Foto e Emblema (Único com margem negativa para subir no banner) */}
-            <div className="relative -mt-12 sm:-mt-16 flex h-24 w-24 sm:h-32 sm:w-32 shrink-0 items-center justify-center mx-auto sm:mx-0">
-              <div
-                className={`flex h-full w-full items-center justify-center rounded-2xl border-4 border-zinc-900 text-3xl font-bold text-white shadow-2xl overflow-hidden ${user.role === "RECRUITER" ? "bg-zinc-800" : "bg-blue-600"}`}
-              >
-                {user.avatarUrl ? (
-                  <img
-                    src={user.avatarUrl}
-                    alt="Perfil"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  user.name.charAt(0)
-                )}
-              </div>
-              {user.role === "RECRUITER" && (
-                <div
-                  className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full border-2 border-zinc-900 bg-purple-600 text-white z-10"
-                  title="Conta Verificada"
-                >
-                  <FiZap size={14} />
-                </div>
-              )}
-            </div>
-
-            {/* Container do Texto e Botão (Fica sempre protegido abaixo do banner) */}
-            <div className="flex flex-col md:flex-row md:items-start justify-between flex-1 mt-2 sm:mt-4 gap-4">
-              {/* Textos */}
-              <div className="text-center sm:text-left">
-                <h1 className="text-2xl sm:text-3xl font-bold text-white">
-                  {user.name}
-                </h1>
-                {user.isPioneer && (
-                  <div
-                    className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-linear-to-r from-amber-900/40 via-yellow-900/40 px-3 py-1 shadow-md backdrop-blur-md"
-                    title="Membro Fundador do ConnectU"
-                  >
-                    <FiAward className="text-amber-400" size={14} />
-                    <span className="text-xs font-black uppercase tracking-widest text-transparent bg-clip-text bg-linear-to-r from-amber-200 to-yellow-500">
-                      Pioneiro
-                    </span>
-                  </div>
-                )}
-                <div className="mt-2 flex flex-col sm:flex-row sm:items-center justify-center sm:justify-start gap-2 font-medium text-zinc-400">
-                  {user.role === "STUDENT" ? (
-                    <>
-                      <span>
-                        {user.degreeType || "Cursando"} em{" "}
-                        {user.course || "Não informado"} na{" "}
-                        {user.institution || "Não Informada"}{" "}
-                      </span>
-                      {(user.startDate || user.endDate) && (
-                        <span className="hidden sm:block text-zinc-600">•</span>
-                      )}
-                      {(user.startDate || user.endDate) && (
-                        <span className="text-zinc-500 text-sm">
-                          {user.startDate || "?"} até {user.endDate || "Atual"}
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    <span className="flex w-fit items-center gap-2 text-purple-400 bg-purple-500/10 px-3 py-1 rounded-full text-sm border border-purple-500/20 mx-auto sm:mx-0">
-                      <FiBriefcase size={14} /> Equipe de Talentos
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Botão de Editar */}
-              <div className="flex justify-center sm:justify-start shrink-0">
-                <button
-                  onClick={openEditProfileModal}
-                  className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/50 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 hover:border-zinc-600 backdrop-blur-sm"
-                >
-                  <FiEdit2 /> Editar Perfil
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ProfileHeader user={user} onEditClick={openEditProfileModal} />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Coluna Esquerda */}
         <div className="md:col-span-1 space-y-6">
-          <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/40 p-6 backdrop-blur-md shadow-lg">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white">
-                {user.role === "STUDENT" ? "Sobre Mim" : "Nossa Cultura"}
-              </h3>
-              <button
-                onClick={openBioModal}
-                className="text-zinc-400 hover:text-white transition-colors"
-              >
-                <FiEdit2 />
-              </button>
-            </div>
-            <p className="text-sm text-zinc-400 leading-relaxed whitespace-pre-wrap break-all">
-              {user.bio ? (
-                user.bio
-              ) : (
-                <span className="italic">
-                  {user.role === "STUDENT"
-                    ? "Nenhum resumo adicionado."
-                    : "Adicione a missão e cultura da sua empresa."}
-                </span>
-              )}
-            </p>
-
-            {/* Vibe Check (Apenas Recrutadores) */}
-            {user.role === "RECRUITER" && (
-              <div className="mt-6 space-y-4 border-t border-zinc-800 pt-6">
-                <div>
-                  <div className="flex justify-between text-xs text-zinc-500 mb-1 font-medium">
-                    <span>Processo Rígido</span>
-                    <span className="text-purple-400">Inovação Ágil</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-linear-to-r from-zinc-600 to-purple-500 w-[85%] rounded-full"></div>
-                  </div>
-                </div>
-                <div>
-                  <div
-                    className="flex justify-between text-xs text-zinc-500 mb-1
-                  font-medium"
-                  >
-                    <span>Trabalho Isolado</span>
-                    <span className="text-blue400">Colaborativo</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-linear-to-r from-zinc-600 to-blue-500 w-[90%] rounded-full"></div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          <ProfileBio
+            role={user.role}
+            bio={user.bio}
+            onOpenModal={openBioModal}
+          />
 
           {/*Links */}
-          <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/40 p-6 backdrop-blur-md shadow-lg">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white">Links Oficiais</h3>
-              <button
-                onClick={openLinkModal}
-                className="text-blue-500 hover:text-blue-400"
-              >
-                <FiPlus />
-              </button>
-            </div>
-            <div className="flex flex-col gap-3">
-              {!user.links || user.links.length === 0 ? (
-                <p className="text-sm text-zinc-500 italic">
-                  Nenhum link cadastrado
-                </p>
-              ) : (
-                user.links.map((link, index) => (
-                  <a
-                    key={index}
-                    href={
-                      link.url.startsWith("http")
-                        ? link.url
-                        : `https://${link.url}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-sm text-zinc-300 transition-colors hover:border-blue-500 hover:text-blue-400"
-                  >
-                    {getLinkIcon(link.label)}
-                    <span className="truncate">{link.label}</span>
-                  </a>
-                ))
-              )}
-            </div>
-          </div>
+          <ProfileLinks links={user.links} onOpenModal={openLinkModal} />
         </div>
 
         {/*Coluna Direita */}
@@ -965,91 +780,17 @@ export default function ProfilePage() {
           {user.role === "STUDENT" ? (
             // Visão do Aluno
             <>
-              <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/40 p-6 backdrop-blur-md shadow-lg">
-                <div className="mb-4 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-bold text-white">
-                      Competências (Skills)
-                    </h3>
-                    <p className="text-xs text-zinc-500">
-                      Estas habilidades aumentam seu Match com as vagas
-                    </p>
-                  </div>
-                  <button
-                    onClick={openSkillModal}
-                    className="text-blue-500 hover:text-blue-400 flex items-center gap-1 text-sm font-medium"
-                  >
-                    <FiPlus /> Adicionar
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {!user.skills || user.skills.length === 0 ? (
-                    <p className="text-sm text-zinc-500 italic">
-                      Nenhuma competência cadastrada ainda.
-                    </p>
-                  ) : (
-                    user.skills.map((skill, index) => (
-                      <span
-                        key={index}
-                        className="rounded-full bg-blue-900/30 border border-blue-800 px-3 py-1 text-sm text-blue-300"
-                      >
-                        {skill}
-                      </span>
-                    ))
-                  )}
-                </div>
-              </div>
+              {/* Skills */}
+              <ProfileSkills
+                skills={user.skills}
+                onOpenModal={openSkillModal}
+              />
 
-              <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/40 p-6 backdrop-blur-md shadow-lg">
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-white">
-                    Vitrine de Projetos
-                  </h3>
-                  <button
-                    onClick={openProjectModal}
-                    className="text-blue-500 hover:text-blue-400"
-                  >
-                    <FiPlus />
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {!user.projects || user.projects.length === 0 ? (
-                    <p className="text-sm text-zinc-500 italic col-span-2">
-                      Nenhum projeto cadastrado
-                    </p>
-                  ) : (
-                    user.projects.map((project, index) => (
-                      <div
-                        key={index}
-                        className="group relative flex flex-col justify-between overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 p-4 transition-all hover:border-blue-500"
-                      >
-                        <div>
-                          <h4 className="font-medium text-white group-hover:text-blue-400 transition-colors">
-                            {project.title}
-                          </h4>
-                          <p className="mt-1 text-xs text-zinc-400 line-clamp-3">
-                            {project.description}
-                          </p>
-                        </div>
-                        {project.link && (
-                          <a
-                            href={
-                              project.link.startsWith("http")
-                                ? project.link
-                                : `https://${project.link}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-4 flex items-center gap-1 text-xs font-medium text-blue-500 hover:text-blue-400"
-                          >
-                            Acessar Projeto <FiExternalLink />
-                          </a>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
+              {/* Vitrine de projetos */}
+              <ProfileProjects
+                projects={user.projects}
+                onOpenModal={openProjectModal}
+              />
             </>
           ) : (
             // Visão do Recrutador
@@ -1171,777 +912,109 @@ export default function ProfilePage() {
 
       {/* Modais */}
       {/* Modal de Skills */}
-      {isSkillModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">
-                Editar Competências
-              </h2>
-              <button
-                onClick={() => setIsSkillModalOpen(false)}
-                className="text-zinc-400 hover:text-white transition-colors"
-              >
-                <FiX className="text-xl" />
-              </button>
-            </div>
-            <form onSubmit={handleAddTempSkill} className="mb-6 flex gap-2">
-              <input
-                type="text"
-                value={skillInput}
-                onChange={(e) => setSkillInput(e.target.value)}
-                placeholder="Ex: React, Figma, Python..."
-                className="flex-1 rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              />
-              <button
-                type="submit"
-                className="rounded-md bg-zinc-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
-              >
-                Adicionar
-              </button>
-            </form>
-            <div className="mb-8 flex flex-wrap gap-2 max-h-40 overflow-y-auto">
-              {tempSkills.length === 0 ? (
-                <p className="text-sm text-zinc-500">
-                  Nenhuma competência na lista.
-                </p>
-              ) : (
-                tempSkills.map((skill, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-1 rounded-full bg-blue-900/30 border border-blue-800 pl-3 pr-1 py-1 text-sm text-blue-300"
-                  >
-                    {skill}
-                    <button
-                      onClick={() => handleRemoveTempSkill(skill)}
-                      className="ml-1 rounded-full p-1 hover:bg-blue-800/50 hover:text-white transition-colors"
-                    >
-                      <FiX />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-            <div className="flex justify-end gap-3 border-t border-zinc-800 pt-4">
-              <button
-                onClick={() => setIsSkillModalOpen(false)}
-                className="rounded-md px-4 py-2 text-sm font-medium text-zinc-400 transition-colors hover:text-white"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveSkills}
-                disabled={isSaving}
-                className="rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-              >
-                {isSaving ? "Salvando..." : "Salvar Alterações"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <EditSkillModal
+        isOpen={isSkillModalOpen}
+        onClose={() => setIsSkillModalOpen(false)}
+        skillInput={skillInput}
+        setSkillInput={setSkillInput}
+        tempSkills={tempSkills}
+        onAddSkill={handleAddTempSkill}
+        onRemoveSkill={handleRemoveTempSkill}
+        onSave={handleSaveSkills}
+        isSaving={isSaving}
+      />
 
       {/* Modal de Bio */}
-      {isBioModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">Editar Resumo</h2>
-              <button
-                onClick={() => setIsBioModalOpen(false)}
-                className="text-zinc-400 hover:text-white transition-colors"
-              >
-                <FiX className="text-xl" />
-              </button>
-            </div>
-            <textarea
-              value={bioInput}
-              onChange={(e) => setBioInput(e.target.value)}
-              placeholder="Escreva um breve resumo..."
-              className="w-full h-40 resize-none rounded-md border border-zinc-800 bg-zinc-950 p-4 text-sm text-white placeholder-zinc-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            />
-            <div className="mt-6 flex justify-end gap-3 border-t border-zinc-800 pt-4">
-              <button
-                onClick={() => setIsBioModalOpen(false)}
-                className="rounded-md px-4 py-2 text-sm font-medium text-zinc-400 transition-colors hover:text-white"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveBio}
-                disabled={isSavingBio}
-                className="rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-              >
-                {isSavingBio ? "Salvando..." : "Salvar Alterações"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <EditBioModal
+        isOpen={isBioModalOpen}
+        onClose={() => setIsBioModalOpen(false)}
+        bioInput={bioInput}
+        setBioInput={setBioInput}
+        onSave={handleSaveBio}
+        isSaving={isSavingBio}
+      />
 
       {/* Modal de Links */}
-      {isLinkModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">Editar Links</h2>
-              <button
-                onClick={() => setIsLinkModalOpen(false)}
-                className="text-zinc-400 hover:text-white"
-              >
-                <FiX className="text-xl" />
-              </button>
-            </div>
-            <form
-              onSubmit={handleAddTempLink}
-              className="mb-6 flex flex-col gap-3"
-            >
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={linkLabel}
-                  onChange={(e) => setLinkLabel(e.target.value)}
-                  placeholder="Título"
-                  className="w-1/3 rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
-                />
-                <input
-                  type="text"
-                  value={linkUrl}
-                  onChange={(e) => setLinkUrl(e.target.value)}
-                  placeholder="URL"
-                  className="flex-1 rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={!linkLabel || !linkUrl}
-                className="w-full rounded-md bg-zinc-800 py-2 text-sm text-white hover:bg-zinc-700 disabled:opacity-50"
-              >
-                Adicionar Link
-              </button>
-            </form>
-            <div className="mb-8 flex flex-col gap-2 max-h-40 overflow-y-auto">
-              {tempLinks.length === 0 ? (
-                <p className="text-sm text-zinc-500">Nenhum link.</p>
-              ) : (
-                tempLinks.map((link, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-blue-400">
-                        {getLinkIcon(link.label)}
-                      </span>
-                      <div>
-                        <p className="text-sm font-medium text-white">
-                          {link.label}
-                        </p>
-                        <p className="text-xs text-zinc-500 truncate max-w-37.5">
-                          {link.url}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleRemoveTempLink(index)}
-                      className="text-zinc-500 hover:text-red-400"
-                    >
-                      <FiX />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-            <div className="flex justify-end gap-3 border-t border-zinc-800 pt-4">
-              <button
-                onClick={() => setIsLinkModalOpen(false)}
-                className="px-4 py-2 text-sm text-zinc-400 hover:text-white"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveLinks}
-                disabled={isSavingLinks}
-                className="rounded-md bg-blue-600 px-6 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
-              >
-                Salvar Alterações
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <EditLinkModal
+        isOpen={isLinkModalOpen}
+        onClose={() => setIsLinkModalOpen(false)}
+        linkLabel={linkLabel}
+        setLinkLabel={setLinkLabel}
+        linkUrl={linkUrl}
+        setLinkUrl={setLinkUrl}
+        tempLinks={tempLinks}
+        onAddLink={handleAddTempLink}
+        onRemoveLink={handleRemoveTempLink}
+        onSave={handleSaveLinks}
+        isSaving={isSavingLinks}
+      />
 
       {/* Modal de Projetos */}
-      {isProjectModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl max-h-[90vh] overflow-auto">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">Editar Projetos</h2>
-              <button
-                onClick={() => setIsProjectModalOpen(false)}
-                className="text-zinc-400 hover:text-white transition-colors"
-              >
-                <FiX className="text-xl" />
-              </button>
-            </div>
-            <form
-              onSubmit={handleAddTempProject}
-              className="mb-8 flex flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-950 p-4"
-            >
-              <h3 className="text-sm font-semibold text-zinc-300">
-                Adicionar Novo
-              </h3>
-              <input
-                type="text"
-                value={projectTitle}
-                onChange={(e) => setProjectTitle(e.target.value)}
-                placeholder="Título"
-                className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
-              />
-              <textarea
-                value={projectDesc}
-                onChange={(e) => setProjectDesc(e.target.value)}
-                placeholder="Descrição..."
-                className="w-full h-20 resize-none rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
-              />
-              <input
-                type="text"
-                value={projectLink}
-                onChange={(e) => setProjectLink(e.target.value)}
-                placeholder="Link (Opcional)"
-                className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
-              />
-              <button
-                type="submit"
-                disabled={!projectTitle || !projectDesc}
-                className="w-full rounded-md bg-blue-600/20 py-2 text-sm font-medium text-blue-400 transition-colors hover:bg-blue-600 hover:text-white disabled:opacity-50 mt-2"
-              >
-                + Inserir na Lista
-              </button>
-            </form>
-            <div className="mb-8 flex flex-col gap-3">
-              <h3 className="text-sm font-semibold text-zinc-300">
-                Projetos Atuais
-              </h3>
-              {tempProjects.length === 0 ? (
-                <p className="text-sm text-zinc-500 italic">
-                  Nenhum projeto adicionado
-                </p>
-              ) : (
-                tempProjects.map((project, index) => (
-                  <div
-                    key={index}
-                    className="relative rounded-md border border-zinc-800 bg-zinc-950 p-3 pr-10"
-                  >
-                    <h4 className="text-sm font-bold text-white">
-                      {project.title}
-                    </h4>
-                    <p className="text-xs text-zinc-400 mt-1 line-clamp-2">
-                      {project.description}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTempProject(index)}
-                      className="absolute right-3 top-3 text-zinc-500 hover:text-red-400"
-                    >
-                      <FiX />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-            <div className="flex justify-end gap-3 border-t border-zinc-800 pt-4">
-              <button
-                onClick={() => setIsProjectModalOpen(false)}
-                className="px-4 py-2 text-sm text-zinc-400 hover:text-white"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveProjects}
-                disabled={isSavingProjects}
-                className="rounded-md bg-blue-600 px-6 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
-              >
-                Salvar Alterações
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <EditProjectModal
+        isOpen={isProjectModalOpen}
+        onClose={() => setIsProjectModalOpen(false)}
+        projectTitle={projectTitle}
+        setProjectTitle={setProjectTitle}
+        projectDesc={projectDesc}
+        setProjectDesc={setProjectDesc}
+        projectLink={projectLink}
+        setProjectLink={setProjectLink}
+        tempProjects={tempProjects}
+        onAddProject={handleAddTempProject}
+        onRemoveProject={handleRemoveTempProject}
+        onSave={handleSaveProjects}
+        isSaving={isSavingProjects}
+      />
 
       {/*Modal de Criar/Editar Vagas (Exclusivo para recrutadores ou empresas) */}
-      {isJobModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl max-h-[90vh] overflow-auto">
-            <div className="mb-6 flex items-center justify-between border-b border-zinc-800 pb-4">
-              <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <FiTarget className="text-purple-400" />{" "}
-                  {editingJobId ? "Editar Oportunidade" : "Nova Oportunidade"}
-                </h2>
-                <p className="text-xs text-zinc-400 mt-1">
-                  Defina os requisitos para o algoritmo encontrar o talento
-                  ideal
-                </p>
-              </div>
-              <button
-                onClick={() => setIsJobModalOpen(false)}
-                className="text-zinc-400 hover:text-white bg-zinc-800 p-1.5 rounded-md transition-colors"
-              >
-                <FiX className="text-xl" />
-              </button>
-            </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                  Título da Vaga
-                </label>
-                <input
-                  required
-                  type="text"
-                  placeholder="Ex: Desenvolvedor Front-end Junior"
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
-                  value={jobFormData.title}
-                  onChange={(e) =>
-                    setJobFormData({ ...jobFormData, title: e.target.value })
-                  }
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                  Tipo / Modelo
-                </label>
-                <select
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
-                  value={jobFormData.type}
-                  onChange={(e) =>
-                    setJobFormData({ ...jobFormData, type: e.target.value })
-                  }
-                >
-                  <option value="Tempo Integral">Tempo Integral</option>
-                  <option value="Meio Período">Meio Período</option>
-                  <option value="Estágio">Estágio</option>
-                  <option value="Remoto">Remoto</option>
-                  <option value="Híbrido">Híbrido</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                  Descrição
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  placeholder="Descreva as responsabilidades e requisitos básicos..."
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 resize-none"
-                  value={jobFormData.description}
-                  onChange={(e) =>
-                    setJobFormData({
-                      ...jobFormData,
-                      description: e.target.value,
-                    })
-                  }
-                ></textarea>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                  Skills Necessárias (separadas por vírgula)
-                </label>
-                <input
-                  required
-                  type="text"
-                  placeholder="Ex: React, JavaScript, Figma"
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
-                  value={jobFormData.skillsInput}
-                  onChange={(e) =>
-                    setJobFormData({
-                      ...jobFormData,
-                      skillsInput: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-zinc-300 ml-1">
-                  Skills Desejáveis / Plus (separadas por vírgula)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ex: Docker, AWS, UI/UX"
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500"
-                  value={jobFormData.desirableSkillsInput}
-                  onChange={(e) =>
-                    setJobFormData({
-                      ...jobFormData,
-                      desirableSkillsInput: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div className="flex items-center gap-3 pt-2">
-                <input
-                  type="checkbox"
-                  id="profileIsInternship"
-                  checked={jobFormData.isInternship}
-                  onChange={(e) =>
-                    setJobFormData({
-                      ...jobFormData,
-                      isInternship: e.target.checked,
-                    })
-                  }
-                  className="w-5 h-5 border-zinc-700 bg-zinc-900 text-purple-600 focus:ring-purple-500 focus:ring-offset-zinc-950"
-                />
-                <label
-                  htmlFor="profileIsInternship"
-                  className="text-sm font-medium text-zinc-300 cursor-pointer"
-                >
-                  Esta vaga é exclusiva para Estágio?
-                </label>
-              </div>
-            </div>
-
-            <div className="mt-8 flex justify-end gap-3 border-t border-zinc-800 pt-4">
-              <button
-                onClick={() => setIsJobModalOpen(false)}
-                className="rounded-lg px-4 py-2 text-sm font-medium text-zinc-400 transition-colors hover:text-white hover:bg-zinc-800"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveJob}
-                disabled={
-                  isSubmittingJob ||
-                  !jobFormData.title ||
-                  !jobFormData.skillsInput
-                }
-                className="rounded-lg bg-purple-600 px-6 py-2 text-sm font-bold text-white transition-all hover:bg-purple-700 disabled:opacity-50 disabled:hover:bg-purple-600"
-              >
-                {isSubmittingJob
-                  ? "Salvando..."
-                  : editingJobId
-                    ? "Guardar Alterações"
-                    : "Salvar Vaga"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <EditJobModal
+        isOpen={isJobModalOpen}
+        onClose={() => setIsJobModalOpen(false)}
+        jobFormData={jobFormData}
+        setJobFormData={setJobFormData}
+        onSave={handleSaveJob}
+        isSubmitting={isSubmittingJob}
+        editingJobId={editingJobId}
+      />
 
       {/* Modal Visualizar/ Gerenciar Vaga */}
-      {isViewJobModalOpen && selectedJob && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          {/* CONTAINER PRINCIPAL: Agora é um flex-col com overflow-hidden */}
-          <div className="w-full max-w-2xl rounded-xl border border-zinc-800 bg-zinc-900 shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
-            {/* HEADER: Fixo no topo (shrink-0) */}
-            <div className="p-6 pb-4 flex items-center justify-between border-b border-zinc-800 shrink-0">
-              <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <h2 className="text-2xl font-bold text-white">
-                    {selectedJob.title}
-                  </h2>
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium border ${selectedJob.isActive ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"}`}
-                  >
-                    {selectedJob.isActive ? "Aberta" : "Encerrada"}
-                  </span>
-                </div>
-                <div className="flex gap-2 mt-2">
-                  <span className="rounded-md bg-zinc-800 px-2.5 py-1 text-xs font-medium text-zinc-300 border border-zinc-700">
-                    {selectedJob.type}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsViewJobModalOpen(false)}
-                className="text-zinc-400 hover:text-white transition-colors bg-zinc-800/50 p-2 rounded-full hover:bg-zinc-700"
-              >
-                <FiX className="text-xl" />
-              </button>
-            </div>
-
-            {/* CORPO: Aqui fica a rolagem independente (overflow-y-auto e flex-1) */}
-            <div className="p-6 space-y-6 overflow-y-auto flex-1">
-              <div>
-                <h3 className="text-sm font-semibold text-zinc-400 mb-2 uppercase tracking-wider">
-                  Descrição da Vaga
-                </h3>
-                <div className="rounded-lg bg-zinc-950 p-4 border border-zinc-800">
-                  <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
-                    {selectedJob.description ||
-                      "Nenhuma descrição detalhada fornecida para esta vaga."}
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-semibold text-zinc-400 mb-2 uppercase tracking-wider">
-                  Competências Exigidas
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {selectedJob.requiredSkills &&
-                  selectedJob.requiredSkills.length > 0 ? (
-                    selectedJob.requiredSkills.map((skill, index) => (
-                      <span
-                        key={index}
-                        className="rounded-full bg-purple-900/30 border border-purple-800/50 px-3 py-1 text-sm text-purple-300"
-                      >
-                        {skill}
-                      </span>
-                    ))
-                  ) : (
-                    <p className="text-sm text-zinc-500 italic">
-                      Nenhuma competência específica listada.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* FOOTER: Fixo na base (shrink-0) */}
-            <div className="p-6 pt-4 flex flex-col sm:flex-row justify-between gap-3 border-t border-zinc-800 bg-zinc-900 shrink-0">
-              <button
-                onClick={() => handleDeleteJob(selectedJob.id)}
-                className="rounded-md border border-red-900/50 bg-red-950/30 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-900/50 hover:text-red-300"
-              >
-                Excluir Vaga
-              </button>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() =>
-                    handleToggleJobStatus(selectedJob.id, selectedJob.isActive)
-                  }
-                  className={`rounded-md border px-4 py-2 text-sm font-medium transition-colors ${selectedJob.isActive ? "border-yellow-700/50 bg-yellow-900/20 text-yellow-500 hover:bg-yellow-900/40" : "border-emerald-700/50 bg-emerald-900/20 text-emerald-500 hover:bg-emerald-900/40"}`}
-                >
-                  {selectedJob.isActive ? "Encerrar Vaga" : "Reabrir Vaga"}
-                </button>
-                <button
-                  onClick={() => handleEditJob(selectedJob)}
-                  className="flex items-center gap-2 rounded-md bg-purple-600 px-6 py-2 text-sm font-bold text-white transition-all hover:bg-purple-700"
-                >
-                  <FiEdit2 size={14} /> Editar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ViewJobModal
+        isOpen={isViewJobModalOpen}
+        onClose={() => setIsViewJobModalOpen(false)}
+        job={selectedJob}
+        onDelete={handleDeleteJob}
+        onToggleStatus={handleToggleJobStatus}
+        onEdit={handleEditJob}
+      />
 
       {/* Modal de Editar Perfil Básico */}
-      {isEditProfileModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-2xl rounded-xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl max-h-[90vh] overflow-auto">
-            <div className="mb-6 flex items-center justify-between border-b border-zinc-800 pb-4">
-              <h2 className="text-xl font-bold text-white">
-                Editar Dados Básicos
-              </h2>
-              <button
-                onClick={() => setIsEditProfileModalOpen(false)}
-                className="text-zinc-400 hover:text-white"
-              >
-                <FiX className="text-xl" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveBasicProfile} className="space-y-4">
-              {/* Campos Universais (Aluno e Empresa) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <label className="text-sm font-medium text-zinc-300 mb-1 block">
-                    Nome de Exibição
-                  </label>
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    required
-                    className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-zinc-300 mb-1">
-                    Foto de Perfil (Opcional)
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*" // Aceita apenas imagens
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files.length > 0) {
-                        setAvatarFile(e.target.files[0]);
-                      }
-                    }}
-                    className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition-all cursor-pointer"
-                  />
-                  <p className="text-xs text-zinc-500 mt-1">
-                    Deixe em branco para usar sua inicial colorida.
-                  </p>
-
-                  {/* Botão para remover foto atual */}
-                  {editAvatarUrl && (
-                    <button
-                      type="button"
-                      onClick={() => setEditAvatarUrl("")}
-                      className="mt-2 text-xs font-bold text-red-500 hover:text-red-400"
-                    >
-                      Remover foto atual
-                    </button>
-                  )}
-                </div>
-
-                <div className="sm:col-span-2 mt-4">
-                  <label className="block text-sm font-medium text-zinc-300 mb-1">
-                    Imagem de Capa (Banner)
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files.length > 0) {
-                        setBannerFile(e.target.files[0]);
-                      }
-                    }}
-                    className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-400 file:mr-4 file:py-2
-                  file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition-all cursor-pointer"
-                  />{" "}
-                  <p className="text-xs text-zinc-500 mt-1">
-                    Recomendamos imagens horizontais comboa resolução.
-                  </p>
-                  {/* Botão para Remover o banner atual */}
-                  {editBannerUrl && !bannerFile && (
-                    <button
-                      type="button"
-                      onClick={() => setEditBannerUrl("")}
-                      className="mt-2 text-xs font-bold text-red-500 hover:text-red-400"
-                    >
-                      Remover banner atual
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Campos Específicos para Alunos */}
-              {user?.role === "STUDENT" && (
-                <div className="border-t border-zinc-800 pt-4 mt-4 space-y-4">
-                  <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">
-                    Dados Acadêmicos
-                  </h3>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-zinc-300 mb-1 block">
-                        Curso
-                      </label>
-                      <input
-                        type="text"
-                        value={editCourse}
-                        onChange={(e) => setEditCourse(e.target.value)}
-                        placeholder="Ex: Gestão de TI"
-                        className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-zinc-300 mb-1 block">
-                        Instituição
-                      </label>
-                      <input
-                        type="text"
-                        value={editInstitution}
-                        onChange={(e) => setEditInstitution(e.target.value)}
-                        placeholder="Ex: FATEC"
-                        className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="text-sm font-medium text-zinc-300 mb-1 block">
-                        Nível de Formação
-                      </label>
-                      <select
-                        value={editDegreeType}
-                        onChange={(e) => setEditDegreeType(e.target.value)}
-                        className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
-                      >
-                        <option value="Técnico">Ensino Técnico</option>
-                        <option value="Tecnólogo">Tecnólogo</option>
-                        <option value="Bacharelado">Bacharelado</option>
-                        <option value="Licenciatura">Licenciatura</option>
-                        <option value="Pós-graduação">
-                          Pós-graduação / Especialização
-                        </option>
-                        <option value="Mestrado">Mestrado</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-zinc-300 mb-1 block">
-                        Mês/Ano de Início
-                      </label>
-                      <input
-                        type="text"
-                        value={editStartDate}
-                        onChange={(e) => setEditStartDate(e.target.value)}
-                        placeholder="Ex: 02/2024"
-                        className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-zinc-300 mb-1 block">
-                        Previsão de Conclusão
-                      </label>
-                      <input
-                        type="text"
-                        value={editEndDate}
-                        onChange={(e) => setEditEndDate(e.target.value)}
-                        placeholder="Ex: 12/2026"
-                        className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="text-sm font-medium text-zinc-300 mb-1 block">
-                        Link do Currículo (Opcional)
-                      </label>
-                      <input
-                        type="file"
-                        accept=".pdf"
-                        onChange={(e) => {
-                          if (e.target.files && e.target.files.length > 0) {
-                            setResumeFile(e.target.files[0]);
-                          }
-                        }}
-                        className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-zinc-700 file:text-white hover:file:bg-zinc-600 transition-all cursor-pointer"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-end gap-3 pt-6">
-                <button
-                  type="button"
-                  onClick={() => setIsEditProfileModalOpen(false)}
-                  className="rounded-md px-4 py-2 text-sm font-medium text-zinc-400 hover:text-white"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSavingProfile}
-                  className="rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {isSavingProfile ? "Salvando..." : "Salvar Perfil"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <EditBasicProfileModal
+        isOpen={isEditProfileModalOpen}
+        onClose={() => setIsEditProfileModalOpen(false)}
+        userRole={user?.role}
+        editName={editName}
+        setEditName={setEditName}
+        editAvatarUrl={editAvatarUrl}
+        setEditAvatarUrl={setEditAvatarUrl}
+        setAvatarFile={setAvatarFile}
+        editBannerUrl={editBannerUrl}
+        setEditBannerUrl={setEditBannerUrl}
+        setBannerFile={setBannerFile}
+        editCourse={editCourse}
+        setEditCourse={setEditCourse}
+        editInstitution={editInstitution}
+        setEditInstitution={setEditInstitution}
+        editDegreeType={editDegreeType}
+        setEditDegreeType={setEditDegreeType}
+        editStartDate={editStartDate}
+        setEditStartDate={setEditStartDate}
+        editEndDate={editEndDate}
+        setEditEndDate={setEditEndDate}
+        setResumeFile={setResumeFile}
+        onSave={handleSaveBasicProfile}
+        isSaving={isSavingProfile}
+      />
     </div>
   );
 }
