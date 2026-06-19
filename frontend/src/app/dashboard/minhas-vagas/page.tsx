@@ -16,6 +16,7 @@ import {
 } from "react-icons/fi";
 
 import { StudentProfileModal } from "@/app/components/jobs/StudentProfileModal";
+import { JobFormModal } from "@/app/components/jobs/JobFormModal";
 
 interface UserData {
   id: string;
@@ -640,262 +641,28 @@ export default function MinhasVagasPage() {
       />
 
       {/* MODAL DE NOVA VAGA */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl relative">
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 text-zinc-400 hover:text-white bg-zinc-800 p-1.5 rounded-md"
-            >
-              <FiX />
-            </button>
-
-            <h2 className="text-xl font-bold text-white mb-6">
-              Criar Nova Vaga
-            </h2>
-
-            <form onSubmit={handleCreateJob} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                  Título da Vaga
-                </label>
-                <input
-                  required
-                  type="text"
-                  placeholder="Ex: Desenvolvedor Front-end Junior"
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500"
-                  value={newJobData.title}
-                  onChange={(e) =>
-                    setNewJobData({ ...newJobData, title: e.target.value })
-                  }
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                  Tipo / Modelo
-                </label>
-                <select
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500"
-                  value={newJobData.type}
-                  onChange={(e) =>
-                    setNewJobData({ ...newJobData, type: e.target.value })
-                  }
-                >
-                  <option value="Tempo Integral">Tempo Integral</option>
-                  <option value="Meio Período">Meio Período</option>
-                  <option value="Estágio">Estágio</option>
-                  <option value="Remoto">Remoto</option>
-                  <option value="Híbrido">Híbrido</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                  Descrição
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  placeholder="Descreva as responsabilidades e requisitos básicos..."
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 resize-none"
-                  value={newJobData.description}
-                  onChange={(e) =>
-                    setNewJobData({
-                      ...newJobData,
-                      description: e.target.value,
-                    })
-                  }
-                ></textarea>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                  Skills Necessárias (separadas por vírgula)
-                </label>
-                <input
-                  required
-                  type="text"
-                  placeholder="Ex: React, JavaScript, Figma"
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500"
-                  value={newJobData.skillsInput}
-                  onChange={(e) =>
-                    setNewJobData({
-                      ...newJobData,
-                      skillsInput: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-zinc-300 ml-1">
-                  Skills Desejáveis / Plus (separadas por vírgula)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ex: Docker, AWS, UI/UX"
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500"
-                  value={newJobData.desirableSkillsInput}
-                  onChange={(e) =>
-                    setNewJobData({
-                      ...newJobData,
-                      desirableSkillsInput: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div className="flex items-center gap-3 pt-2">
-                <input
-                  type="checkbox"
-                  id="isInternship"
-                  checked={newJobData.isInternship}
-                  onChange={(e) =>
-                    setNewJobData({
-                      ...newJobData,
-                      isInternship: e.target.checked,
-                    })
-                  }
-                  className="w-5 h-5 border-zinc-700 bg-zinc-900 text-blue-600 focus:ring-blue-500 focus:ring-offset-zinc-950"
-                />
-                <label
-                  htmlFor="isInternship"
-                  className="text-sm font-medium text-zinc-300 cursor-pointer"
-                >
-                  {" "}
-                  Esta vaga é exclusiva para Estágio?{" "}
-                  <span className="text-xs text-zinc-500">
-                    (Filtra alunos que faltam 1+ anos para terminar o curso)
-                  </span>
-                </label>
-              </div>
-
-              <div className="pt-4 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-                >
-                  {isSubmitting ? "Criando..." : "Publicar Vaga"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <JobFormModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Criar Nova Vaga"
+        formData={newJobData}
+        setFormData={setNewJobData}
+        onSubmit={handleCreateJob}
+        isSubmitting={isSubmitting}
+        submitText="Publicar Vaga"
+      />
 
       {/* MODAL DE EDITAR VAGA */}
-      {isEditModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fadeIn">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl relative">
-            <button
-              onClick={() => setIsEditModalOpen(false)}
-              className="absolute top-4 right-4 text-zinc-400 hover:text-white bg-zinc-800 p-1.5 rounded-md"
-            >
-              <FiX />
-            </button>
-
-            <h2 className="text-xl font-bold text-white mb-6">Editar Vaga</h2>
-
-            <form onSubmit={handleUpdateJob} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                  Título da Vaga
-                </label>
-                <input
-                  required
-                  type="text"
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500"
-                  value={editJobData.title}
-                  onChange={(e) =>
-                    setEditJobData({ ...editJobData, title: e.target.value })
-                  }
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                  Tipo / Modelo
-                </label>
-                <select
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500"
-                  value={editJobData.type}
-                  onChange={(e) =>
-                    setEditJobData({ ...editJobData, type: e.target.value })
-                  }
-                >
-                  <option value="Tempo Integral">Tempo Integral</option>
-                  <option value="Meio Período">Meio Período</option>
-                  <option value="Estágio">Estágio</option>
-                  <option value="Remoto">Remoto</option>
-                  <option value="Híbrido">Híbrido</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                  Descrição
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 resize-none"
-                  value={editJobData.description}
-                  onChange={(e) =>
-                    setEditJobData({
-                      ...editJobData,
-                      description: e.target.value,
-                    })
-                  }
-                ></textarea>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                  Skills Necessárias (separadas por vírgula)
-                </label>
-                <input
-                  required
-                  type="text"
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500"
-                  value={editJobData.skillsInput}
-                  onChange={(e) =>
-                    setEditJobData({
-                      ...editJobData,
-                      skillsInput: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div className="pt-4 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-                >
-                  {isSubmitting ? "Salvando..." : "Salvar Alterações"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <JobFormModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Editar Vaga"
+        formData={editJobData}
+        setFormData={setEditJobData}
+        onSubmit={handleUpdateJob}
+        isSubmitting={isSubmitting}
+        submitText="Salvar Alterações"
+      />
     </div>
   );
 }
