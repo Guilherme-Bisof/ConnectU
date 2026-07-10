@@ -1,11 +1,12 @@
 import { FiX } from "react-icons/fi";
+import { TagInput } from "@/app/components/ui/TagInput";
 
 export interface JobFormData {
   title: string;
   type: string;
   description: string;
-  skillsInput: string;
-  desirableSkillsInput: string;
+  requiredSkills: string[];
+  desirableSkills: string[];
   isInternship: boolean;
 }
 
@@ -98,35 +99,23 @@ export function JobFormModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1">
-              Skills Necessárias (separadas por vírgula)
-            </label>
-            <input
-              required
-              type="text"
+            <TagInput
+              label="Skills Necessárias (pressione Enter para adicionar)"
               placeholder="Ex: React, JavaScript, Figma"
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500"
-              value={formData.skillsInput}
-              onChange={(e) =>
-                setFormData({ ...formData, skillsInput: e.target.value })
+              tags={formData.requiredSkills}
+              setTags={(tags) =>
+                setFormData({ ...formData, requiredSkills: tags })
               }
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-zinc-300 ml-1">
-              Skills Desejáveis / Plus (separadas por vírgula)
-            </label>
-            <input
-              type="text"
+            <TagInput
+              label="Skills Desejáveis / Plus (pressione Enter para adicionar)"
               placeholder="Ex: Docker, AWS, UI/UX"
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500"
-              value={formData.desirableSkillsInput}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  desirableSkillsInput: e.target.value,
-                })
+              tags={formData.desirableSkills}
+              setTags={(tags) =>
+                setFormData({ ...formData, desirableSkills: tags })
               }
             />
           </div>

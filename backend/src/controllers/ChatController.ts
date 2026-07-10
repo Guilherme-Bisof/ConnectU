@@ -51,6 +51,51 @@ export class ChatController {
     }
   }
 
+  async createProfessionalRoom(req: Request, res: Response) {
+    try {
+      const { jobId, studentId } = req.body;
+      const recruiterId = (req as any).user?.id;
+
+      if (!jobId || !studentId) {
+        return res.status(400).json({ error: "Faltam parâmetros obrigatórios." });
+      }
+
+      if (studentId === recruiterId) {
+        return res.status(400).json({ error: "Você não pode iniciar um chat consigo mesmo." });
+      }
+
+      let room = await prisma.room.findFirst({
+        where: {
+          context: "PROFESSIONAL",
+          jobId: String(jobId),
+          AND: [
+            { users: { some: { id: recruiterId } } },
+            { users: { some: { id: studentId } } },
+          ],
+        },
+        include: { users: true },
+      });
+
+      if (!room) {
+        room = await prisma.room.create({
+          data: {
+            context: "PROFESSIONAL",
+            jobId: String(jobId),
+            users: {
+              connect: [{ id: recruiterId }, { id: studentId }],
+            },
+          },
+          include: { users: true },
+        });
+      }
+
+      return res.json(room);
+    } catch (error) {
+      console.error("Erro ao iniciar chat profissional:", error);
+      return res.status(500).json({ error: "Erro interno ao iniciar chat." });
+    }
+  }
+
   async getRooms(req: Request, res: Response) {
     try {
       const userId = (req as any).user?.id;

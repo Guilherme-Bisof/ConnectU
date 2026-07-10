@@ -36,6 +36,7 @@ interface ApplicantUser {
 interface Applicant {
   userId: string;
   user?: ApplicantUser;
+  status?: string;
 }
 
 interface JobData {
@@ -62,7 +63,7 @@ export default function MinhasVagasPage() {
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
 
   // Estado para o Modal do Aluno
-  const [selectedStudent, setSelectedStudent] = useState<ApplicantUser | null>(
+  const [selectedStudent, setSelectedStudent] = useState<{ user: ApplicantUser; jobId: string; status: string } | null>(
     null,
   );
 
@@ -72,8 +73,8 @@ export default function MinhasVagasPage() {
     title: "",
     type: "Tempo Integral",
     description: "",
-    skillsInput: "",
-    desirableSkillsInput: "",
+    requiredSkills: [] as string[],
+    desirableSkills: [] as string[],
     isInternship: false,
   });
 
@@ -84,8 +85,8 @@ export default function MinhasVagasPage() {
     title: "",
     type: "Tempo Integral",
     description: "",
-    skillsInput: "",
-    desirableSkillsInput: "",
+    requiredSkills: [] as string[],
+    desirableSkills: [] as string[],
     isInternship: false,
   });
 
@@ -223,21 +224,75 @@ export default function MinhasVagasPage() {
     }
   };
 
+  const handleChangeStatus = async (jobId: string, userId: string, newStatus: string) => {
+    try {
+      const token = localStorage.getItem("connectu_token");
+      const res = await fetch(
+        `https://connectu-gd1z.onrender.com/jobs/${jobId}/applicants/${userId}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
+
+      if (res.ok) {
+        setVagas((prev) =>
+          prev.map((vaga) => {
+            if (vaga.id === jobId) {
+              return {
+                ...vaga,
+                applications: vaga.applications?.map((app) =>
+                  app.userId === userId ? { ...app, status: newStatus } : app
+                ),
+              };
+            }
+            return vaga;
+          })
+        );
+        setSelectedStudent(null);
+      } else {
+        alert("Erro ao alterar o status do candidato.");
+      }
+    } catch (error) {
+      console.error("Erro ao mudar status do candidato:", error);
+    }
+  };
+
+  const handleStartChat = async (jobId: string, userId: string) => {
+    try {
+      const token = localStorage.getItem("connectu_token");
+      const res = await fetch("https://connectu-gd1z.onrender.com/rooms/professional", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ jobId, studentId: userId }),
+      });
+
+      if (res.ok) {
+        const room = await res.json();
+        router.push(`/dashboard/chat?room=${room.id}`);
+      } else {
+        alert("Erro ao iniciar chat profissional.");
+      }
+    } catch (error) {
+      console.error("Erro ao iniciar chat:", error);
+    }
+  };
+
   const handleCreateJob = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.companyId) return alert("Erro: Empresa não identificada.");
 
     setIsSubmitting(true);
 
-    const requiredSkills = newJobData.skillsInput
-      .split(",")
-      .map((skill) => skill.trim())
-      .filter((skill) => skill !== "");
-
-    const desirableSkills = newJobData.desirableSkillsInput
-      .split(",")
-      .map((skill) => skill.trim())
-      .filter((skill) => skill !== "");
+    const requiredSkills = newJobData.requiredSkills;
+    const desirableSkills = newJobData.desirableSkills;
 
     try {
       const token = localStorage.getItem("connectu_token");
@@ -265,8 +320,8 @@ export default function MinhasVagasPage() {
           title: "",
           type: "Tempo Integral",
           description: "",
-          skillsInput: "",
-          desirableSkillsInput: "",
+          requiredSkills: [],
+          desirableSkills: [],
           isInternship: false,
         });
         setIsModalOpen(false);
@@ -288,8 +343,8 @@ export default function MinhasVagasPage() {
       title: vaga.title,
       type: vaga.type,
       description: vaga.description || "",
-      skillsInput: vaga.requiredSkills.join(", "),
-      desirableSkillsInput: vaga.desirableSkills?.join(", ") || "",
+      requiredSkills: vaga.requiredSkills || [],
+      desirableSkills: vaga.desirableSkills || [],
       isInternship: vaga.isInternship || false,
     });
     setIsEditModalOpen(true);
@@ -301,15 +356,8 @@ export default function MinhasVagasPage() {
 
     setIsSubmitting(true);
 
-    const requiredSkills = editJobData.skillsInput
-      .split(",")
-      .map((skill) => skill.trim())
-      .filter((skill) => skill !== "");
-
-    const desirableSkills = newJobData.desirableSkillsInput
-      .split(",")
-      .map((skill) => skill.trim())
-      .filter((skill) => skill !== "");
+    const requiredSkills = editJobData.requiredSkills;
+    const desirableSkills = editJobData.desirableSkills;
 
     try {
       const token = localStorage.getItem("connectu_token");
@@ -327,7 +375,7 @@ export default function MinhasVagasPage() {
             description: editJobData.description,
             requiredSkills,
             desirableSkills,
-            isInternship: newJobData.isInternship,
+            isInternship: editJobData.isInternship,
           }),
         },
       );
@@ -433,7 +481,9 @@ export default function MinhasVagasPage() {
       <StudentProfileModal
         isOpen={!!selectedStudent}
         onClose={() => setSelectedStudent(null)}
-        student={selectedStudent}
+        studentData={selectedStudent}
+        onChangeStatus={handleChangeStatus}
+        onStartChat={handleStartChat}
       />
 
       {/* MODAL DE NOVA VAGA */}

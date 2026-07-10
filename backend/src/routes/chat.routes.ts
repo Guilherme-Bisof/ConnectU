@@ -14,5 +14,8 @@ chatRoutes.get("/conversations", authMiddleware, (req, res) =>
 chatRoutes.get("/conversations/:roomId/messages", authMiddleware, (req, res) =>
   chatController.getRoomMessages(req, res),
 );
+chatRoutes.post("/rooms/professional", authMiddleware, (req, res) =>
+  chatController.createProfessionalRoom(req, res),
+);
 
 export { chatRoutes }
