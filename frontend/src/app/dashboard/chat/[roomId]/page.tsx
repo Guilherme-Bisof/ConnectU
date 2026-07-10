@@ -345,6 +345,9 @@ export default function ChatRoomPage() {
   };
 
   const handleMute = () => {
+    // Comunica com o backend para salvar no banco de dados (assim a notificação não é criada)
+    socket.emit("toggle_mute_room", roomId);
+
     const mutedRooms = JSON.parse(localStorage.getItem("connectu_muted_rooms") || "[]");
     
     if (isMuted) {

@@ -2,6 +2,83 @@ import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 
 export class ChatController {
+  /**
+   * Método interno para encontrar ou criar uma sala entre dois usuários.
+   * REGRA DE OURO: Nunca pode existir mais de 1 sala entre 2 pessoas.
+   * Se o usuário saiu da sala antes (apagou conversa), ele é reconectado.
+   */
+  private async findOrCreateRoom(userIdA: string, userIdB: string, context: "SOCIAL" | "PROFESSIONAL" = "SOCIAL", jobId?: string) {
+    // 1. Procura QUALQUER sala que contenha ambos os usuários (independente do contexto)
+    let room = await prisma.room.findFirst({
+      where: {
+        AND: [
+          { users: { some: { id: userIdA } } },
+          { users: { some: { id: userIdB } } },
+        ],
+      },
+      include: { users: true },
+    });
+
+    if (room) return room;
+
+    // 2. Talvez o usuário A tenha saído da sala (apagou conversa) mas a sala ainda existe com B
+    //    Nesse caso, reconecta o usuário A à sala existente
+    const roomWithOnlyB = await prisma.room.findFirst({
+      where: {
+        users: { some: { id: userIdB } },
+        // Verifica se esse Room já teve o userIdA antes (existem mensagens dele)
+      },
+      include: { 
+        users: true,
+        messages: { where: { senderId: userIdA }, take: 1 }
+      },
+    });
+
+    if (roomWithOnlyB && roomWithOnlyB.messages.length > 0) {
+      // Reconecta o usuário que saiu
+      room = await prisma.room.update({
+        where: { id: roomWithOnlyB.id },
+        data: { users: { connect: { id: userIdA } } },
+        include: { users: true },
+      });
+      return room;
+    }
+
+    // Também verifica o inverso (B saiu, A ainda está)
+    const roomWithOnlyA = await prisma.room.findFirst({
+      where: {
+        users: { some: { id: userIdA } },
+      },
+      include: { 
+        users: true,
+        messages: { where: { senderId: userIdB }, take: 1 }
+      },
+    });
+
+    if (roomWithOnlyA && roomWithOnlyA.messages.length > 0) {
+      room = await prisma.room.update({
+        where: { id: roomWithOnlyA.id },
+        data: { users: { connect: { id: userIdB } } },
+        include: { users: true },
+      });
+      return room;
+    }
+
+    // 3. Nenhuma sala existente: cria uma nova
+    room = await prisma.room.create({
+      data: {
+        context,
+        jobId: jobId ? String(jobId) : null,
+        users: {
+          connect: [{ id: userIdA }, { id: userIdB }],
+        },
+      },
+      include: { users: true },
+    });
+
+    return room;
+  }
+
   async createRoom(req: Request, res: Response) {
     try {
       const { participantId } = req.body;
@@ -13,35 +90,13 @@ export class ChatController {
           .json({ error: "ID do participante é obrigatório." });
       }
 
-      // Evita que o usuário crie uma sala com ele mesmo
       if (participantId === userId) {
         return res
           .status(400)
           .json({ error: "Você não pode iniciar um chat consigo mesmo." });
       }
 
-      let room = await prisma.room.findFirst({
-        where: {
-          AND: [
-            { users: { some: { id: userId } } },
-            { users: { some: { id: participantId } } },
-          ],
-        },
-        include: { users: true },
-      });
-
-      if (!room) {
-        room = await prisma.room.create({
-          data: {
-            context: "SOCIAL",
-            users: {
-              connect: [{ id: userId }, { id: participantId }],
-            },
-          },
-          include: { users: true },
-        });
-      }
-
+      const room = await this.findOrCreateRoom(userId, participantId, "SOCIAL");
       return res.json(room);
     } catch (error) {
       console.error("Erro ao iniciar conversa:", error);
@@ -64,31 +119,8 @@ export class ChatController {
         return res.status(400).json({ error: "Você não pode iniciar um chat consigo mesmo." });
       }
 
-      let room = await prisma.room.findFirst({
-        where: {
-          context: "PROFESSIONAL",
-          jobId: String(jobId),
-          AND: [
-            { users: { some: { id: recruiterId } } },
-            { users: { some: { id: studentId } } },
-          ],
-        },
-        include: { users: true },
-      });
-
-      if (!room) {
-        room = await prisma.room.create({
-          data: {
-            context: "PROFESSIONAL",
-            jobId: String(jobId),
-            users: {
-              connect: [{ id: recruiterId }, { id: studentId }],
-            },
-          },
-          include: { users: true },
-        });
-      }
-
+      // Usa a mesma lógica: se já existe uma sala com essa pessoa, reutiliza
+      const room = await this.findOrCreateRoom(recruiterId, studentId, "PROFESSIONAL", jobId);
       return res.json(room);
     } catch (error) {
       console.error("Erro ao iniciar chat profissional:", error);

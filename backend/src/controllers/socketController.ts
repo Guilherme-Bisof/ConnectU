@@ -117,22 +117,31 @@ export const registerSocketEvents = (io: Server) => {
           });
           
           if (room) {
+            // Busca o nome real do remetente
+            const realSender = await prisma.user.findUnique({ where: { id: senderId } });
+            const senderName = realSender?.name || "Usuário";
+
             const otherUsers = room.users.filter((u: any) => u.id !== senderId);
             for (const user of otherUsers) {
-              const notification = await prisma.notification.create({
-                data: {
-                  userId: user.id,
-                  senderId: senderId,
-                  type: "MESSAGE",
-                  title: `Nova mensagem de ${authUser.name}`,
-                  content: content ? content.substring(0, 50) + (content.length > 50 ? "..." : "") : "Enviou uma imagem",
-                }
-              });
+              // Verifica se a sala está silenciada para este usuário
+              const isMuted = user.mutedRooms && user.mutedRooms.includes(roomId);
+              
+              if (!isMuted) {
+                const notification = await prisma.notification.create({
+                  data: {
+                    userId: user.id,
+                    senderId: senderId,
+                    type: "MESSAGE",
+                    title: `Nova mensagem de ${senderName}`,
+                    content: content ? content.substring(0, 50) + (content.length > 50 ? "..." : "") : "Enviou uma imagem",
+                  }
+                });
 
-              // Emite o evento de notificação se o usuário estiver online
-              const receiverSocketId = onlineUsers.get(user.id);
-              if (receiverSocketId) {
-                io.to(receiverSocketId).emit("notification:received", notification);
+                // Emite o evento de notificação se o usuário estiver online
+                const receiverSocketId = onlineUsers.get(user.id);
+                if (receiverSocketId) {
+                  io.to(receiverSocketId).emit("notification:received", notification);
+                }
               }
             }
           }
@@ -174,17 +183,51 @@ export const registerSocketEvents = (io: Server) => {
       try {
         // Verifica se usuário pertence a sala
         const room = await prisma.room.findFirst({
-          where: { id: roomId, users: { some: { id: authUser.id } } }
+          where: { id: roomId, users: { some: { id: authUser.id } } },
+          include: { users: true }
         });
         if (!room) return;
 
-        // Apaga mensagens e a sala
-        await prisma.message.deleteMany({ where: { roomId } });
-        await prisma.room.delete({ where: { id: roomId } });
+        // Remove APENAS este usuário da sala (não apaga para o outro)
+        await prisma.room.update({
+          where: { id: roomId },
+          data: {
+            users: { disconnect: { id: authUser.id } }
+          }
+        });
 
-        io.to(roomId).emit("room_deleted", roomId);
+        // Notifica apenas o socket deste usuário que a sala foi removida da lista dele
+        socket.emit("room_deleted", roomId);
+
+        // Se não sobrou ninguém na sala, aí sim apaga tudo
+        const remainingUsers = room.users.filter((u: any) => u.id !== authUser.id);
+        if (remainingUsers.length === 0) {
+          await prisma.message.deleteMany({ where: { roomId } });
+          await prisma.room.delete({ where: { id: roomId } });
+        }
       } catch (error) {
         console.error("Erro ao deletar sala:", error);
+      }
+    });
+
+    socket.on("toggle_mute_room", async (roomId: string) => {
+      try {
+        const user = await prisma.user.findUnique({ where: { id: authUser.id } });
+        if (!user) return;
+        
+        const isMuted = user.mutedRooms.includes(roomId);
+        const updatedMutedRooms = isMuted
+          ? user.mutedRooms.filter(id => id !== roomId)
+          : [...user.mutedRooms, roomId];
+
+        await prisma.user.update({
+          where: { id: authUser.id },
+          data: { mutedRooms: updatedMutedRooms }
+        });
+
+        socket.emit("mute_room_toggled", { roomId, isMuted: !isMuted });
+      } catch (error) {
+        console.error("Erro ao mutar sala:", error);
       }
     });
 

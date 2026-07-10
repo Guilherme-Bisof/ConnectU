@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { FiX, FiBookOpen } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 
@@ -25,9 +26,20 @@ export function StudentProfileModal({
   onChangeStatus,
 }: StudentProfileModalProps) {
   const router = useRouter();
+  const [isStartingChat, setIsStartingChat] = useState(false);
 
   if (!isOpen || !studentData) return null;
   const { user: student, jobId, status } = studentData;
+
+  const handleStartChat = async () => {
+    if (isStartingChat) return;
+    setIsStartingChat(true);
+    try {
+      await onStartChat?.(jobId, student.id);
+    } finally {
+      setIsStartingChat(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
@@ -90,10 +102,15 @@ export function StudentProfileModal({
         <div className="mt-6 pt-4 border-t border-zinc-800 space-y-3">
           <div className="grid grid-cols-2 gap-2">
             <button
-              onClick={() => onStartChat?.(jobId, student.id)}
-              className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              onClick={handleStartChat}
+              disabled={isStartingChat}
+              className={`text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isStartingChat 
+                  ? "bg-blue-800 cursor-not-allowed opacity-60" 
+                  : "bg-blue-600 hover:bg-blue-500"
+              }`}
             >
-              Iniciar Chat
+              {isStartingChat ? "Abrindo..." : "Iniciar Chat"}
             </button>
             <button
               onClick={() => router.push(`/dashboard/perfil/${student.id}`)}
