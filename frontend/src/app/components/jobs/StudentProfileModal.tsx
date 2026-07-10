@@ -9,20 +9,25 @@ interface ApplicantUser {
   skills?: string[];
 }
 
-interface StudentProfileModalsProps {
+interface StudentProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  student: ApplicantUser | null;
+  studentData: { user: ApplicantUser; jobId: string; status: string } | null;
+  onStartChat?: (jobId: string, userId: string) => void;
+  onChangeStatus?: (jobId: string, userId: string, newStatus: string) => void;
 }
 
 export function StudentProfileModal({
   isOpen,
   onClose,
-  student,
-}: StudentProfileModalsProps) {
+  studentData,
+  onStartChat,
+  onChangeStatus,
+}: StudentProfileModalProps) {
   const router = useRouter();
 
-  if (!isOpen || !student) return null;
+  if (!isOpen || !studentData) return null;
+  const { user: student, jobId, status } = studentData;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
@@ -82,13 +87,40 @@ export function StudentProfileModal({
             </div>
           </div>
         </div>
-        <div className="mt-6 pt-4 border-t border-zinc-800">
-          <button
-            onClick={() => router.push(`/dashboard/perfil/${student.id}`)}
-            className="w-full bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
-          >
-            Ver Perfil Completo
-          </button>
+        <div className="mt-6 pt-4 border-t border-zinc-800 space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => onStartChat?.(jobId, student.id)}
+              className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              Iniciar Chat
+            </button>
+            <button
+              onClick={() => router.push(`/dashboard/perfil/${student.id}`)}
+              className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              Ver Perfil
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {status !== "INTERVIEWING" && (
+              <button
+                onClick={() => onChangeStatus?.(jobId, student.id, "INTERVIEWING")}
+                className="bg-zinc-800 hover:bg-zinc-700 text-blue-400 border border-zinc-700 hover:border-blue-500/50 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                Avançar (Entrevista)
+              </button>
+            )}
+            {status !== "REJECTED" && (
+              <button
+                onClick={() => onChangeStatus?.(jobId, student.id, "REJECTED")}
+                className="bg-zinc-800 hover:bg-zinc-700 text-red-400 border border-zinc-700 hover:border-red-500/50 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                Descartar
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

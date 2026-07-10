@@ -134,6 +134,31 @@ export class JobController {
     }
   }
 
+  async updateApplicantStatus(req: Request, res: Response) {
+    try {
+      const { jobId, userId } = req.params;
+      const { status } = req.body;
+
+      const application = await prisma.application.findFirst({
+        where: { jobId: String(jobId), userId: String(userId) }
+      });
+
+      if (!application) {
+        return res.status(404).json({ error: "Candidatura não encontrada." });
+      }
+
+      const updatedApplication = await prisma.application.update({
+        where: { id: application.id },
+        data: { status }
+      });
+
+      res.json(updatedApplication);
+    } catch (error) {
+      console.error("Erro ao atualizar status do candidato:", error);
+      res.status(500).json({ error: "Erro interno ao atualizar status." });
+    }
+  }
+
   async getByCompany(req: Request, res: Response) {
     try {
       const { companyId } = req.params;

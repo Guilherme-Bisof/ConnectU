@@ -1,3 +1,5 @@
+"use client";
+import { useState } from "react";
 import {
   FiUsers,
   FiChevronUp,
@@ -6,6 +8,8 @@ import {
   FiEdit2,
   FiX,
   FiTrash2,
+  FiCheckCircle,
+  FiAlertCircle,
 } from "react-icons/fi";
 
 export interface ApplicantUser {
@@ -19,6 +23,7 @@ export interface ApplicantUser {
 export interface Applicant {
   userId: string;
   user?: ApplicantUser;
+  status?: string;
 }
 
 export interface JobData {
@@ -40,7 +45,7 @@ interface JobCardProps {
   onToggleStatus: (jobId: string, currentStatus: boolean) => void;
   onEdit: (vaga: JobData) => void;
   onDelete: (jobId: string) => void;
-  onSelectStudent: (student: ApplicantUser) => void;
+  onSelectStudent: (studentData: { user: ApplicantUser; jobId: string; status: string }) => void;
   onRemoveApplicant: (
     jobId: string,
     userId: string,
@@ -58,6 +63,7 @@ export function JobCard({
   onSelectStudent,
   onRemoveApplicant,
 }: JobCardProps) {
+  const [activeTab, setActiveTab] = useState<"PENDING" | "INTERVIEWING" | "REJECTED">("PENDING");
   const totalCandidatos = vaga.applications?.length || 0;
 
   return (
@@ -169,90 +175,134 @@ export function JobCard({
         </div>
       </div>
 
-      {/* Lista de Alunos Expandida */}
-      {isExpanded && vaga.applications && vaga.applications.length > 0 && (
-        <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 ml-2 mr-2 -mt-1 animate-fadeIn space-y-3">
-          <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider px-2">
-            Alunos que aplicaram:
-          </p>
+      {/* CRM: Alunos Expandidos */}
+      {isExpanded && (
+        <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 ml-2 mr-2 -mt-1 animate-fadeIn space-y-4">
+          
+          {/* Abas do CRM */}
+          <div className="flex items-center gap-2 border-b border-zinc-800 pb-2">
+            <button
+              onClick={() => setActiveTab("PENDING")}
+              className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-md transition-colors ${
+                activeTab === "PENDING" ? "bg-zinc-800 text-white" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900"
+              }`}
+            >
+              Novos
+            </button>
+            <button
+              onClick={() => setActiveTab("INTERVIEWING")}
+              className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-md transition-colors ${
+                activeTab === "INTERVIEWING" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" : "text-zinc-500 hover:text-blue-300 hover:bg-zinc-900"
+              }`}
+            >
+              Em Conversa
+            </button>
+            <button
+              onClick={() => setActiveTab("REJECTED")}
+              className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-md transition-colors ${
+                activeTab === "REJECTED" ? "bg-red-500/10 text-red-400 border border-red-500/20" : "text-zinc-500 hover:text-red-300 hover:bg-zinc-900"
+              }`}
+            >
+              Descartados
+            </button>
+          </div>
+
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {vaga.applications.map((app, idx) => {
-              const aluno = app.user;
-              if (!aluno) return null;
+            {vaga.applications
+              ?.filter((app) => (app.status || "PENDING") === activeTab)
+              .map((app, idx) => {
+                const aluno = app.user;
+                if (!aluno) return null;
 
-              // CÁLCULO DE MATCH EM TEMPO REAL
-              const requiredCount = vaga.requiredSkills.length;
-              const matchCount =
-                aluno.skills?.filter((s) =>
-                  vaga.requiredSkills.some(
-                    (req) => req.toLowerCase() === s.toLowerCase(),
-                  ),
-                ).length || 0;
-              const matchPercentage =
-                requiredCount > 0
-                  ? Math.round((matchCount / requiredCount) * 100)
-                  : 0;
+                // CÁLCULO DE MATCH EM TEMPO REAL
+                const requiredCount = vaga.requiredSkills.length;
+                const matchCount =
+                  aluno.skills?.filter((s) =>
+                    vaga.requiredSkills.some(
+                      (req) => req.toLowerCase() === s.toLowerCase(),
+                    ),
+                  ).length || 0;
+                const matchPercentage =
+                  requiredCount > 0
+                    ? Math.round((matchCount / requiredCount) * 100)
+                    : 0;
 
-              return (
-                <div
-                  key={idx}
-                  onClick={() => onSelectStudent(aluno)}
-                  className="group relative bg-zinc-900 border border-zinc-800/60 p-4 rounded-lg flex flex-col justify-between cursor-pointer transition-all hover:bg-zinc-800/50 hover:border-blue-500/40"
-                >
-                  <div className="absolute top-3 right-3 text-xs font-black text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-purple-500">
-                    {matchPercentage}% Match
-                  </div>
+                const metSkills = vaga.requiredSkills.filter(req => aluno.skills?.some(s => s.toLowerCase() === req.toLowerCase()));
+                const missingSkills = vaga.requiredSkills.filter(req => !aluno.skills?.some(s => s.toLowerCase() === req.toLowerCase()));
 
-                  <div>
-                    <h4 className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors pr-16">
-                      {aluno.name}
-                    </h4>
-                    <p className="text-xs text-zinc-400 mt-0.5">
-                      {aluno.course || "Curso não informado"}
-                    </p>
-                  </div>
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => onSelectStudent({ user: aluno, jobId: vaga.id, status: app.status || "PENDING" })}
+                    className="group relative bg-zinc-900 border border-zinc-800/60 p-4 rounded-lg flex flex-col justify-between cursor-pointer transition-all hover:bg-zinc-800/50 hover:border-blue-500/40"
+                  >
+                    <div className="absolute top-3 right-3 text-xs font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
+                      {matchPercentage}% Match
+                    </div>
 
-                  {aluno.skills && aluno.skills.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1">
-                      {aluno.skills.slice(0, 5).map((s, i) => {
-                        const isRequired = vaga.requiredSkills.some(
-                          (reqSkill) =>
-                            reqSkill.toLowerCase() === s.toLowerCase(),
-                        );
-                        return (
-                          <span
-                            key={i}
-                            className={`text-[10px] px-1.5 py-0.5 rounded ${
-                              isRequired
-                                ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                                : "bg-zinc-800 text-zinc-400"
-                            }`}
-                          >
-                            {s}
-                          </span>
-                        );
-                      })}
-                      {aluno.skills.length > 5 && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-500">
-                          +{aluno.skills.length - 5}
-                        </span>
+                    <div>
+                      <h4 className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors pr-16">
+                        {aluno.name}
+                      </h4>
+                      <p className="text-xs text-zinc-400 mt-0.5 line-clamp-1">
+                        {aluno.course || "Curso não informado"}
+                      </p>
+                    </div>
+
+                    <div className="mt-3 flex flex-col gap-1.5">
+                      {metSkills.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {metSkills.map((req, i) => (
+                            <span
+                              key={`met-${i}`}
+                              className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20"
+                            >
+                              <FiCheckCircle size={10} /> {req}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {missingSkills.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {missingSkills.map((req, i) => (
+                            <span
+                              key={`miss-${i}`}
+                              className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20"
+                              title="Requisito faltante"
+                            >
+                              <FiAlertCircle size={10} /> {req}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {vaga.requiredSkills.length === 0 && aluno.skills && (
+                        <div className="flex flex-wrap gap-1">
+                           <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">
+                             {aluno.skills.length} skills no perfil
+                           </span>
+                        </div>
                       )}
                     </div>
-                  )}
 
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRemoveApplicant(vaga.id, aluno.id, aluno.name);
-                    }}
-                    className="absolute bottom-3 right-3 text-zinc-500 hover:text-red-400 bg-zinc-800/40 hover:bg-red-500/10 p-1.5 rounded-md transition-colors opacity-0 group-hover:opacity-100"
-                    title="Remover candidato"
-                  >
-                    <FiTrash2 size={14} />
-                  </button>
-                </div>
-              );
-            })}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemoveApplicant(vaga.id, aluno.id, aluno.name);
+                      }}
+                      className="absolute bottom-3 right-3 text-zinc-500 hover:text-red-400 bg-zinc-800/40 hover:bg-red-500/10 p-1.5 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+                      title="Remover candidato"
+                    >
+                      <FiTrash2 size={14} />
+                    </button>
+                  </div>
+                );
+              })}
+            
+            {vaga.applications?.filter((app) => (app.status || "PENDING") === activeTab).length === 0 && (
+              <div className="col-span-full p-4 text-center text-sm text-zinc-500 bg-zinc-900/50 rounded-lg border border-dashed border-zinc-800">
+                Nenhum candidato nesta etapa.
+              </div>
+            )}
           </div>
         </div>
       )}
