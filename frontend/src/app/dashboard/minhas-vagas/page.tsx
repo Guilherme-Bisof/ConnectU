@@ -276,7 +276,7 @@ export default function MinhasVagasPage() {
 
       if (res.ok) {
         const room = await res.json();
-        router.push(`/dashboard/chat?room=${room.id}`);
+        router.push(`/dashboard/chat/${room.id}`);
       } else {
         alert("Erro ao iniciar chat profissional.");
       }

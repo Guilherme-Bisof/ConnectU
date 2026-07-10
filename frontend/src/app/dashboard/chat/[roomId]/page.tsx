@@ -260,10 +260,10 @@ export default function ChatRoomPage() {
                 <div
                   key={room.id}
                   onClick={() => router.push(`/dashboard/chat/${room.id}`)}
-                  className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border transition-all ${
+                  className={`group flex items-center gap-3 p-3 rounded-xl cursor-pointer border transition-all ${
                     isCurrent
                       ? "bg-zinc-800 border-zinc-700 shadow-inner"
-                      : "border-transparent hover:bg-zinc-800/40"
+                      : "border-transparent hover:bg-zinc-800/40 hover:border-zinc-800"
                   }`}
                 >
                   <div className="w-10 h-10 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center font-bold text-blue-500 shrink-0 overflow-hidden">
@@ -281,11 +281,27 @@ export default function ChatRoomPage() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <h4 className="font-semibold text-sm text-zinc-200 truncate">
+                    <div className="flex items-center justify-between gap-2 mb-0.5">
+                      <h4 className={`font-semibold text-sm truncate transition-colors ${isCurrent ? "text-white" : "text-zinc-200 group-hover:text-white"}`}>
                         {other.name}
                       </h4>
+                      <span
+                        className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0 font-bold ${
+                          other.role === "RECRUITER"
+                            ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                            : "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                        }`}
+                      >
+                        {other.role === "RECRUITER"
+                          ? "Recrutador"
+                          : "Aluno"}
+                      </span>
                     </div>
+                    <p className="text-xs text-zinc-400 truncate">
+                      {room.messages && room.messages[0]
+                        ? room.messages[0].content
+                        : "Nenhuma mensagem ainda..."}
+                    </p>
                   </div>
                 </div>
               );
