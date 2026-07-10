@@ -146,7 +146,8 @@ model Room {
 
 model Message {
   id        String   @id @default(uuid())
-  content   String
+  content   String?  // Alterado para opcional caso o usuário queira mandar apenas a imagem
+  imageUrl  String?
   createdAt DateTime @default(now())
 
   roomId String

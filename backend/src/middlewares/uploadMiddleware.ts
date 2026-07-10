@@ -52,8 +52,18 @@ const postStorage = new CloudinaryStorage ({
   }
 })
 
+const chatStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => {
+    return {
+      folder: 'connectu_chat',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+    } as any
+  }
+})
 
 export const uploadBanner = multer({ storage: bannerStorage});
 export const uploadResume = multer({ storage: resumeStorage});
 export const uploadAvatar = multer({ storage: storage });
 export const uploadPost = multer ({ storage: postStorage});
+export const uploadChatImage = multer({ storage: chatStorage });

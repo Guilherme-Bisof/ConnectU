@@ -158,4 +158,20 @@ export class ChatController {
       return res.status(500).json({ error: "Erro ao buscar histórico." });
     }
   }
+
+  async uploadImage(req: Request, res: Response) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "Nenhuma imagem foi enviada." });
+      }
+      
+      const file = req.file as any;
+      const imageUrl = file.path; 
+
+      return res.json({ url: imageUrl });
+    } catch (error) {
+      console.error("Erro ao fazer upload da imagem do chat:", error);
+      return res.status(500).json({ error: "Erro interno no upload de imagem." });
+    }
+  }
 }

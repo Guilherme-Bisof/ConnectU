@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { ChatController } from "../controllers/ChatController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { uploadChatImage } from "../middlewares/uploadMiddleware.js";
 
 const chatRoutes = Router();
 const chatController = new ChatController();
@@ -16,6 +17,9 @@ chatRoutes.get("/conversations/:roomId/messages", authMiddleware, (req, res) =>
 );
 chatRoutes.post("/rooms/professional", authMiddleware, (req, res) =>
   chatController.createProfessionalRoom(req, res),
+);
+chatRoutes.post("/conversations/upload-image", authMiddleware, uploadChatImage.single('file'), (req, res) =>
+  chatController.uploadImage(req, res),
 );
 
 export { chatRoutes }

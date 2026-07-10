@@ -66,11 +66,11 @@ export const registerSocketEvents = (io: Server) => {
 
     socket.on(
       "send_message",
-      async (data: { roomId: string; content: string }) => {
-        const { roomId, content } = data;
+      async (data: { roomId: string; content?: string; imageUrl?: string }) => {
+        const { roomId, content, imageUrl } = data;
         const senderId = authUser.id; 
 
-        if (!content || content.trim() === "") return;
+        if ((!content || content.trim() === "") && !imageUrl) return;
 
         try {
          
@@ -83,9 +83,10 @@ export const registerSocketEvents = (io: Server) => {
 
           if (!belongsToRoom) return;
 
-          const savedMessage = await prisma.message.create({
+          const savedMessage = await (prisma.message as any).create({
             data: {
-              content,
+              content: content || null,
+              imageUrl: imageUrl || null,
               roomId,
               senderId,
             },
