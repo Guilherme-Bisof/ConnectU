@@ -90,6 +90,7 @@ export default function ChatRoomPage() {
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeChatUser, setActiveChatUser] = useState<Participant | null>(
@@ -218,6 +219,14 @@ export default function ChatRoomPage() {
     };
   }, [roomId]);
 
+  useEffect(() => {
+    // Carrega o estado de mute atual
+    if (typeof window !== "undefined" && roomId) {
+      const mutedRooms = JSON.parse(localStorage.getItem("connectu_muted_rooms") || "[]");
+      setIsMuted(mutedRooms.includes(roomId));
+    }
+  }, [roomId]);
+
   // Buscar histórico de mensagens da sala ativa
   useEffect(() => {
     async function fetchMessages() {
@@ -336,7 +345,20 @@ export default function ChatRoomPage() {
   };
 
   const handleMute = () => {
-    alert("Notificações silenciadas para esta conversa!");
+    const mutedRooms = JSON.parse(localStorage.getItem("connectu_muted_rooms") || "[]");
+    
+    if (isMuted) {
+      // Desilenciar
+      const updatedRooms = mutedRooms.filter((id: string) => id !== roomId);
+      localStorage.setItem("connectu_muted_rooms", JSON.stringify(updatedRooms));
+      setIsMuted(false);
+    } else {
+      // Silenciar
+      mutedRooms.push(roomId);
+      localStorage.setItem("connectu_muted_rooms", JSON.stringify(mutedRooms));
+      setIsMuted(true);
+    }
+    
     setIsMenuOpen(false);
   };
 
@@ -544,7 +566,7 @@ export default function ChatRoomPage() {
                   onClick={handleMute}
                   className="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:text-white hover:bg-zinc-700 rounded-lg transition-colors"
                 >
-                  Silenciar Notificações
+                  {isMuted ? "Desilenciar Notificações" : "Silenciar Notificações"}
                 </button>
                 <div className="w-full h-px bg-zinc-700 my-1"></div>
                 <button 

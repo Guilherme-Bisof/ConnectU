@@ -109,6 +109,33 @@ export const registerSocketEvents = (io: Server) => {
           });
 
           io.to(roomId).emit("receive_message", savedMessage);
+
+          // Criar notificação para os outros membros da sala
+          const room = await prisma.room.findUnique({
+            where: { id: roomId },
+            include: { users: true }
+          });
+          
+          if (room) {
+            const otherUsers = room.users.filter((u: any) => u.id !== senderId);
+            for (const user of otherUsers) {
+              const notification = await prisma.notification.create({
+                data: {
+                  userId: user.id,
+                  senderId: senderId,
+                  type: "MESSAGE",
+                  title: `Nova mensagem de ${authUser.name}`,
+                  content: content ? content.substring(0, 50) + (content.length > 50 ? "..." : "") : "Enviou uma imagem",
+                }
+              });
+
+              // Emite o evento de notificação se o usuário estiver online
+              const receiverSocketId = onlineUsers.get(user.id);
+              if (receiverSocketId) {
+                io.to(receiverSocketId).emit("notification:received", notification);
+              }
+            }
+          }
         } catch (error) {
           console.error("Erro ao salvar e transmitir mensagem:", error);
         }
