@@ -28,12 +28,14 @@ interface StudentJobDetailPanelProps {
   job: JobData | null;
   matchResult: MatchResult | null;
   onOpenDetails?: () => void;
+  onOpenCourses?: () => void;
 }
 
 export function StudentJobDetailPanel({
   job,
   matchResult,
   onOpenDetails,
+  onOpenCourses
 }: StudentJobDetailPanelProps) {
   const [animatedScore, setAnimatedScore] = useState(0);
 
@@ -235,7 +237,9 @@ export function StudentJobDetailPanel({
                 Adicionar experiência com as competências ausentes pode aumentar
                 suas chances significativamente.
               </p>
-              <button className="mt-3 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-zinc-700">
+              <button 
+              onClick={onOpenCourses}
+              className="mt-3 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-zinc-700">
                 Ver sugestões de cursos
               </button>
             </div>

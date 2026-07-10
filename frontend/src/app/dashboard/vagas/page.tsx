@@ -7,6 +7,7 @@ import { StudentJobCard } from "@/app/components/jobs/StudentJobCard";
 import { StudentJobDetailPanel } from "@/app/components/jobs/StudentJobDetailPanel";
 import { calculateMatch } from "@/utils/matchAlgorithm";
 import { StudentFullJobModal } from "@/app/components/jobs/StudentFullJobModal";
+import { CourseSuggestionsModal } from "@/app/components/jobs/CourseSuggestionsModal";
 
 interface UserData {
   id: string;
@@ -52,6 +53,7 @@ export default function VagasPage() {
 
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCoursesModalOpen, setIsCoursesModalOpen] = useState(false);
 
   const isProfileIncomplete =
     user?.role === "STUDENT" &&
@@ -247,6 +249,7 @@ export default function VagasPage() {
             job={selectedData?.enrichedData || null}
             matchResult={selectedData?.matchResult || null}
             onOpenDetails={() => setIsModalOpen(true)}
+            onOpenCourses={() => setIsCoursesModalOpen(true)}
           />
         </div>
       </div>
@@ -263,9 +266,21 @@ export default function VagasPage() {
           }}
           hasApplied={
             selectedData.enrichedData.applications?.some(
-              (app: { userId: string}) => app.userId === user?.id,
+              (app: { userId: string }) => app.userId === user?.id,
             ) || appliedJobIds.includes(selectedData.originalId)
           }
+        />
+      )}
+
+      {/* Sugestões de Cursos */}
+      {selectedData && (
+        <CourseSuggestionsModal
+          isOpen={isCoursesModalOpen}
+          onClose={() => setIsCoursesModalOpen(false)}
+          missingSkills={[
+            ...selectedData.matchResult.missingRequired,
+            ...selectedData.matchResult.missingDesirable,
+          ]}
         />
       )}
     </div>
