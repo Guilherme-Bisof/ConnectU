@@ -5,6 +5,9 @@ import { JWT_SECRET } from "../middlewares/authMiddleware.js";
 
 export let ioInstance: Server;
 
+// userId -> count of active sockets
+const onlineUsers = new Map<string, number>();
+
 export const registerSocketEvents = (io: Server) => {
 
   ioInstance = io;
@@ -41,7 +44,20 @@ export const registerSocketEvents = (io: Server) => {
       `Usuário autenticado conectado ao Socket: ${authUser.name} (${socket.id})`,
     );
 
+    const currentCount = onlineUsers.get(authUser.id) || 0;
+    if (currentCount === 0) {
+      // Notifica todos que este usuário ficou online
+      io.emit("user_status_change", { userId: authUser.id, status: "online" });
+    }
+    onlineUsers.set(authUser.id, currentCount + 1);
+
     socket.join(authUser.id);
+    
+    // Quando entra, pede a lista de quem já tá online
+    socket.on("request_online_users", () => {
+      const usersArray = Array.from(onlineUsers.keys());
+      socket.emit("online_users_list", usersArray);
+    });
     
     socket.on("join_room", async (roomId: string) => {
       const hasAccess = await prisma.room.findFirst({
@@ -83,7 +99,7 @@ export const registerSocketEvents = (io: Server) => {
 
           if (!belongsToRoom) return;
 
-          const savedMessage = await (prisma.message as any).create({
+          const savedMessage = await prisma.message.create({
             data: {
               content: content || null,
               imageUrl: imageUrl || null,
@@ -99,8 +115,43 @@ export const registerSocketEvents = (io: Server) => {
       },
     );
 
+    socket.on("edit_message", async (data: { messageId: string, newContent: string, roomId: string }) => {
+      try {
+        const msg = await prisma.message.findUnique({ where: { id: data.messageId } });
+        if (!msg || msg.senderId !== authUser.id) return;
+        
+        const updated = await prisma.message.update({
+          where: { id: data.messageId },
+          data: { content: data.newContent, isEdited: true }
+        });
+        
+        io.to(data.roomId).emit("message_edited", updated);
+      } catch (error) {
+        console.error("Erro ao editar mensagem:", error);
+      }
+    });
+
+    socket.on("delete_message", async (data: { messageId: string, roomId: string }) => {
+      try {
+        const msg = await prisma.message.findUnique({ where: { id: data.messageId } });
+        if (!msg || msg.senderId !== authUser.id) return;
+        
+        await prisma.message.delete({ where: { id: data.messageId } });
+        io.to(data.roomId).emit("message_deleted", { messageId: data.messageId, roomId: data.roomId });
+      } catch (error) {
+        console.error("Erro ao deletar mensagem:", error);
+      }
+    });
+
     socket.on("disconnect", () => {
       console.log(`Usuário desconectado do Socket: ${authUser.name}`);
+      const currentCount = onlineUsers.get(authUser.id) || 0;
+      if (currentCount <= 1) {
+        onlineUsers.delete(authUser.id);
+        io.emit("user_status_change", { userId: authUser.id, status: "offline" });
+      } else {
+        onlineUsers.set(authUser.id, currentCount - 1);
+      }
     });
   });
 };

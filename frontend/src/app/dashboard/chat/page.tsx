@@ -4,6 +4,19 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { FiMessageSquare, FiSearch } from "react-icons/fi";
+import { io } from "socket.io-client";
+
+const token =
+  typeof window !== "undefined" ? localStorage.getItem("connectu_token") : "";
+
+const socket = io("https://connectu-gd1z.onrender.com", {
+  auth: {
+    token: token,
+  },
+  autoConnect: true,
+  transports: ["websocket"],
+  withCredentials: true,
+});
 
 interface Participant {
   id: string;
@@ -32,6 +45,31 @@ export default function ChatPage() {
   >("TODOS");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+
+  useEffect(() => {
+    socket.emit("request_online_users");
+
+    socket.on("online_users_list", (usersArray: string[]) => {
+      setOnlineUsers(usersArray);
+    });
+
+    socket.on("user_status_change", (data: { userId: string; status: "online" | "offline" }) => {
+      setOnlineUsers((prev) => {
+        if (data.status === "online") {
+          if (!prev.includes(data.userId)) return [...prev, data.userId];
+          return prev;
+        } else {
+          return prev.filter((id) => id !== data.userId);
+        }
+      });
+    });
+
+    return () => {
+      socket.off("online_users_list");
+      socket.off("user_status_change");
+    };
+  }, []);
 
   // 1. Buscar todas as salas do usuário logado
   useEffect(() => {
@@ -166,8 +204,12 @@ export default function ChatPage() {
                     ) : (
                       otherUser.name.charAt(0)
                     )}
-                    {/* Indicador de Online Fake para Premium Feel */}
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-zinc-950 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
+                    {/* Indicador de Online */}
+                    <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-zinc-950 transition-colors ${
+                      onlineUsers.includes(otherUser.id)
+                        ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"
+                        : "bg-zinc-600"
+                    }`}></div>
                   </div>
 
                   {/* Informações de Texto */}

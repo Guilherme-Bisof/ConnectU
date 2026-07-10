@@ -14,7 +14,10 @@ import {
   FiVideo,
   FiSmile,
   FiX,
-  FiImage
+  FiImage,
+  FiMoreHorizontal,
+  FiEdit2,
+  FiTrash2
 } from "react-icons/fi";
 
 const token =
@@ -40,6 +43,7 @@ interface Message {
   id: string;
   content: string | null;
   imageUrl?: string | null;
+  isEdited?: boolean;
   senderId: string;
   createdAt: string;
 }
@@ -83,6 +87,8 @@ export default function ChatRoomPage() {
   const [newMessage, setNewMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeChatUser, setActiveChatUser] = useState<Participant | null>(
@@ -164,13 +170,42 @@ export default function ChatRoomPage() {
     if (roomId) {
       socket.emit("join_room", roomId);
     }
+    
+    socket.emit("request_online_users");
+
+    socket.on("online_users_list", (usersArray: string[]) => {
+      setOnlineUsers(usersArray);
+    });
+
+    socket.on("user_status_change", (data: { userId: string; status: "online" | "offline" }) => {
+      setOnlineUsers((prev) => {
+        if (data.status === "online") {
+          if (!prev.includes(data.userId)) return [...prev, data.userId];
+          return prev;
+        } else {
+          return prev.filter((id) => id !== data.userId);
+        }
+      });
+    });
 
     socket.on("receive_message", (message: Message) => {
       setMessages((prev) => [...prev, message]);
     });
 
+    socket.on("message_edited", (updatedMsg: Message) => {
+      setMessages((prev) => prev.map((m) => (m.id === updatedMsg.id ? updatedMsg : m)));
+    });
+
+    socket.on("message_deleted", (data: { messageId: string }) => {
+      setMessages((prev) => prev.filter((m) => m.id !== data.messageId));
+    });
+
     return () => {
+      socket.off("online_users_list");
+      socket.off("user_status_change");
       socket.off("receive_message");
+      socket.off("message_edited");
+      socket.off("message_deleted");
     };
   }, [roomId]);
 
@@ -204,6 +239,17 @@ export default function ChatRoomPage() {
 
   const sendMessage = async () => {
     if ((!newMessage.trim() && !selectedImage) || !user || !roomId || isUploading) return;
+
+    if (editingMessageId) {
+      socket.emit("edit_message", { 
+        messageId: editingMessageId, 
+        newContent: newMessage.trim(), 
+        roomId 
+      });
+      setNewMessage("");
+      setEditingMessageId(null);
+      return;
+    }
 
     let imageUrl = null;
 
@@ -253,6 +299,24 @@ export default function ChatRoomPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedImage(e.target.files[0]);
+    }
+  };
+
+  const startEditing = (msg: Message) => {
+    setEditingMessageId(msg.id);
+    setNewMessage(msg.content || "");
+    setSelectedImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const cancelEditing = () => {
+    setEditingMessageId(null);
+    setNewMessage("");
+  };
+
+  const deleteMessage = (msgId: string) => {
+    if (confirm("Tem certeza que deseja apagar esta mensagem para todos?")) {
+      socket.emit("delete_message", { messageId: msgId, roomId });
     }
   };
 
@@ -404,9 +468,15 @@ export default function ChatRoomPage() {
                 {activeChatUser?.name || "Carregando..."}
               </h2>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                <span className={`w-2 h-2 rounded-full ${
+                  activeChatUser && onlineUsers.includes(activeChatUser.id)
+                    ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" 
+                    : "bg-zinc-600"
+                }`}></span>
                 <p className="text-[11px] text-zinc-400 font-medium">
-                  {activeChatUser?.role === "RECRUITER" ? "Recrutador" : "Candidato"} • Online
+                  {activeChatUser?.role === "RECRUITER" ? "Recrutador" : "Candidato"} • {
+                    activeChatUser && onlineUsers.includes(activeChatUser.id) ? "Online" : "Offline"
+                  }
                 </p>
               </div>
             </div>
@@ -446,13 +516,24 @@ export default function ChatRoomPage() {
                 className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}
               >
                 <div
-                  className={`relative max-w-[85%] md:max-w-[70%] px-4 py-3 text-sm shadow-md transition-all flex flex-col ${
+                  className={`relative max-w-[85%] md:max-w-[70%] px-4 py-3 text-sm shadow-md transition-all flex flex-col group/msg ${
                     isMine
                       ? "bg-blue-600 text-white rounded-2xl rounded-br-sm shadow-blue-600/20"
                       : "bg-zinc-900/90 border border-white/5 text-zinc-200 rounded-2xl rounded-bl-sm backdrop-blur-md"
                   } ${!isLastMessageFromSender && isMine ? "rounded-br-2xl mb-1" : ""} 
                     ${!isLastMessageFromSender && !isMine ? "rounded-bl-2xl mb-1" : ""}`}
                 >
+                  {/* Menu flutuante de ações da mensagem (Apenas se for o remetente) */}
+                  {isMine && (
+                    <div className="absolute -left-9 top-1/2 -translate-y-1/2 hidden group-hover/msg:flex flex-col gap-1 bg-zinc-800/90 backdrop-blur-sm rounded-lg p-1 shadow-xl border border-zinc-700 z-10">
+                      <button onClick={() => startEditing(msg)} className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-700 rounded-md transition-colors" title="Editar">
+                        <FiEdit2 size={13} />
+                      </button>
+                      <button onClick={() => deleteMessage(msg.id)} className="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-zinc-700 rounded-md transition-colors" title="Apagar">
+                        <FiTrash2 size={13} />
+                      </button>
+                    </div>
+                  )}
                   {msg.imageUrl && (
                     <div className="mb-2 w-full max-w-[300px] rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition-opacity">
                       <Image 
@@ -472,6 +553,7 @@ export default function ChatRoomPage() {
                   
                   {/* Tempo da mensagem dentro do balão */}
                   <div className={`text-[10px] flex items-center gap-1 mt-1 font-medium ${isMine ? "text-blue-200 justify-end" : "text-zinc-500 justify-start"}`}>
+                    {msg.isEdited && <span className="italic opacity-80 mr-1">(editado)</span>}
                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
@@ -511,8 +593,20 @@ export default function ChatRoomPage() {
         )}
 
         {/* Input de mensagem (Floating Bar Premium) */}
-        <div className="p-4 bg-transparent relative z-20">
-          <div className="max-w-4xl mx-auto flex items-end gap-2 bg-zinc-900/80 backdrop-blur-xl border border-white/10 p-2 rounded-2xl shadow-2xl">
+        <div className="p-4 bg-transparent relative z-20 flex flex-col gap-2">
+          {editingMessageId && (
+            <div className="max-w-4xl mx-auto w-full flex items-center justify-between bg-zinc-900/90 border border-blue-500/30 px-4 py-2 rounded-xl backdrop-blur-md">
+              <div className="flex items-center gap-2 text-sm text-blue-400 font-medium">
+                <FiEdit2 size={14} />
+                <span>Editando mensagem...</span>
+              </div>
+              <button onClick={cancelEditing} className="text-zinc-400 hover:text-white p-1 rounded-md transition-colors">
+                <FiX size={16} />
+              </button>
+            </div>
+          )}
+
+          <div className="max-w-4xl mx-auto w-full flex items-end gap-2 bg-zinc-900/80 backdrop-blur-xl border border-white/10 p-2 rounded-2xl shadow-2xl">
             
             <input 
               type="file" 
