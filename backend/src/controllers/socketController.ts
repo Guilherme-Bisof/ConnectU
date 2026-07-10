@@ -143,6 +143,24 @@ export const registerSocketEvents = (io: Server) => {
       }
     });
 
+    socket.on("delete_room", async (roomId: string) => {
+      try {
+        // Verifica se usuário pertence a sala
+        const room = await prisma.room.findFirst({
+          where: { id: roomId, users: { some: { id: authUser.id } } }
+        });
+        if (!room) return;
+
+        // Apaga mensagens e a sala
+        await prisma.message.deleteMany({ where: { roomId } });
+        await prisma.room.delete({ where: { id: roomId } });
+
+        io.to(roomId).emit("room_deleted", roomId);
+      } catch (error) {
+        console.error("Erro ao deletar sala:", error);
+      }
+    });
+
     socket.on("disconnect", () => {
       console.log(`Usuário desconectado do Socket: ${authUser.name}`);
       const currentCount = onlineUsers.get(authUser.id) || 0;

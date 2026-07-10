@@ -89,6 +89,7 @@ export default function ChatRoomPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeChatUser, setActiveChatUser] = useState<Participant | null>(
@@ -200,12 +201,20 @@ export default function ChatRoomPage() {
       setMessages((prev) => prev.filter((m) => m.id !== data.messageId));
     });
 
+    socket.on("room_deleted", (deletedRoomId: string) => {
+      if (deletedRoomId === roomId) {
+        alert("Esta conversa foi apagada.");
+        router.push("/dashboard/chat");
+      }
+    });
+
     return () => {
       socket.off("online_users_list");
       socket.off("user_status_change");
       socket.off("receive_message");
       socket.off("message_edited");
       socket.off("message_deleted");
+      socket.off("room_deleted");
     };
   }, [roomId]);
 
@@ -318,6 +327,17 @@ export default function ChatRoomPage() {
     if (confirm("Tem certeza que deseja apagar esta mensagem para todos?")) {
       socket.emit("delete_message", { messageId: msgId, roomId });
     }
+  };
+
+  const handleDeleteRoom = () => {
+    if (confirm("ATENÇÃO: Deseja apagar esta conversa permanentemente para ambos os usuários?")) {
+      socket.emit("delete_room", roomId);
+    }
+  };
+
+  const handleMute = () => {
+    alert("Notificações silenciadas para esta conversa!");
+    setIsMenuOpen(false);
   };
 
   return (
@@ -482,18 +502,59 @@ export default function ChatRoomPage() {
             </div>
           </div>
           
-          {/* Ações Premium (Mockadas para visual) */}
+          {/* Ações Premium (Mockadas para visual, 3 pontinhos para o futuro) */}
           <div className="flex items-center gap-2">
-            <button className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors">
+            <button className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors" title="Chamada de Áudio (Em breve)">
               <FiPhone size={18} />
             </button>
-            <button className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors">
+            <button className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors" title="Chamada de Vídeo (Em breve)">
               <FiVideo size={18} />
             </button>
             <div className="w-px h-6 bg-zinc-800 mx-1"></div>
-            <button className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors">
-              <FiMoreVertical size={18} />
-            </button>
+            {/* 3 pontinhos (Reservado para funcionalidades futuras) */}
+            <div className="relative">
+              <button 
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                  isMenuOpen ? "text-white bg-zinc-800" : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                }`}
+              >
+                <FiMoreVertical size={18} />
+              </button>
+              
+              {/* Overlay invisível para fechar ao clicar fora */}
+              {isMenuOpen && (
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setIsMenuOpen(false)}
+                />
+              )}
+
+              {/* Dropdown mockado que aparece no click */}
+              <div className={`absolute right-0 top-full mt-2 flex-col bg-zinc-800/90 backdrop-blur-md rounded-xl p-2 shadow-2xl border border-zinc-700 w-48 z-50 ${
+                isMenuOpen ? "flex" : "hidden"
+              }`}>
+                <button 
+                  onClick={() => router.push(activeChatUser ? `/dashboard/perfil/${activeChatUser.id}` : "#")}
+                  className="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:text-white hover:bg-zinc-700 rounded-lg transition-colors"
+                >
+                  Ver Perfil
+                </button>
+                <button 
+                  onClick={handleMute}
+                  className="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:text-white hover:bg-zinc-700 rounded-lg transition-colors"
+                >
+                  Silenciar Notificações
+                </button>
+                <div className="w-full h-px bg-zinc-700 my-1"></div>
+                <button 
+                  onClick={handleDeleteRoom}
+                  className="w-full text-left px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition-colors"
+                >
+                  Apagar Conversa
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
