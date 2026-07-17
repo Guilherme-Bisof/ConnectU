@@ -1,0 +1,22 @@
+# Variáveis de Ambiente e Segredos (NUNCA SUBIR)
+.env
+.env.local
+.env.development
+.env.production
+*.pem
+*.key
+
+# Dependências (Deixa o repositório leve)
+node_modules/
+/dist
+/build
+/.next
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Sistema Operacional
+.DS_Store
+Thumbs.db

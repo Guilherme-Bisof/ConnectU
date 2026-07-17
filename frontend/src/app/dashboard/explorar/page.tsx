@@ -17,16 +17,18 @@ interface SearchedUser {
   companyId?: string | null;
   avatarUrl?: string | null;
   course?: string | null;
+  institution?: string | null;
   skills: string[];
-  isPionner?: boolean;
+  isPioneer?: boolean;
 }
 
-export default function SearchPage() {
+export default function ExplorarPage() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchedUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
+  // Função que dispara a busca para o Backend
   async function handleSearch(searchTerm: string) {
     if (!searchTerm.trim()) {
       setResults([]);
@@ -54,7 +56,7 @@ export default function SearchPage() {
         console.error("Erro na busca");
       }
     } catch (error) {
-      console.error("Erro na conexão ao buscar:", error);
+      console.error("Erro de conexão ao buscar:", error);
     } finally {
       setLoading(false);
     }
@@ -70,11 +72,11 @@ export default function SearchPage() {
 
   return (
     <div className="mx-auto max-w-4xl animate-fadeIn">
-      {/* Cabecalho */}
+      {/* Cabeçalho */}
       <div className="mb-8">
-        <div className="text-2xl font-bold text-white">Explorar Rede</div>
+        <h2 className="text-2xl font-bold text-white">Explorar Rede</h2>
         <p className="text-zinc-400">
-          Busque por talentos, recrutadores, cursos ou palavras-chaves de
+          Busque por talentos, recrutadores, cursos ou palavras-chave de
           competências.
         </p>
       </div>
@@ -91,13 +93,11 @@ export default function SearchPage() {
         />
       </div>
 
-      {/* Resultados ou Estados */}
+      {/* Resultados ou Estados da Tela */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
           <div className="h-7 w-7 animate-spin rounded-full border-2 border-zinc-700 border-t-blue-500 mb-3" />
-          <span className="text-sm font-medium text-zinc-500">
-            Varrendo a rede...
-          </span>
+          Varrendo a rede...
         </div>
       ) : results.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2">
@@ -107,7 +107,7 @@ export default function SearchPage() {
               className="group relative flex flex-col justify-between rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-5 transition-all hover:border-zinc-700 hover:bg-zinc-900 shadow-sm"
             >
               <div>
-                {/*Topo do card: avatar e nome */}
+                {/* Topo do Card: Avatar + Nome */}
                 <div className="flex items-center gap-3.5 mb-4">
                   <div className="h-12 w-12 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-lg font-bold text-blue-500 overflow-hidden shadow-inner">
                     {profile.avatarUrl ? (
@@ -126,13 +126,13 @@ export default function SearchPage() {
                       <h3 className="font-bold text-zinc-100 truncate group-hover:text-blue-400 transition-colors">
                         {profile.name}
                       </h3>
-                      {profile.isPionner && (
+                      {profile.isPioneer && (
                         <div
-                          className=" shrink-0 inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-linear-to-r from-amber-900/40 via-yellow-900/20 to-amber-900/40 px-2 py-0.5"
-                          title="Membro Fundados"
+                          className="shrink-0 inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-linear-to-r from-amber-900/40 via-yellow-900/20 to-amber-900/40 px-2 py-0.5"
+                          title="Membro Fundador"
                         >
                           <FiAward className="text-amber-400" size={10} />
-                          <span className="text-[9px] font-black uppercase text-transparent bg-clip-text bg-linear-to-r from-amber-200 to bg-yellow-500">
+                          <span className="text-[9px] font-black uppercase text-transparent bg-clip-text bg-linear-to-r from-amber-200 to-yellow-500">
                             Pioneiro
                           </span>
                         </div>
@@ -155,7 +155,14 @@ export default function SearchPage() {
                   </div>
                 </div>
 
-                {/* Subtitulo da instituição (apenas estudantes) */}
+                {/* Subtítulo da Instituição para estudantes */}
+                {profile.role === "STUDENT" && profile.institution && (
+                  <p className="text-xs text-zinc-500 px-1 mb-3 truncate">
+                    {profile.institution}
+                  </p>
+                )}
+
+                {/* Tags de Competências */}
                 {profile.skills && profile.skills.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mb-4">
                     {profile.skills.slice(0, 4).map((skill, i) => (
@@ -175,7 +182,7 @@ export default function SearchPage() {
                 )}
               </div>
 
-              {/*Botão de ação */}
+              {/* Botão de Ação do Card */}
               <div className="mt-2 border-t border-zinc-800/50 pt-3 flex items-center justify-between">
                 <Link
                   href={`/dashboard/perfil/${profile.id}`}
@@ -193,9 +200,8 @@ export default function SearchPage() {
             Nenhum perfil ou competência corresponde à sua busca.
           </p>
           <p className="text-xs text-zinc-600 mt-1">
-            {
-              'Tente pesquisar termos como "React", "Node", "Design" ou outros nomes.'
-            }
+            Tente pesquisar termos como "React", "Node", "Design" ou outros
+            nomes.
           </p>
         </div>
       ) : (
