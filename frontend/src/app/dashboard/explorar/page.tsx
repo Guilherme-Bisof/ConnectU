@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   FiSearch,
   FiAward,
   FiBookOpen,
   FiBriefcase,
-  FiMessageSquare,
 } from "react-icons/fi";
 
 interface SearchedUser {
@@ -111,9 +111,12 @@ export default function ExplorarPage() {
                 <div className="flex items-center gap-3.5 mb-4">
                   <div className="h-12 w-12 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-lg font-bold text-blue-500 overflow-hidden shadow-inner">
                     {profile.avatarUrl ? (
-                      <img
+                      <Image
                         src={profile.avatarUrl}
                         alt={profile.name}
+                        width={48}
+                        height={48}
+                        unoptimized
                         className="h-full w-full object-cover"
                       />
                     ) : (
@@ -200,7 +203,7 @@ export default function ExplorarPage() {
             Nenhum perfil ou competência corresponde à sua busca.
           </p>
           <p className="text-xs text-zinc-600 mt-1">
-            Tente pesquisar termos como "React", "Node", "Design" ou outros
+            Tente pesquisar termos como &quot;React&quot;, &quot;Node&quot;, &quot;Design&quot; ou outros
             nomes.
           </p>
         </div>
