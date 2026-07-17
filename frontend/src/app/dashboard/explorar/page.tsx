@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -22,8 +23,10 @@ interface SearchedUser {
   isPioneer?: boolean;
 }
 
-export default function ExplorarPage() {
-  const [query, setQuery] = useState("");
+function ExplorarContent() {
+  const searchParams = useSearchParams();
+  const query = searchParams.get("q") || "";
+
   const [results, setResults] = useState<SearchedUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -81,22 +84,12 @@ export default function ExplorarPage() {
         </p>
       </div>
 
-      {/* Barra de Pesquisa */}
-      <div className="relative mb-8">
-        <FiSearch className="absolute top-4 left-4 text-zinc-500 text-lg" />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Digite um nome, uma tecnologia (Ex: React, Node) ou instituição..."
-          className="w-full rounded-2xl border border-zinc-800 bg-zinc-900/50 py-3.5 pr-4 pl-12 text-sm text-white placeholder-zinc-500 outline-none transition-all focus:border-blue-500 focus:bg-zinc-900 shadow-xl"
-        />
-      </div>
+      {/* O Campo de busca foi removido daqui e integrado ao Header Global (layout.tsx) */}
 
       {/* Resultados ou Estados da Tela */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
-          <div className="h-7 w-7 animate-spin rounded-full border-2 border-zinc-700 border-t-blue-500 mb-3" />
+          <div className="h-7 w-7 animate-spin rounded-full border-2 border-zinc-700 border-t-[#316cf4] mb-3" />
           Varrendo a rede...
         </div>
       ) : results.length > 0 ? (
@@ -109,7 +102,7 @@ export default function ExplorarPage() {
               <div>
                 {/* Topo do Card: Avatar + Nome */}
                 <div className="flex items-center gap-3.5 mb-4">
-                  <div className="h-12 w-12 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-lg font-bold text-blue-500 overflow-hidden shadow-inner">
+                  <div className="h-12 w-12 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-lg font-bold text-[#316cf4] overflow-hidden shadow-inner">
                     {profile.avatarUrl ? (
                       <Image
                         src={profile.avatarUrl}
@@ -126,7 +119,7 @@ export default function ExplorarPage() {
 
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-zinc-100 truncate group-hover:text-blue-400 transition-colors">
+                      <h3 className="font-bold text-zinc-100 truncate group-hover:text-[#316cf4] transition-colors">
                         {profile.name}
                       </h3>
                       {profile.isPioneer && (
@@ -189,7 +182,7 @@ export default function ExplorarPage() {
               <div className="mt-2 border-t border-zinc-800/50 pt-3 flex items-center justify-between">
                 <Link
                   href={`/dashboard/perfil/${profile.id}`}
-                  className="text-xs font-semibold text-blue-500 hover:text-blue-400 transition-colors"
+                  className="text-xs font-semibold text-[#316cf4] hover:text-blue-400 transition-colors"
                 >
                   Ver perfil completo →
                 </Link>
@@ -211,10 +204,22 @@ export default function ExplorarPage() {
         <div className="bg-zinc-900/20 border border-zinc-800/40 rounded-2xl p-12 text-center text-zinc-500">
           <FiSearch className="mx-auto text-3xl text-zinc-700 mb-3" />
           <p className="text-sm">
-            Comece a digitar para encontrar conexões na rede.
+            Use a barra de pesquisa no topo da página para encontrar conexões na rede.
           </p>
         </div>
       )}
     </div>
+  );
+}
+
+export default function ExplorarPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center py-16 text-zinc-500">
+        <div className="h-7 w-7 animate-spin rounded-full border-2 border-zinc-700 border-t-[#316cf4]" />
+      </div>
+    }>
+      <ExplorarContent />
+    </Suspense>
   );
 }

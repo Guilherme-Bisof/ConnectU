@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { FiThumbsUp, FiMessageSquare, FiTrash2, FiAward } from "react-icons/fi";
+import { FiTrash2, FiAward } from "react-icons/fi";
 import Link from "next/link";
+import RightSidebar from "./RightSidebar";
 
 interface UserData {
   id: string;
@@ -206,7 +207,7 @@ export default function DashboardFeed() {
           msg: "Não foi possível publicar. Tente novamente.",
         });
       }
-    } catch (_) {
+    } catch {
       setFeedback({ type: "error", msg: "Erro de conexão com o servidor." });
     } finally {
       setLoading(false);
@@ -338,303 +339,453 @@ export default function DashboardFeed() {
   if (!user) return null;
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white">Feed de Atualizações</h2>
-        <p className="text-zinc-400">Veja o que está rolando na rede hoje.</p>
-      </div>
+    <>
+      <div className="lg:mr-80 flex flex-col items-center">
+        <div className="max-w-[720px] w-full space-y-6">
+          {/* Feed Creation Box */}
+          <div
+            className="rounded-xl border border-[#2a2d32] bg-[#181a1d] p-5"
+            data-purpose="creation-box"
+          >
+            <div className="flex gap-4 mb-4">
+              {/* Avatar do usuário */}
+              {user.avatarUrl ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={user.avatarUrl}
+                  alt={user.name}
+                  className="w-12 h-12 rounded-full object-cover border-2 border-transparent shrink-0"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gray-600 flex items-center justify-center shrink-0">
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                    />
+                  </svg>
+                </div>
+              )}
 
-      <div className="mb-8 rounded-xl border border-zinc-800 bg-zinc-900 p-4 shadow-sm">
-        <div className="flex gap-4">
-          {user.avatarUrl ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={user.avatarUrl}
-              alt={user.name}
-              className="h-10 w-10 shrink-0 rounded-full object-cover border border-zinc-800"
-            />
-          ) : (
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 font-bold text-white uppercase">
-              {user.name.charAt(0)}
+              <div className="flex-1">
+                <textarea
+                  value={newPostText}
+                  onChange={(e) => setNewPostText(e.target.value)}
+                  className="w-full bg-[#1c1e22] border-none rounded-xl text-gray-300 p-4 resize-none h-28 focus:ring-1 focus:ring-[#316cf4] focus:outline-none"
+                  placeholder="No que você está trabalhando?"
+                />
+              </div>
             </div>
-          )}
 
-          <div className="flex-1">
-            <textarea
-              value={newPostText}
-              onChange={(e) => setNewPostText(e.target.value)}
-              placeholder="Compartilhe um projeto, dúvida ou vaga..."
-              className="w-full resize-none bg-transparent pt-2 text-zinc-100 placeholder-zinc-500 outline-none focus:ring-0"
-              rows={2}
-            />
-
+            {/* Feedback de publicação */}
             {feedback && (
               <p
-                className={`text-sm mt-2 ${feedback.type === "success" ? "text-emerald-400" : "text-red-400"}`}
+                className={`text-sm mb-3 px-1 ${feedback.type === "success" ? "text-emerald-400" : "text-red-400"}`}
               >
                 {feedback.msg}
               </p>
             )}
 
-            <div className="mt-2 flex items-center justify-between border-t border-zinc-800 pt-3">
-              <span className="text-xs text-zinc-500">
-                Postando como:{" "}
-                <strong className="text-zinc-300">
-                  {user.role === "STUDENT" ? "Talento" : "Empresa"}
-                </strong>
-              </span>
+            {/* Pré-visualização do arquivo selecionado */}
+            {postFile && (
+              <div className="mb-3 flex items-center gap-2 px-1">
+                <span className="text-xs text-gray-400">
+                  📸 {postFile.name}
+                </span>
+                <button
+                  onClick={() => setPostFile(null)}
+                  className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                >
+                  Remover
+                </button>
+              </div>
+            )}
 
-              {/* Input de arquivo para imagens do post */}
-              <label className="cursor-pointer text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2 py-1 rounded transition-colors">
-                {postFile ? "📸 Imagem adicionada" : "Adicionar Imagem"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files.length > 0) {
-                      setPostFile(e.target.files[0]);
-                    }
-                  }}
-                />
-              </label>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {/* Botão de adicionar imagem */}
+                <label className="cursor-pointer flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-white rounded-lg transition-colors text-sm">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                    />
+                  </svg>
+                  <span>{postFile ? "Imagem adicionada" : "Adicionar Imagem"}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        setPostFile(e.target.files[0]);
+                      }
+                    }}
+                  />
+                </label>
 
-              <button
-                onClick={handleCreatePost}
-                disabled={loading || !newPostText.trim()}
-                className="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-              >
-                {loading ? "Publicando..." : "Publicar"}
-              </button>
+                <span className="text-xs text-gray-500">
+                  Postando como:{" "}
+                  <strong className="text-gray-300">
+                    {user.role === "STUDENT" ? "Talento" : "Empresa"}
+                  </strong>
+                </span>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCreatePost}
+                  disabled={loading || !newPostText.trim()}
+                  className="px-6 py-2 bg-[#316cf4] text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? "Publicando..." : "Publicar projeto"}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Feed Posts Section */}
+          <div className="space-y-6" data-purpose="feed-stream">
+            {isFetching ? (
+              [1, 2, 3].map((n) => (
+                <div
+                  key={n}
+                  className="rounded-xl border border-[#2a2d32] bg-[#181a1d] p-5 animate-pulse"
+                >
+                  <div className="flex gap-3 mb-4">
+                    <div className="h-12 w-12 rounded-full bg-[#2a2d32]" />
+                    <div className="flex-1 space-y-2 py-1">
+                      <div className="h-4 bg-[#2a2d32] rounded w-1/4" />
+                      <div className="h-3 bg-[#2a2d32] rounded w-1/3" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-3 bg-[#2a2d32] rounded" />
+                    <div className="h-3 bg-[#2a2d32] rounded w-5/6" />
+                  </div>
+                </div>
+              ))
+            ) : posts.length === 0 ? (
+              <div className="rounded-xl border border-[#2a2d32] bg-[#181a1d] p-12 text-center">
+                <svg
+                  className="w-12 h-12 text-gray-600 mx-auto mb-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                  />
+                </svg>
+                <p className="text-gray-500 text-sm">
+                  Nenhuma publicação ainda. Seja o primeiro a postar!
+                </p>
+              </div>
+            ) : (
+              posts.map((post) => (
+                <article
+                  key={post.id}
+                  className="group/post rounded-xl border border-[#2a2d32] bg-[#181a1d] overflow-hidden transition-colors hover:border-[#3a3d42]"
+                >
+                  <div className="p-5">
+                    {/* Cabeçalho do Post */}
+                    <div className="flex justify-between items-start mb-4">
+                      <Link
+                        href={`/dashboard/perfil/${post.authorId}`}
+                        className="flex gap-3 group cursor-pointer min-w-0"
+                      >
+                        {/* Avatar do autor */}
+                        {post.author.avatarUrl ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={post.author.avatarUrl}
+                            alt={post.author.name}
+                            className="w-12 h-12 rounded-full object-cover shrink-0 border border-[#2a2d32] group-hover:ring-2 ring-[#316cf4] transition-all"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-gray-600 flex items-center justify-center shrink-0 group-hover:ring-2 ring-[#316cf4] transition-all">
+                            <svg
+                              className="w-6 h-6 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                              />
+                            </svg>
+                          </div>
+                        )}
+
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                            <h3 className="font-bold text-white leading-tight truncate group-hover:text-[#316cf4] group-hover:underline transition-colors">
+                              {post.author.name}
+                            </h3>
+                            {post.author.isPioneer && (
+                              <div
+                                className="shrink-0 inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-linear-to-r from-amber-900/40 via-yellow-900/20 to-amber-900/40 px-2 py-0.5 shadow-[0_0_10px_rgba(245,158,11,0.2)] backdrop-blur-md"
+                                title="Membro Fundador"
+                              >
+                                <FiAward className="text-amber-400" size={10} />
+                                <span className="text-[9px] font-black uppercase tracking-widest text-transparent bg-clip-text bg-linear-to-r from-amber-200 to-yellow-500">
+                                  Pioneiro
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 truncate">
+                            {post.author.role === "STUDENT"
+                              ? `${post.author.course} na ${post.author.institution}`
+                              : "Empresa"}
+                          </p>
+                        </div>
+                      </Link>
+
+                      <div className="flex shrink-0 items-center gap-3">
+                        <span className="text-xs text-gray-500">
+                          {formatTimeAgo(post.createdAt)}
+                        </span>
+                        {post.authorId === user.id && (
+                          <button
+                            onClick={() => handleDeletePost(post.id)}
+                            className="text-gray-600 hover:text-red-400 transition-colors opacity-100 md:opacity-0 md:group-hover/post:opacity-100"
+                            title="Excluir post"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Conteúdo do Post */}
+                    <p className="text-gray-300 text-sm mb-4 leading-relaxed whitespace-pre-wrap">
+                      {post.content}
+                    </p>
+
+                    {/* Imagem do Post */}
+                    {post.imageUrl && (
+                      <div className="mb-4 overflow-hidden rounded-xl border border-[#2a2d32] bg-[#0d0f11]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={post.imageUrl}
+                          alt="Imagem da publicação"
+                          className="max-h-125 w-full object-contain"
+                        />
+                      </div>
+                    )}
+
+                    {/* Ações do Post */}
+                    <div className="flex items-center justify-between pt-4 border-t border-[#2a2d32] text-gray-400 text-sm">
+                      <button
+                        onClick={() => handleLike(post.id)}
+                        className={`flex items-center gap-2 transition-colors ${post.likes.some((like) => like.userId === user?.id)
+                            ? "text-[#316cf4] font-bold"
+                            : "hover:text-white"
+                          }`}
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill={
+                            post.likes.some((like) => like.userId === user?.id)
+                              ? "currentColor"
+                              : "none"
+                          }
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            d="M14 10h4.708c.94 0 1.667.767 1.607 1.702l-.447 6.998A2 2 0 0117.876 21H6.124a2 2 0 01-1.992-1.3l-.447-6.998C3.625 11.767 4.352 11 5.292 11H10V5a2 2 0 114 0v5z"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                          />
+                        </svg>
+                        <span>Curtir {post.likes.length > 0 && post.likes.length}</span>
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          setActiveCommentPostId(
+                            post.id === activeCommentPostId ? null : post.id,
+                          )
+                        }
+                        className="flex items-center gap-2 hover:text-white transition-colors"
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                          />
+                        </svg>
+                        <span>
+                          Comentar{" "}
+                          {post.comments && post.comments.length > 0 &&
+                            post.comments.length}
+                        </span>
+                      </button>
+
+                      <button className="flex items-center gap-2 hover:text-white transition-colors">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                          />
+                        </svg>
+                        <span>Compartilhar</span>
+                      </button>
+                    </div>
+
+                    {/* Área de Comentário */}
+                    {activeCommentPostId === post.id && (
+                      <div className="mt-4 flex gap-2">
+                        <input
+                          value={commentContent}
+                          onChange={(e) => setCommentContent(e.target.value)}
+                          className="flex-1 bg-[#1c1e22] border border-[#2a2d32] rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#316cf4]"
+                          placeholder="Escreva um comentário..."
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              handleComment(post.id);
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={() => handleComment(post.id)}
+                          className="bg-[#316cf4] hover:bg-blue-600 px-4 py-2 rounded-lg text-white text-sm font-semibold transition-colors"
+                        >
+                          Enviar
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Lista de Comentários */}
+                    {post.comments && post.comments.length > 0 && (
+                      <div className="space-y-3 border-t border-[#2a2d32] pt-4 mt-4">
+                        {post.comments.map((comment) => (
+                          <div
+                            key={comment.id}
+                            className="flex gap-3 group/comment"
+                          >
+                            <Link
+                              href={`/dashboard/perfil/${comment.userId}`}
+                              className="shrink-0"
+                            >
+                              {comment.user.avatarUrl ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img
+                                  src={comment.user.avatarUrl}
+                                  alt={comment.user.name}
+                                  className="h-8 w-8 rounded-full object-cover border border-[#2a2d32] hover:ring-2 ring-[#316cf4] transition-all"
+                                />
+                              ) : (
+                                <div className="h-8 w-8 flex items-center justify-center rounded-full bg-gray-600 text-[10px] font-bold text-white uppercase hover:ring-2 ring-[#316cf4] transition-all">
+                                  {comment.user.name.charAt(0)}
+                                </div>
+                              )}
+                            </Link>
+
+                            <div className="flex-1 rounded-xl bg-[#1c1e22] px-4 py-2.5 text-sm text-gray-300 relative">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Link
+                                  href={`/dashboard/perfil/${comment.userId}`}
+                                  className="hover:underline"
+                                >
+                                  <p className="font-bold text-white text-xs hover:text-[#316cf4] transition-colors">
+                                    {comment.user.name}
+                                  </p>
+                                </Link>
+                                {comment.user.isPioneer && (
+                                  <div
+                                    className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-linear-to-r from-amber-900/40 via-yellow-900/20 to-amber-900/40 px-1.5 py-0.5 shadow-[0_0_10px_rgba(245,158,11,0.2)] backdrop-blur-sm"
+                                    title="Membro Fundador"
+                                  >
+                                    <FiAward
+                                      className="text-amber-400"
+                                      size={10}
+                                    />
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-transparent bg-clip-text bg-linear-to-r from-amber-200 to-yellow-500">
+                                      Pioneiro
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+
+                              <p className="leading-relaxed">{comment.content}</p>
+
+                              {comment.userId === user?.id && (
+                                <button
+                                  onClick={() =>
+                                    handleDeleteComment(comment.id)
+                                  }
+                                  className="absolute top-2 right-2 opacity-0 group-hover/comment:opacity-100 text-gray-500 hover:text-red-400 transition-opacity"
+                                  title="Excluir comentário"
+                                >
+                                  <FiTrash2 size={12} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </article>
+              ))
+            )}
+
+            {/* Sentinel para Infinite Scroll */}
+            <div
+              id="feed-sentinel"
+              className="h-10 w-full flex items-center justify-center p-4 text-sm text-gray-600"
+            >
+              {isFetching && hasMore && (
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#2a2d32] border-t-[#316cf4]" />
+              )}
+              {!hasMore && posts.length > 0 && (
+                <span>Você chegou ao fim do feed.</span>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col gap-4">
-        {isFetching ? (
-          [1, 2, 3].map((n) => (
-            <div
-              key={n}
-              className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 animate-pulse"
-            >
-              <div className="flex gap-3 mb-4">
-                <div className="h-10 w-10 rounded-full bg-zinc-800"></div>
-                <div className="flex-1 space-y-2 py-1">
-                  <div className="h-4 bg-zinc-800 rounded w-1/4"></div>
-                  <div className="h-3 bg-zinc-800 rounded w-1/3"></div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="h-3 bg-zinc-800 rounded"></div>
-                <div className="h-3 bg-zinc-800 rounded w-5/6"></div>
-              </div>
-            </div>
-          ))
-        ) : posts.length === 0 ? (
-          <p className="text-center text-zinc-500 py-8">
-            Nenhuma publicação ainda. Seja o primeiro a postar!
-          </p>
-        ) : (
-          posts.map((post) => (
-            <div
-              key={post.id}
-              className="group/post rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 transition-colors hover:bg-zinc-900"
-            >
-              <div className="mb-3 flex items-start justify-between gap-2">
-                <Link
-                  href={`/dashboard/perfil/${post.authorId}`}
-                  className="flex items-center gap-3 min-w-0 group cursor-pointer"
-                >
-                  {post.author.avatarUrl ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={post.author.avatarUrl}
-                      alt={post.author.name}
-                      className="h-10 w-10 shrink-0 rounded-full object-cover border border-zinc-800 group-hover:ring-2 ring-blue-500 transition-all"
-                    />
-                  ) : (
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-800 font-bold text-zinc-300 uppercase group-hover:ring-2 ring-blue-500 transition-all">
-                      {post.author.name.charAt(0)}
-                    </div>
-                  )}
-
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                      <h3 className="text-sm font-medium text-zinc-100 truncate max-w-full group-hover:text-blue-400 group-hover:underline transition-colors">
-                        {post.author.name}
-                      </h3>
-                      {post.author.isPioneer && (
-                        <div
-                          className="shrink-0 inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-linear-to-r from-amber-900/40 via-yellow-900/20 to-amber-900/40 px-2 py-0.5 shadow-[0_0_10px_rgba(245,158,11,0.2)] backdrop-blur-md"
-                          title="Membro Fundador"
-                        >
-                          <FiAward className="text-amber-400" size={10} />
-                          <span className="text-[9px] font-black uppercase tracking-widest text-transparent bg-clip-text bg-linear-to-r from-amber-200 to-yellow-500">
-                            Pioneiro
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-xs text-zinc-500 truncate">
-                      {post.author.role === "STUDENT"
-                        ? `${post.author.course} na ${post.author.institution}`
-                        : "Empresa"}
-                    </p>
-                  </div>
-                </Link>
-
-                <div className="flex shrink-0 items-center gap-3">
-                  <span className="text-xs text-zinc-600">
-                    {formatTimeAgo(post.createdAt)}
-                  </span>
-                  {post.authorId === user.id && (
-                    <button
-                      onClick={() => handleDeletePost(post.id)}
-                      className="text-zinc-600 hover:text-red-400 transition-colors opacity-100 md:opacity-0 md:group-hover/post:opacity-100"
-                      title="Excluir post"
-                    >
-                      <FiTrash2 />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <p className="mb-4 text-sm leading-relaxed text-zinc-300 whitespace-pre-wrap">
-                {post.content}
-              </p>
-
-              {post.imageUrl && (
-                <div className="mb-4 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={post.imageUrl}
-                    alt="Imagem da publicação"
-                    className="max-h-125 w-full object-contain"
-                  />
-                </div>
-              )}
-
-              <div className="mb-4 flex items-center gap-6 text-xs font-medium text-zinc-500">
-                <button
-                  onClick={() => handleLike(post.id)}
-                  className={`flex items-center gap-2 transition-colors ${
-                    post.likes.some((like) => like.userId === user?.id)
-                      ? "text-blue-500 font-bold"
-                      : "text-zinc-500 hover:text-blue-400"
-                  }`}
-                >
-                  <FiThumbsUp
-                    className={`text-base ${post.likes.some((like) => like.userId === user?.id) ? "fill-current" : ""}`}
-                  />{" "}
-                  Curtir ({post.likes.length})
-                </button>
-                <button
-                  onClick={() =>
-                    setActiveCommentPostId(
-                      post.id === activeCommentPostId ? null : post.id,
-                    )
-                  }
-                  className="flex items-center gap-2 transition-colors hover:text-blue-400"
-                >
-                  <FiMessageSquare className="text-base" /> Comentar
-                </button>
-              </div>
-
-              {activeCommentPostId === post.id && (
-                <div className="mb-4 flex gap-2">
-                  <input
-                    value={commentContent}
-                    onChange={(e) => setCommentContent(e.target.value)}
-                    className="flex-1 bg-zinc-800 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    placeholder="Escreva um comentário..."
-                  />
-                  <button
-                    onClick={() => handleComment(post.id)}
-                    className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md text-white text-sm transition-colors"
-                  >
-                    Enviar
-                  </button>
-                </div>
-              )}
-
-              {post.comments && post.comments.length > 0 && (
-                <div className="space-y-3 border-t border-zinc-800 pt-4 mt-2">
-                  {post.comments.map((comment) => (
-                    <div key={comment.id} className="flex gap-3 group/comment">
-                      <Link
-                        href={`/dashboard/perfil/${comment.userId}`}
-                        className="shrink-0"
-                      >
-                        {comment.user.avatarUrl ? (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img
-                            src={comment.user.avatarUrl}
-                            alt={comment.user.name}
-                            className="h-8 w-8 rounded-full object-cover border border-zinc-800 hover:ring-2 ring-blue-500 transition-all"
-                          />
-                        ) : (
-                          <div className="h-8 w-8 flex items-center justify-center rounded-full bg-zinc-800 text-[10px] font-bold text-zinc-400 uppercase hover:ring-2 ring-blue-500 transition-all">
-                            {comment.user.name.charAt(0)}
-                          </div>
-                        )}
-                      </Link>
-
-                      <div className="flex-1 rounded-2xl bg-zinc-800/50 px-4 py-2 text-sm text-zinc-300 relative">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Link
-                            href={`/dashboard/perfil/${comment.userId}`}
-                            className="hover:underline"
-                          >
-                            <p className="font-bold text-zinc-200 text-xs hover:text-blue-400 transition-colors">
-                              {comment.user.name}
-                            </p>
-                          </Link>
-                          {comment.user.isPioneer && (
-                            <div
-                              className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-linear-to-r from-amber-900/40 via-yellow-900/20 to-amber-900/40 px-1.5 py-0.5 shadow-[0_0_10px_rgba(245,158,11,0.2)] backdrop-blur-sm"
-                              title="Membro Fundador"
-                            >
-                              <FiAward className="text-amber-400" size={10} />
-                              <span className="text-[9px] font-black uppercase tracking-widest text-transparent bg-clip-text bg-linear-to-r from-amber-200 to-yellow-500">
-                                Pioneiro
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        <p className="leading-relaxed">{comment.content}</p>
-
-                        {comment.userId === user?.id && (
-                          <button
-                            onClick={() => handleDeleteComment(comment.id)}
-                            className="absolute top-2 right-2 opacity-0 group-hover/comment:opacity-100 text-zinc-500 hover:text-red-400 transition-opacity"
-                            title="Excluir comentário"
-                          >
-                            <FiTrash2 size={12} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))
-        )}
-
-        <div
-          id="feed-sentinel"
-          className="h-10 w-full flex items-center justify-center p-4 text-sm text-zinc-600"
-        >
-          {isFetching && hasMore && (
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-700 border-t-blue-500" />
-          )}
-          {!hasMore && posts.length > 0 && (
-            <span>Você chegou ao fim do feed.</span>
-          )}
-        </div>
-      </div>
-    </div>
+      <RightSidebar />
+    </>
   );
 }

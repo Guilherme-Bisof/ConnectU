@@ -1,7 +1,30 @@
 @import "tailwindcss";
+
+:root {
+  --bg-dark-main: #0d0f11;
+  --bg-card: #181a1d;
+  --border-color: #2a2d32;
+  --primary-blue: #316cf4;
+  --text-muted: #9ba1a6;
+}
+
 body {
-  background-color: #121212;
+  background-color: var(--bg-dark-main);
   color: #ffffff;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 10px;
 }
 
 @keyframes slideInRight {
