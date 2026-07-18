@@ -63,7 +63,6 @@ export function JobCard({
             : "bg-zinc-950 border-zinc-900 opacity-60 grayscale-30 hover:grayscale-0"
         }`}
       >
-        {/* Acento lateral esquerdo (Ativo/Selecionado) */}
         <div className={`absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 ${
           isSelected ? "bg-blue-500" : vaga.isActive ? "bg-zinc-700 group-hover:bg-blue-500/50" : "bg-zinc-800"
         }`} />
@@ -72,7 +71,6 @@ export function JobCard({
         <div className="flex-1 pl-2">
           <div className="flex items-start justify-between gap-3 mb-1">
             <h2 className="text-base font-bold text-white line-clamp-1">{vaga.title}</h2>
-            {/* Toggle Switch Moderno */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -115,7 +113,7 @@ export function JobCard({
           </div>
         </div>
 
-        {/* Ações e Métricas Inferiores */}
+        {/* Ações e Métricas */}
         <div className="flex items-center justify-between pl-2 border-t border-zinc-800/50 pt-3">
           <div className="flex items-center gap-2 text-zinc-400">
             <FiUsers className={totalCandidatos > 0 ? "text-blue-400" : ""} size={14} />

@@ -71,7 +71,7 @@ export default function ChatPage() {
     };
   }, []);
 
-  // 1. Buscar todas as salas do usuário logado
+  // Buscar conversas do usuário logado
   useEffect(() => {
     async function fetchConversations() {
       try {
@@ -97,7 +97,7 @@ export default function ChatPage() {
     fetchConversations();
   }, []);
 
-  // 2. Filtro derivado (Corrigindo o erro de "set-state-in-effect")
+  // Filtro derivado 
   const filteredConversations = conversations.filter((room) => {
     const matchRole =
       activeFilter === "TODOS" ||
@@ -113,9 +113,9 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-[calc(100vh-4rem)] w-full bg-black text-white overflow-hidden">
-      {/* COLUNA DA ESQUERDA: LISTA DE CONVERSAS */}
+      {/* Esquerda: LISTA DE CONVERSAS */}
       <aside className="w-full md:w-[400px] border-r border-white/5 bg-zinc-950/80 flex flex-col h-full shrink-0 relative z-10 backdrop-blur-xl">
-        {/* Header da lista */}
+        {/* Header */}
         <div className="p-5 border-b border-white/5 space-y-5 bg-linear-to-b from-zinc-900/50 to-transparent">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-extrabold tracking-tight text-transparent bg-clip-text bg-linear-to-r from-white to-zinc-400">
@@ -138,7 +138,7 @@ export default function ChatPage() {
             />
           </div>
 
-          {/* Filtros Premium (Segmented Control) */}
+          {/* Filtros */}
           <div className="flex p-1 bg-zinc-900/80 border border-white/5 rounded-lg">
             {(["TODOS", "STUDENT", "RECRUITER"] as const).map((filter) => (
               <button
@@ -160,7 +160,7 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Listagem rolável de contatos */}
+        {/* Listagem de contatos */}
         <div className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-16 text-zinc-500 gap-3">
@@ -187,10 +187,9 @@ export default function ChatPage() {
                   onClick={() => router.push(`/dashboard/chat/${room.id}`)}
                   className="relative flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-900 cursor-pointer border border-transparent hover:border-white/5 transition-all group overflow-hidden"
                 >
-                  {/* Glow Hover Subtil */}
                   <div className="absolute inset-0 bg-linear-to-r from-blue-500/0 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
-                  {/* Avatar do Contato */}
+                  {/* Avatar */}
                   <div className="relative w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-blue-500 shrink-0 shadow-inner">
                     {otherUser.avatarUrl ? (
                       <Image
@@ -212,7 +211,7 @@ export default function ChatPage() {
                     }`}></div>
                   </div>
 
-                  {/* Informações de Texto */}
+                  {/* Informações */}
                   <div className="flex-1 min-w-0 pr-2">
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <h4 className="font-bold text-sm text-zinc-100 truncate group-hover:text-blue-400 transition-colors">
@@ -235,9 +234,8 @@ export default function ChatPage() {
         </div>
       </aside>
 
-      {/* COLUNA DA DIREITA: TELA INICIAL (STANDBY) */}
+      {/* Direita: Tela inicial */}
       <main className="hidden md:flex flex-1 flex-col items-center justify-center bg-zinc-950/40 relative text-center">
-        {/* Glow Central Background */}
         <div className="absolute w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[100px] pointer-events-none" />
         
         <div className="relative z-10 flex flex-col items-center">
@@ -255,3 +253,4 @@ export default function ChatPage() {
     </div>
   );
 }
+w

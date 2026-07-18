@@ -42,7 +42,7 @@ function getMockData(jobId: string) {
   };
 }
 
-// ─── Cores dinâmicas do badge de match ─────────────────────────────────────
+//  Cores dinâmicas do badge de match 
 function getMatchBadgeStyle(score: number) {
   if (score >= 80)
     return "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
@@ -57,7 +57,7 @@ function getScoreStrokeColor(score: number) {
   return "text-red-500";
 }
 
-// ─── Sub-componente: Card de Vaga na Lista ─────────────────────────────────
+//  Sub-componente: Card de Vaga na Lista 
 function JobListCard({
   job,
   matchScore,
@@ -85,11 +85,10 @@ function JobListCard({
   return (
     <div
       onClick={onClick}
-      className={`relative rounded-xl p-5 cursor-pointer group transition-all border ${
-        isSelected
+      className={`relative rounded-xl p-5 cursor-pointer group transition-all border ${isSelected
           ? "bg-[#316cf4]/5 border-[#316cf4]/40 shadow-[0_0_15px_rgba(49,108,244,0.08)]"
           : "bg-[#131313] border-[#2a2d32] hover:bg-[#1c1b1b]"
-      }`}
+        }`}
     >
       {/* Indicador de seleção */}
       {isSelected && (
@@ -99,11 +98,10 @@ function JobListCard({
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-3 min-w-0">
           <div
-            className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm border shrink-0 ${
-              isSelected
+            className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm border shrink-0 ${isSelected
                 ? "bg-[#316cf4] text-white border-[#316cf4]"
                 : "bg-[#393939] text-white border-[#434655]"
-            }`}
+              }`}
           >
             {job.companyName.charAt(0)}
           </div>
@@ -133,11 +131,10 @@ function JobListCard({
           return (
             <span
               key={i}
-              className={`px-2.5 py-1 rounded text-xs font-medium border ${
-                hasIt
+              className={`px-2.5 py-1 rounded text-xs font-medium border ${hasIt
                   ? "bg-[#2a2a2a] border-[#434655] text-white"
                   : "bg-[#2a2a2a] border-red-900/40 text-red-400"
-              }`}
+                }`}
             >
               {hasIt ? skill : `Falta ${skill}`}
             </span>
@@ -170,7 +167,7 @@ function JobListCard({
   );
 }
 
-// ─── Sub-componente: Painel de Detalhes ────────────────────────────────────
+// Sub-componente: Painel de Detalhes 
 function JobDetailPanel({
   job,
   matchResult,
@@ -208,7 +205,7 @@ function JobDetailPanel({
 
   return (
     <div className="w-full max-w-[800px] mx-auto p-8 flex flex-col gap-8">
-      {/* Detail Header */}
+      {/* Header do detalhe */}
       <div className="flex items-start justify-between bg-[#131313] border border-[#434655] rounded-2xl p-6 shadow-sm">
         <div className="flex items-center gap-5 min-w-0">
           <div className="w-16 h-16 rounded-xl bg-[#316cf4] flex items-center justify-center text-white text-3xl font-bold shadow-inner shrink-0">
@@ -242,7 +239,7 @@ function JobDetailPanel({
           </div>
         </div>
 
-        {/* Match Circle */}
+        {/* Circulo de match */}
         <div className="relative w-20 h-20 flex items-center justify-center shrink-0 ml-4">
           <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
             <path
@@ -273,9 +270,9 @@ function JobDetailPanel({
         </div>
       </div>
 
-      {/* Layout Split for details */}
+      {/* Layout Split para detalhes */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {/* Left: Match Analysis */}
+        {/* Esquerda: Análise de Match */}
         <div className="flex flex-col gap-6">
           {/* Skills Atendidas */}
           <section>
@@ -329,11 +326,10 @@ function JobDetailPanel({
                   return (
                     <div
                       key={i}
-                      className={`bg-[#131313] border rounded-xl p-4 flex gap-4 items-start ${
-                        isRequired
+                      className={`bg-[#131313] border rounded-xl p-4 flex gap-4 items-start ${isRequired
                           ? "border-red-500/30"
                           : "border-amber-500/30"
-                      }`}
+                        }`}
                     >
                       <svg
                         className={`w-5 h-5 shrink-0 mt-0.5 ${isRequired ? "text-red-400" : "text-amber-400"}`}
@@ -391,7 +387,7 @@ function JobDetailPanel({
           </section>
         </div>
 
-        {/* Right: Job Info */}
+        {/* Direita: Job Info */}
         <div className="flex flex-col gap-6">
           {/* Sobre a vaga */}
           <section>
@@ -441,7 +437,7 @@ function JobDetailPanel({
         </div>
       </div>
 
-      {/* Bottom Metrics & CTA */}
+      {/* Métricas e CTA */}
       <div className="mt-4 border-t border-[#434655] pt-8">
         <div className="grid grid-cols-3 gap-4 mb-8 text-center">
           <div className="flex flex-col gap-1 items-center">
@@ -486,7 +482,7 @@ function JobDetailPanel({
   );
 }
 
-// ─── Página Principal ──────────────────────────────────────────────────────
+//  Página Principal
 export default function VagasPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
@@ -555,7 +551,7 @@ export default function VagasPage() {
     }
   }, [user, isProfileIncomplete]);
 
-  // ─── Enriquecimento dos dados ────────────────────────────────────────────
+  // Enriquecimento dos dados
   const enrichedJobs = matchedJobs.map((job) => {
     const mocks = getMockData(job.id);
     const matchRes = calculateMatch(
@@ -657,7 +653,7 @@ export default function VagasPage() {
 
   const selectedData = enrichedJobs.find((j) => j.originalId === selectedJobId);
 
-  // ─── Loading & Guards ────────────────────────────────────────────────────
+  // Loading e Guards
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-500">
@@ -698,7 +694,6 @@ export default function VagasPage() {
     );
   }
 
-  // ─── Render ──────────────────────────────────────────────────────────────
   return (
     <div className="-m-6 flex flex-col h-[calc(100vh-4rem)]">
       {/* Header */}
@@ -712,35 +707,33 @@ export default function VagasPage() {
         </p>
       </header>
 
-      {/* Two Column Layout */}
+      {/* Layout*/}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Column: Search, Filters & List */}
+        {/* Esquerda: Busca, Filtros e Lista */}
         <div className="w-[40%] min-w-[360px] border-r border-[#434655] flex flex-col bg-[#0e0e0e]">
-          {/* Tabs */}
+          {/* Abas */}
           <div className="flex border-b border-[#434655] px-6 shrink-0">
             <button
               onClick={() => setActiveTab("recommended")}
-              className={`px-4 py-4 font-bold transition-colors ${
-                activeTab === "recommended"
+              className={`px-4 py-4 font-bold transition-colors ${activeTab === "recommended"
                   ? "text-white border-b-2 border-[#316cf4] bg-[#316cf4]/5"
                   : "text-gray-500 hover:text-white hover:bg-[#2a2a2a]"
-              }`}
+                }`}
             >
               Para Você
             </button>
             <button
               onClick={() => setActiveTab("saved")}
-              className={`px-4 py-4 font-bold transition-colors ${
-                activeTab === "saved"
+              className={`px-4 py-4 font-bold transition-colors ${activeTab === "saved"
                   ? "text-white border-b-2 border-[#316cf4] bg-[#316cf4]/5"
                   : "text-gray-500 hover:text-white hover:bg-[#2a2a2a]"
-              }`}
+                }`}
             >
               Vagas Salvas
             </button>
           </div>
 
-          {/* Search & Filters */}
+          {/* Busca e Filtros */}
           <div className="p-6 border-b border-[#434655] shrink-0 flex flex-col gap-4">
             <div className="relative">
               <svg
@@ -760,7 +753,7 @@ export default function VagasPage() {
               />
             </div>
 
-            {/* Filter chips */}
+            {/* Filtros */}
             <div className="flex flex-wrap items-center gap-2">
               <button className="flex items-center gap-1 px-3 py-1.5 bg-[#131313] border border-[#434655] rounded-lg text-gray-400 hover:bg-[#2a2a2a] transition-colors text-xs">
                 Modalidade
@@ -783,7 +776,7 @@ export default function VagasPage() {
               </button>
             </div>
 
-            {/* Count & sort */}
+            {/* Contagem e ordem */}
             <div className="flex justify-between items-center mt-1">
               <span className="text-xs text-gray-500">
                 {filteredJobs.length} vagas encontradas
@@ -797,7 +790,7 @@ export default function VagasPage() {
             </div>
           </div>
 
-          {/* Job List */}
+          {/* LISTA DE VAGAS */}
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 custom-scrollbar">
             {activeTab === "recommended" ? (
               filteredJobs.length === 0 ? (
@@ -827,7 +820,7 @@ export default function VagasPage() {
           </div>
         </div>
 
-        {/* Right Column: Job Details */}
+        {/* DIREITA: Detalhes da Vaga */}
         <div className="flex-1 bg-[#0d0f11] overflow-y-auto custom-scrollbar flex justify-center pb-12">
           {selectedData ? (
             <JobDetailPanel

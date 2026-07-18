@@ -35,9 +35,8 @@ export function JobFormModal({
 
   return (
     <div className="fixed inset-0 z-60 flex justify-end bg-black/60 backdrop-blur-sm animate-fadeIn">
-      {/* Side Drawer Panel */}
       <div className="w-full max-w-md h-full bg-zinc-950 border-l border-zinc-800 shadow-2xl flex flex-col animate-slideInRight">
-        {/* Header Fixo */}
+        {/* Header*/}
         <div className="px-6 py-5 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
           <h2 className="text-xl font-bold text-white">{title}</h2>
           <button
@@ -49,7 +48,7 @@ export function JobFormModal({
           </button>
         </div>
 
-        {/* Corpo Scrollável */}
+        {/* Corpo */}
         <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
           <form id="jobForm" onSubmit={onSubmit} className="space-y-6">
             
@@ -157,7 +156,7 @@ export function JobFormModal({
           </form>
         </div>
 
-        {/* Rodapé Fixo */}
+        {/* Footer  */}
         <div className="p-6 border-t border-zinc-800 bg-zinc-950 flex justify-end gap-3">
           <button
             type="button"

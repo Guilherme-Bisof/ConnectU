@@ -31,7 +31,6 @@ function ExplorarContent() {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
-  // Função que dispara a busca para o Backend
   async function handleSearch(searchTerm: string) {
     if (!searchTerm.trim()) {
       setResults([]);
@@ -75,7 +74,7 @@ function ExplorarContent() {
 
   return (
     <div className="mx-auto max-w-4xl animate-fadeIn">
-      {/* Cabeçalho */}
+      {/* Header */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-white">Explorar Rede</h2>
         <p className="text-zinc-400">
@@ -84,9 +83,7 @@ function ExplorarContent() {
         </p>
       </div>
 
-      {/* O Campo de busca foi removido daqui e integrado ao Header Global (layout.tsx) */}
-
-      {/* Resultados ou Estados da Tela */}
+      {/* Resultados ou Estados */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
           <div className="h-7 w-7 animate-spin rounded-full border-2 border-zinc-700 border-t-[#316cf4] mb-3" />
@@ -151,14 +148,14 @@ function ExplorarContent() {
                   </div>
                 </div>
 
-                {/* Subtítulo da Instituição para estudantes */}
+                {/* Subtítulo */}
                 {profile.role === "STUDENT" && profile.institution && (
                   <p className="text-xs text-zinc-500 px-1 mb-3 truncate">
                     {profile.institution}
                   </p>
                 )}
 
-                {/* Tags de Competências */}
+                {/* Tags */}
                 {profile.skills && profile.skills.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mb-4">
                     {profile.skills.slice(0, 4).map((skill, i) => (
@@ -178,7 +175,7 @@ function ExplorarContent() {
                 )}
               </div>
 
-              {/* Botão de Ação do Card */}
+              {/* Botão de Ação */}
               <div className="mt-2 border-t border-zinc-800/50 pt-3 flex items-center justify-between">
                 <Link
                   href={`/dashboard/perfil/${profile.id}`}

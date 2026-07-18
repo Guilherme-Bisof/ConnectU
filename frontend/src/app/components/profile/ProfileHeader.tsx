@@ -55,7 +55,7 @@ export function ProfileHeader({ user, onEditClick }: ProfileHeaderProps) {
             )}
           </div>
 
-          {/* Conteinar do texto e botao */}
+          {/* Container */}
           <div className="flex flex-col md:flex-row md:items-start justify-between flex-1 mt-2 sm:mt-4 gap-4">
             <div className="text-center sm:text-left">
               <h1 className="text-2xl sm:text-3xl font-bold text-white">
@@ -97,7 +97,7 @@ export function ProfileHeader({ user, onEditClick }: ProfileHeaderProps) {
               </div>
             </div>
 
-            {/* Botão de Editar */}
+            {/* Botão Editar */}
             <div className="flex justify-center sm:justify-start shrink-0">
               <button
                 onClick={onEditClick}

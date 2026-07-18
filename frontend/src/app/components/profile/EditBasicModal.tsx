@@ -54,7 +54,6 @@ interface IBGECity {
   };
 }
 
-// Cache global de cidades brasileiras fora do ciclo do React
 let cachedCities: string[] = [];
 
 const loadCities = async () => {
@@ -118,9 +117,7 @@ export function EditBasicProfileModal({
   const [hasLocalResume, setHasLocalResume] = useState(false);
   const [localResumeName, setLocalResumeName] = useState("");
 
-  // Inicializar os valores originais via state na montagem do modal
-  // Como o modal renderiza null quando isOpen = false, a transição para true monta o componente,
-  // disparando a inicialização do useState de forma limpa e síncrona.
+
   const [initialValues] = useState(() => ({
     name: editName,
     course: editCourse,
@@ -157,7 +154,6 @@ export function EditBasicProfileModal({
     }
   }, [isSaving]);
 
-  // Fechar autocomplete se clicar fora
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -207,7 +203,7 @@ export function EditBasicProfileModal({
     return "Curriculo.pdf";
   };
 
-  // Comparação de alterações — agora usando o estado initialValues, 100% válido durante o render
+  // Comparação de alterações — agora usando o estado initialValues
   const hasChanges =
     editName !== initialValues.name ||
     editCourse !== initialValues.course ||
@@ -272,7 +268,6 @@ export function EditBasicProfileModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
-      {/* Scrollbar CSS customizado inline */}
       <style>{`
         .profile-modal-content {
           scrollbar-width: thin;
@@ -292,7 +287,6 @@ export function EditBasicProfileModal({
 
       {/* Modal Container */}
       <div className="bg-[#1e2024] w-full max-h-[85vh] rounded-xl border border-[#424656] flex flex-col shadow-2xl relative overflow-hidden max-w-[640px]">
-        {/* STICKY HEADER */}
         <header className="sticky top-0 z-50 bg-[#1e2024]/90 backdrop-blur-md px-8 py-6 border-b border-[#424656] flex justify-between items-start shrink-0">
           <div className="flex flex-col gap-1">
             <h1 className="text-xl font-bold text-white">Editar perfil</h1>
@@ -309,12 +303,10 @@ export function EditBasicProfileModal({
           </button>
         </header>
 
-        {/* SCROLLABLE CONTENT */}
         <form
           onSubmit={handleFormSubmit}
           className="profile-modal-content flex-1 overflow-y-auto px-8 pt-8 pb-28 space-y-8"
         >
-          {/* Inputs de arquivo ocultos */}
           <input
             type="file"
             ref={avatarInputRef}
@@ -358,7 +350,7 @@ export function EditBasicProfileModal({
             className="hidden"
           />
 
-          {/* SECTION 1: IDENTIDADE */}
+          {/*  IDENTIDADE */}
           <section className="space-y-6">
             <div className="flex items-center gap-2 text-[#316cf4]">
               <FiUser className="text-[20px]" />
@@ -470,7 +462,7 @@ export function EditBasicProfileModal({
             </div>
           </section>
 
-          {/* SECTION 2: CAPA DO PERFIL */}
+          {/* CAPA DO PERFIL */}
           <section className="space-y-6">
             <div className="flex items-center gap-2 text-[#316cf4]">
               <FiImage className="text-[20px]" />
@@ -520,7 +512,7 @@ export function EditBasicProfileModal({
             </div>
           </section>
 
-          {/* SECTION 3: FORMAÇÃO ACADÊMICA (Somente Alunos) */}
+          {/* FORMAÇÃO ACADÊMICA (Somente Alunos) */}
           {userRole === "STUDENT" && (
             <>
               <section className="space-y-6">
@@ -606,7 +598,7 @@ export function EditBasicProfileModal({
                 </div>
               </section>
 
-              {/* SECTION 4: CURRÍCULO */}
+              {/* CURRÍCULO */}
               <section className="space-y-6 pb-20">
                 <div className="flex items-center gap-2 text-[#316cf4]">
                   <FiFileText className="text-[20px]" />
@@ -670,7 +662,7 @@ export function EditBasicProfileModal({
           )}
         </form>
 
-        {/* STICKY FOOTER */}
+        {/* FOOTER */}
         <footer className="sticky bottom-0 z-50 bg-[#1e2024] px-8 py-6 border-t border-[#424656] flex items-center justify-end gap-4 shrink-0 shadow-[0_-10px_20px_rgba(0,0,0,0.2)]">
           <button
             onClick={onClose}

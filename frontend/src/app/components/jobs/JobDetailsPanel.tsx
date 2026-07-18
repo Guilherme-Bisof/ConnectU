@@ -34,10 +34,9 @@ export function JobDetailsPanel({
 
   return (
     <div className="flex-1 bg-zinc-950 border border-zinc-800 rounded-2xl flex flex-col h-[calc(100vh-160px)] min-h-[600px] overflow-hidden shadow-2xl relative">
-      {/* Background Glow */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Header Detalhes Vaga */}
+      {/* Header */}
       <div className="p-6 border-b border-zinc-800 bg-zinc-900/50 relative z-10">
         <div className="flex items-start justify-between gap-4 mb-6">
           <div>
@@ -86,7 +85,7 @@ export function JobDetailsPanel({
         </div>
       </div>
 
-      {/* Grid de Candidatos (Kanban Area) */}
+      {/* Grid de Candidatos */}
       <div className="flex-1 overflow-y-auto p-6 bg-black/40 relative z-10 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
         <div className="grid gap-4 xl:grid-cols-2">
           {vaga.applications

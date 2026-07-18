@@ -250,7 +250,7 @@ export default function ChatRoomPage() {
     fetchMessages();
   }, [roomId]);
 
-  // Scroll automático para o fim
+
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -478,12 +478,11 @@ export default function ChatRoomPage() {
         </div>
       </aside>
 
-      {/* COLUNA DA DIREITA: CHAT ATIVO */}
+      {/* CHAT ATIVO */}
       <main className="flex-1 flex flex-col h-full bg-zinc-950 relative">
-        {/* Background Patterns para visual Premium */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-blue-900/10 via-zinc-950 to-zinc-950 pointer-events-none" />
 
-        {/* Cabeçalho do Chat Ativo (Glassmorphism) */}
+        {/* Chat Header */}
         <div className="p-4 px-6 border-b border-white/5 flex items-center justify-between gap-3 backdrop-blur-md bg-zinc-950/70 sticky top-0 z-20 shadow-sm">
           <div className="flex items-center gap-4">
             <button
@@ -527,7 +526,7 @@ export default function ChatRoomPage() {
             </div>
           </div>
           
-          {/* Ações Premium (Mockadas para visual, 3 pontinhos para o futuro) */}
+          {/* Ações */}
           <div className="flex items-center gap-2">
             <button className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors" title="Chamada de Áudio (Em breve)">
               <FiPhone size={18} />
@@ -536,7 +535,7 @@ export default function ChatRoomPage() {
               <FiVideo size={18} />
             </button>
             <div className="w-px h-6 bg-zinc-800 mx-1"></div>
-            {/* 3 pontinhos (Reservado para funcionalidades futuras) */}
+            {/* Menu (3 pontinhos) */}
             <div className="relative">
               <button 
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -547,7 +546,7 @@ export default function ChatRoomPage() {
                 <FiMoreVertical size={18} />
               </button>
               
-              {/* Overlay invisível para fechar ao clicar fora */}
+              {/* Overlay */}
               {isMenuOpen && (
                 <div 
                   className="fixed inset-0 z-40" 
@@ -555,7 +554,7 @@ export default function ChatRoomPage() {
                 />
               )}
 
-              {/* Dropdown mockado que aparece no click */}
+              {/* Dropdown */}
               <div className={`absolute right-0 top-full mt-2 flex-col bg-zinc-800/90 backdrop-blur-md rounded-xl p-2 shadow-2xl border border-zinc-700 w-48 z-50 ${
                 isMenuOpen ? "flex" : "hidden"
               }`}>
@@ -585,7 +584,7 @@ export default function ChatRoomPage() {
 
         {/* Área de mensagens */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6 relative z-10 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
-          {/* Timestamp separador do dia */}
+          {/* Timestamp */}
           <div className="flex justify-center mb-8 mt-2">
             <span className="px-3 py-1 rounded-full bg-zinc-900/80 border border-zinc-800 text-[10px] font-bold text-zinc-500 uppercase tracking-widest backdrop-blur-sm">
               Hoje
@@ -637,7 +636,7 @@ export default function ChatRoomPage() {
                     <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                   )}
                   
-                  {/* Tempo da mensagem dentro do balão */}
+                  {/* Hora da mensagem */}
                   <div className={`text-[10px] flex items-center gap-1 mt-1 font-medium ${isMine ? "text-blue-200 justify-end" : "text-zinc-500 justify-start"}`}>
                     {msg.isEdited && <span className="italic opacity-80 mr-1">(editado)</span>}
                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -649,7 +648,7 @@ export default function ChatRoomPage() {
           <div ref={scrollRef} className="h-4" />
         </div>
 
-        {/* Preview de imagem se selecionada */}
+        {/* Preview da imagem */}
         {selectedImage && (
           <div className="px-4 pt-4 pb-0 bg-transparent relative z-20">
             <div className="max-w-4xl mx-auto">
@@ -678,7 +677,7 @@ export default function ChatRoomPage() {
           </div>
         )}
 
-        {/* Input de mensagem (Floating Bar Premium) */}
+        {/* Input */}
         <div className="p-4 bg-transparent relative z-20 flex flex-col gap-2">
           {editingMessageId && (
             <div className="max-w-4xl mx-auto w-full flex items-center justify-between bg-zinc-900/90 border border-blue-500/30 px-4 py-2 rounded-xl backdrop-blur-md">

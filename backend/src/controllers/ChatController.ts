@@ -8,7 +8,7 @@ export class ChatController {
    * Se o usuário saiu da sala antes (apagou conversa), ele é reconectado.
    */
   private async findOrCreateRoom(userIdA: string, userIdB: string, context: "SOCIAL" | "PROFESSIONAL" = "SOCIAL", jobId?: string) {
-    // 1. Procura QUALQUER sala que contenha ambos os usuários (independente do contexto)
+    // Procura QUALQUER sala que contenha ambos os usuários (independente do contexto)
     let room = await prisma.room.findFirst({
       where: {
         AND: [
@@ -21,12 +21,12 @@ export class ChatController {
 
     if (room) return room;
 
-    // 2. Talvez o usuário A tenha saído da sala (apagou conversa) mas a sala ainda existe com B
-    //    Nesse caso, reconecta o usuário A à sala existente
+    // Talvez o usuário tenha saído da sala (apagou conversa) mas a sala ainda existe com B
+    //Nesse caso, reconecta o usuário à sala existente
     const roomWithOnlyB = await prisma.room.findFirst({
       where: {
         users: { some: { id: userIdB } },
-        // Verifica se esse Room já teve o userIdA antes (existem mensagens dele)
+        // Verifica se esse Room já teve o userId antes (existem mensagens dele)
       },
       include: { 
         users: true,
@@ -64,7 +64,7 @@ export class ChatController {
       return room;
     }
 
-    // 3. Nenhuma sala existente: cria uma nova
+    // Nenhuma sala existente: cria uma nova
     room = await prisma.room.create({
       data: {
         context,
@@ -165,7 +165,7 @@ export class ChatController {
         return res.status(400).json({ error: "ID da sala inválido." });
       }
 
-      // Camada de Segurança Corporativa: Verifica se o usuário logado pertence à sala que ele quer ler
+      //  Verifica se o usuário logado pertence à sala que ele quer ler
       const roomAccess = await prisma.room.findFirst({
         where: {
           id: roomId,

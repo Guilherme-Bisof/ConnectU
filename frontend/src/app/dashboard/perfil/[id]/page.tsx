@@ -168,7 +168,7 @@ export default function PublicProfilePage() {
 
   return (
     <div className="mx-auto max-w-4xl pb-12 animate-fadeIn relative">
-      {/* Botão Voltar Dinâmico */}
+      {/* Botão Voltar */}
       <button
         onClick={() => router.back()}
         className="flex items-center gap-2 text-zinc-400 hover:text-white mb-6 transition-colors"
@@ -176,7 +176,7 @@ export default function PublicProfilePage() {
         <FiArrowLeft /> Voltar
       </button>
 
-      {/* Header do Perfil */}
+      {/* Header */}
       <div className="relative mb-8 rounded-2xl bg-zinc-900 border border-zinc-800 p-8 shadow-xl overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-32 bg-linear-to-r from-blue-900/40 to-purple-900/40 border-b border-zinc-800/50"></div>
 
@@ -211,7 +211,7 @@ export default function PublicProfilePage() {
               )}
             </div>
 
-            {/* Subtítulo dinâmico*/}
+            {/* Subtítulo*/}
             <p className="text-sm text-zinc-400 mt-1">
               {profile.role === "STUDENT"
                 ? `${profile.course || "Estudante"} na ${profile.institution || "Instituição não informada"}`
@@ -234,7 +234,7 @@ export default function PublicProfilePage() {
                 )}
               </button>
 
-              {/* Botão do Currículo VISÍVEL APENAS PARA RECRUTADORES */}
+              {/* Botão Currículo (VISÍVEL APENAS PARA RECRUTADORES) */}
               {profile.resumeUrl && viewerRole === "RECRUITER" && (
                 <a
                   href={
@@ -252,7 +252,7 @@ export default function PublicProfilePage() {
             </div>
           </div>
 
-          {/* Links Rápidos no Header */}
+          {/* Links */}
           {profile.links && profile.links.length > 0 && (
             <div className="flex gap-3 mt-4 sm:mt-0">
               {profile.links.map((link) => (
@@ -276,13 +276,13 @@ export default function PublicProfilePage() {
         </div>
       </div>
 
-      {/* Grid Dinâmico com base na Role */}
+      {/* Grid */}
       <div className="grid md:grid-cols-3 gap-6">
-        {/* COLUNA DA ESQUERDA: Se for Empresa ocupa o espaço inteiro (3 colunas), se for Aluno ocupa 1 coluna */}
+        {/* ESQUERDA */}
         <div
           className={`space-y-6 ${profile.role === "STUDENT" ? "md:col-span-1" : "md:col-span-3"}`}
         >
-          {/* Resumo Profissional (Bio) */}
+          {/* Resumo */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
             <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4 border-b border-zinc-800 pb-2">
               {profile.role === "STUDENT" ? "Sobre Mim" : "Sobre a Empresa"}
@@ -354,10 +354,10 @@ export default function PublicProfilePage() {
           )}
         </div>
 
-        {/* COLUNA DA DIREITA: Renderiza APENAS se o perfil for estudante */}
+        {/* DIREITA */}
         {profile.role === "STUDENT" && (
           <div className="space-y-6 md:col-span-2">
-            {/* Competências (Skills) */}
+            {/* Competências */}
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
               <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4 border-b border-zinc-800 pb-2">
                 Competências & Tecnologias
@@ -438,7 +438,7 @@ export default function PublicProfilePage() {
         )}
       </div>
 
-      {/* MODAL DE DETALHES DO PROJETO */}
+      {/* MODAL DETALHES DO PROJETO */}
       {selectedProject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-2xl shadow-2xl relative flex flex-col max-h-[90vh]">

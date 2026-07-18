@@ -40,7 +40,6 @@ export function StudentJobDetailPanel({
   const [animatedScore, setAnimatedScore] = useState(0);
 
   useEffect(() => {
-    // Colocamos o reset num setTimeout(0) para evitar o aviso do ESLint
     const resetTimer = setTimeout(() => setAnimatedScore(0), 0);
 
     let animTimer: NodeJS.Timeout;

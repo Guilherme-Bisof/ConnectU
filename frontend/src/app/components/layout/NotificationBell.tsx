@@ -161,7 +161,7 @@ export function NotificationBell({
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Botão do Sino */}
+      {/* Botão */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 text-zinc-400 hover:text-white transition-colors rounded-full hover:bg-zinc-800"

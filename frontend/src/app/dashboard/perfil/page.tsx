@@ -266,7 +266,7 @@ export default function ProfilePage() {
     fetchDashboardData();
   }, [user]);
 
-  // --- FUNÇÕES DO MODAL DE SKILLS ---
+  // FUNÇÕES DO MODAL DE SKILLS 
   function openSkillModal() {
     setTempSkills(user?.skills || []);
     setIsSkillModalOpen(true);
@@ -320,7 +320,7 @@ export default function ProfilePage() {
     }
   }
 
-  // --- FUNÇÕES DO MODAL DE SOBRE (BIO) ---
+  //  FUNÇÕES DO MODAL DE SOBRE (BIO) 
   function openBioModal() {
     setBioInput(user?.bio || "");
     setIsBioModalOpen(true);
@@ -759,7 +759,7 @@ export default function ProfilePage() {
 
   // Fallbacks de imagens
   const bannerSrc = user.bannerUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1964&auto=format&fit=crop";
-  
+
   // Elementos do checklist de completude do perfil
   const hasBasicProfile = !!(user.name && user.course && user.institution);
   const hasSkills = !!(user.skills && user.skills.length > 0);
@@ -1022,11 +1022,10 @@ export default function ProfilePage() {
                                 ? achievement.name
                                 : "Conquista bloqueada"
                             }
-                            className={`flex h-11 w-11 items-center justify-center rounded-full border transition ${
-                              achievement.unlocked
+                            className={`flex h-11 w-11 items-center justify-center rounded-full border transition ${achievement.unlocked
                                 ? achievement.className
                                 : "border-zinc-800 bg-zinc-900/60 text-zinc-700"
-                            }`}
+                              }`}
                           >
                             <Icon className="h-4 w-4" />
                           </button>
@@ -1289,11 +1288,10 @@ export default function ProfilePage() {
                     </div>
                   ) : (
                     <div
-                      className={`grid gap-4 ${
-                        user.projects!.length === 1
+                      className={`grid gap-4 ${user.projects!.length === 1
                           ? "grid-cols-1"
                           : "grid-cols-1 md:grid-cols-2"
-                      }`}
+                        }`}
                     >
                       {user.projects!.map((proj, idx) => {
                         const isSingle = user.projects!.length === 1;

@@ -458,7 +458,7 @@ export default function DashboardFeed() {
             </div>
           </div>
 
-          {/* Feed Posts Section */}
+          {/*  Section Feed de Posts  */}
           <div className="space-y-6" data-purpose="feed-stream">
             {isFetching ? (
               [1, 2, 3].map((n) => (
@@ -505,7 +505,7 @@ export default function DashboardFeed() {
                   className="group/post rounded-xl border border-[#2a2d32] bg-[#181a1d] overflow-hidden transition-colors hover:border-[#3a3d42]"
                 >
                   <div className="p-5">
-                    {/* Cabeçalho do Post */}
+                    {/* Header do Post */}
                     <div className="flex justify-between items-start mb-4">
                       <Link
                         href={`/dashboard/perfil/${post.authorId}`}

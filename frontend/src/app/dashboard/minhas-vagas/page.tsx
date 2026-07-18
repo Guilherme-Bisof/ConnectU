@@ -339,7 +339,7 @@ export default function MinhasVagasPage() {
     }
   };
 
-  //Função para abrir o modal de edição já preenchido com os dados da vaga criada
+  //Função para abrir o modal de edição já preenchido
   const openEditModal = (vaga: JobData) => {
     setEditingJobId(vaga.id);
     setEditJobData({
@@ -404,7 +404,6 @@ export default function MinhasVagasPage() {
     }
   };
 
-  // toggleExpandJob removido em favor do selectedJobId
 
   if (isLoading) {
     return (
@@ -425,11 +424,11 @@ export default function MinhasVagasPage() {
 
   return (
     <div className="mx-auto max-w-7xl pb-12 relative px-4 xl:px-0">
-      {/* Cabeçalho Premium */}
+      {/* Header */}
       <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 p-8 rounded-2xl border border-white/5 bg-linear-to-br from-zinc-900/80 to-black overflow-hidden shadow-2xl">
-        {/* Glow de fundo */}
+
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
-        
+
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2.5 bg-blue-500/10 rounded-xl border border-blue-500/20">
@@ -452,10 +451,10 @@ export default function MinhasVagasPage() {
         </button>
       </div>
 
-      {/* Layout Master-Detail (2 Colunas) */}
+      {/* Master-Detail */}
       <div className="flex flex-col lg:flex-row gap-6">
-        
-        {/* Coluna da Esquerda: Lista de Vagas */}
+
+        {/* Lista */}
         <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 flex flex-col gap-4">
           {vagas.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-zinc-700 bg-zinc-900/50 p-12 text-center">
@@ -484,9 +483,9 @@ export default function MinhasVagasPage() {
           )}
         </div>
 
-        {/* Coluna da Direita: Painel de CRM (JobDetailsPanel) */}
+        {/* Direita: Painel */}
         <div className="flex-1 w-full">
-          <JobDetailsPanel 
+          <JobDetailsPanel
             vaga={selectedJob}
             onSelectStudent={setSelectedStudent}
             onRemoveApplicant={handleRemoveApplicant}
@@ -494,7 +493,7 @@ export default function MinhasVagasPage() {
         </div>
       </div>
 
-      {/* MODAL: PERFIL RESUMIDO DO ALUNO */}
+      {/* MODAL PERFIL RESUMIDO DO ALUNO */}
       <StudentProfileModal
         isOpen={!!selectedStudent}
         onClose={() => setSelectedStudent(null)}
@@ -503,7 +502,7 @@ export default function MinhasVagasPage() {
         onStartChat={handleStartChat}
       />
 
-      {/* MODAL DE NOVA VAGA */}
+      {/* MODAL NOVA VAGA */}
       <JobFormModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -515,7 +514,7 @@ export default function MinhasVagasPage() {
         submitText="Publicar Vaga"
       />
 
-      {/* MODAL DE EDITAR VAGA */}
+      {/* MODAL EDITAR VAGA */}
       <JobFormModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}

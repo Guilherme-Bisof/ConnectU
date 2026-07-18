@@ -116,7 +116,7 @@ export default function DashboardLayout({
           </div>
         </form>
 
-        {/* Header Actions */}
+        {/*  Actions do Header */}
         <div className="flex items-center gap-4">
           <NotificationBell placement="bottom" />
 
@@ -188,9 +188,9 @@ export default function DashboardLayout({
         </div>
       </header>
 
-      {/* ===== CONTEÚDO ABAIXO DO HEADER ===== */}
+      {/*  CONTEÚDO ABAIXO DO HEADER */}
       <div className="pt-16 flex min-h-screen">
-        {/* ===== SIDEBAR ESQUERDA (Desktop) ===== */}
+        {/*  SIDEBAR ESQUERDA (Desktop)  */}
         <aside
           className="w-64 fixed left-0 top-16 bottom-0 overflow-y-auto hidden lg:block border-r border-[#2a2d32] p-4 space-y-8"
           data-purpose="navigation-sidebar"
@@ -486,7 +486,7 @@ export default function DashboardLayout({
           </div>
         </aside>
 
-        {/* ===== MENU MOBILE (overlay) ===== */}
+        {/*  MENU MOBILE (overlay)  */}
         {isMobileMenuOpen && (
           <div className="lg:hidden fixed inset-0 top-16 z-40 bg-[#0d0f11]/95 backdrop-blur-sm overflow-y-auto">
             <div className="flex flex-col p-4 space-y-6">
@@ -586,7 +586,7 @@ export default function DashboardLayout({
           </div>
         )}
 
-        {/* ===== ÁREA PRINCIPAL DE CONTEÚDO ===== */}
+        {/*  ÁREA PRINCIPAL DE CONTEÚDO */}
         <main className="flex-1 lg:ml-64 p-6">
           {children}
         </main>

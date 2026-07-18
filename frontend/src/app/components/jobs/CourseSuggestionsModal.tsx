@@ -38,9 +38,7 @@ export function CourseSuggestionsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fadeIn">
-      {/* CAIXA PRINCIPAL DO MODAL - ENGLOBA TUDO */}
       <div className="bg-[#121214] border border-zinc-800 rounded-2xl w-full max-w-2xl shadow-2xl relative flex flex-col max-h-[90vh] animate-slideInRight overflow-hidden">
-        {/* Faixa superior */}
         <div className="h-2 w-full bg-linear-to-r from-blue-400 via-emerald-400 to-blue-400 shrink-0"></div>
 
         {/* Header */}

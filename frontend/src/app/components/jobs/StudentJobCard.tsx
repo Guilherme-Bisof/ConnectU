@@ -25,7 +25,6 @@ export function StudentJobCard({
   isSelected,
   onClick,
 }: StudentJobCardProps) {
-  // Definir cores do match (verde alto, amarelo médio, vermelho baixo)
   const getMatchColor = (score: number) => {
     if (score >= 80)
       return "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
@@ -43,7 +42,6 @@ export function StudentJobCard({
           : "bg-[#121214] border-zinc-800/60 hover:bg-zinc-900 hover:border-zinc-700"
       }`}
     >
-      {/* Indicador lateral de seleção */}
       {isSelected && (
         <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1/2 w-1 bg-blue-500 rounded-r-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
       )}
@@ -51,7 +49,7 @@ export function StudentJobCard({
       {/* Cabecalho card */}
       <div className="flex justify-between items-start gap-4">
         <div className="flex flex-1 gap-4 min-w-0">
-          {/* mock de logo da empresa */}
+          {/* mock de logo */}
           <div
             className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center text-xl font-bold border transition-colors ${
               isSelected
