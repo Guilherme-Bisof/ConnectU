@@ -44,6 +44,7 @@ model User {
   bio        String?
   resumeUrl  String?
   isPioneer  Boolean @default(false)
+  location   String?
 
   // Carreira e Status 
   currentCompany String? // Onde o aluno trabalha atualmente

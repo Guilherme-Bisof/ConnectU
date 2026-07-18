@@ -1,15 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FiPlus, FiEdit2, FiX, FiExternalLink, FiTarget } from "react-icons/fi";
 import {
-  ProfileLinks,
-  getLinkIcon,
-} from "@/app/components/profile/ProfileLinks";
-import { ProfileHeader } from "@/app/components/profile/ProfileHeader";
-import { ProfileBio } from "@/app/components/profile/ProfileBio";
-import { ProfileSkills } from "@/app/components/profile/ProfileSkills";
-import { ProfileProjects } from "@/app/components/profile/ProfileProjects";
+  FiPlus,
+  FiTarget,
+  FiCalendar,
+  FiMapPin,
+  FiEdit3,
+  FiCheckCircle,
+  FiCircle,
+  FiPlusCircle,
+  FiArrowRight,
+  FiAward,
+  FiShield,
+  FiCpu,
+  FiLock,
+  FiSettings,
+  FiGlobe,
+  FiLinkedin,
+  FiGithub,
+  FiExternalLink,
+} from "react-icons/fi";
+import { MdVerified } from "react-icons/md";
 import { EditBioModal } from "@/app/components/profile/EditBioModal";
 import { EditSkillModal } from "@/app/components/profile/EditSkillsModal";
 import { EditLinkModal } from "@/app/components/profile/EditLinkModal";
@@ -49,6 +61,7 @@ interface UserData {
   bio?: string;
   links?: UserLink[];
   projects?: UserProject[];
+  location?: string;
 }
 
 interface JobData {
@@ -62,11 +75,23 @@ interface JobData {
   isInternship: boolean;
 }
 
-interface MatchedJobData extends JobData {
-  matchPercentage: number;
-  company: {
-    name: string;
-  };
+
+function getProfileCompletion(user: UserData): number {
+  let total = 5; // name, course, institution, bio, avatarUrl
+  let filled = 0;
+
+  if (user.name) filled++;
+  if (user.course) filled++;
+  if (user.institution) filled++;
+  if (user.bio) filled++;
+  if (user.avatarUrl) filled++;
+
+  total += 3; // +3 para skills, projetos, links
+  if (user.skills && user.skills.length > 0) filled++;
+  if (user.projects && user.projects.length > 0) filled++;
+  if (user.links && user.links.length > 0) filled++;
+
+  return Math.round((filled / total) * 100);
 }
 
 export default function ProfilePage() {
@@ -95,6 +120,7 @@ export default function ProfilePage() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [editLocation, setEditLocation] = useState("");
 
   // Estados do Modal de Sobre (Bio)
   const [isBioModalOpen, setIsBioModalOpen] = useState(false);
@@ -130,8 +156,7 @@ export default function ProfilePage() {
   // Estado para guardar as vagas (recrutador ou empresa)
   const [companyJobs, setCompanyJobs] = useState<JobData[]>([]);
 
-  // Estado para guardar match com vagas (Usuário)
-  const [matchedJobs, setMatchedJobs] = useState<MatchedJobData[]>([]);
+
 
   // Estados modal visualizar/gerenciar vaga
   const [selectedJob, setSelectedJob] = useState<JobData | null>(null);
@@ -155,6 +180,10 @@ export default function ProfilePage() {
           );
           if (res.ok) {
             const freshUser = await res.json();
+            // Mantém a localização do cache caso a API antiga na nuvem não a possua
+            if (freshUser.location === undefined) {
+              freshUser.location = parsedUser.location;
+            }
             setUser(freshUser);
             localStorage.setItem("connectu_user", JSON.stringify(freshUser));
 
@@ -163,12 +192,14 @@ export default function ProfilePage() {
             if (params.get("redirected") === "true") {
               setEditName(freshUser.name || "");
               setEditAvatarUrl(freshUser.avatarUrl || "");
+              setEditBannerUrl(freshUser.bannerUrl || "");
               setEditCourse(freshUser.course || "");
               setEditInstitution(freshUser.institution || "");
               setEditDegreeType(freshUser.degreeType || "");
               setEditStartDate(freshUser.startDate || "");
               setEditEndDate(freshUser.endDate || "");
               setEditResumeUrl(freshUser.resumeUrl || "");
+              setEditLocation(freshUser.location || "");
               setIsEditProfileModalOpen(true);
             }
           }
@@ -215,8 +246,7 @@ export default function ProfilePage() {
             },
           );
           if (res.ok) {
-            const data = await res.json();
-            setMatchedJobs(data);
+            await res.json();
           }
         } catch (error) {
           console.error("Erro ao buscar vagas recomendadas:", error);
@@ -526,14 +556,10 @@ export default function ProfilePage() {
       );
 
       if (response.ok || response.status === 204) {
-        // 1. Remove a vaga do array para ela sumir do ecrã instantaneamente
         setCompanyJobs((prevJobs) =>
           prevJobs.filter((job) => job.id !== jobId),
         );
-
-        // 2. Fecha o modal de visualização
         setIsViewJobModalOpen(false);
-
         alert("Vaga apagada com sucesso!");
       } else {
         alert("Erro ao tentar apagar a vaga no servidor.");
@@ -564,13 +590,9 @@ export default function ProfilePage() {
 
         if (response.ok) {
           const updatedJob = await response.json();
-
-          // Atualiza a vaga na lista geral
           setCompanyJobs((prevJobs) =>
             prevJobs.map((job) => (job.id === jobId ? updatedJob : job)),
           );
-
-          // Atualiza a vaga que está aberta no Modal
           setSelectedJob(updatedJob);
         } else {
           alert("Erro ao atualizar o status da vaga no servidor.");
@@ -614,6 +636,7 @@ export default function ProfilePage() {
     setEditStartDate(user?.startDate || "");
     setEditEndDate(user?.endDate || "");
     setEditResumeUrl(user?.resumeUrl || "");
+    setEditLocation(user?.location || "");
     setIsEditProfileModalOpen(true);
   }
 
@@ -624,13 +647,11 @@ export default function ProfilePage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-
       let finalResumeUrl = editResumeUrl;
 
       if (avatarFile) {
         const formData = new FormData();
         formData.append("file", avatarFile);
-
         try {
           await fetch(
             `https://connectu-gd1z.onrender.com/users/${user.id}/avatar`,
@@ -668,7 +689,6 @@ export default function ProfilePage() {
       if (bannerFile) {
         const bannerData = new FormData();
         bannerData.append("file", bannerFile);
-
         try {
           await fetch(
             `https://connectu-gd1z.onrender.com/users/${user.id}/banner`,
@@ -699,12 +719,17 @@ export default function ProfilePage() {
             startDate: editStartDate,
             endDate: editEndDate,
             resumeUrl: finalResumeUrl,
+            location: editLocation,
           }),
         },
       );
 
       if (res.ok) {
         const updatedUser = await res.json();
+        // Preservar location caso o backend na nuvem ignore este campo
+        if (updatedUser.location === undefined) {
+          updatedUser.location = editLocation;
+        }
         setUser(updatedUser);
         localStorage.setItem("connectu_user", JSON.stringify(updatedUser));
         window.dispatchEvent(new Event("storage"));
@@ -721,197 +746,581 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
+  const completionPercent = getProfileCompletion(user);
+
+  // Fallbacks de imagens
+  const bannerSrc = user.bannerUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1964&auto=format&fit=crop";
+  
+  // Elementos do checklist de completude do perfil
+  const hasBasicProfile = !!(user.name && user.course && user.institution);
+  const hasSkills = !!(user.skills && user.skills.length > 0);
+  const hasProjects = !!(user.projects && user.projects.length > 0);
+
+  // Conquistas com base nas regras dinâmicas
+  const badgeCount = (hasBasicProfile ? 1 : 0) + (user.isPioneer ? 1 : 0) + ((user.skills && user.skills.length >= 5) ? 1 : 0) + (hasProjects ? 1 : 0);
+
   return (
-    <div className="mx auto max-w-5xl-pb-12">
-      {user?.role === "STUDENT" &&
-        (() => {
-          const missingFields = [];
-          if (!user.course?.trim()) missingFields.push("Curso");
-          if (!user.institution?.trim()) missingFields.push("Instituição");
-          if (!user.endDate?.trim())
-            missingFields.push("Previsão de Conclusão");
-          if (!user.skills || user.skills.length === 0)
-            missingFields.push("Habilidades/Skills");
+    <div className="-m-6 flex flex-col min-h-screen">
+      {/* Aviso de perfil incompleto para aluno */}
+      {user.role === "STUDENT" && (() => {
+        const missingFields = [];
+        if (!user.course?.trim()) missingFields.push("Curso");
+        if (!user.institution?.trim()) missingFields.push("Instituição");
+        if (!user.endDate?.trim()) missingFields.push("Previsão de Conclusão");
+        if (!user.skills || user.skills.length === 0) missingFields.push("Habilidades/Skills");
 
-          if (missingFields.length > 0) {
-            return (
-              <div className="mb-6 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-400 flex flex-col md:flex-row md:items-center justify-between gap-2 shadow-md animate-fadeIn">
-                <p className="font-medium">
-                  Para liberar o seu painel de vagas, preencha:{" "}
-                  <span className="font-bold underline">
-                    {missingFields.join(", ")}
-                  </span>
-                  .
-                </p>
-                <button
-                  onClick={openEditProfileModal}
-                  className="text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 px-3 py-1.5 rounded border border-amber-500/30 transition-colors uppercase"
-                >
-                  Preencher agora
-                </button>
-              </div>
-            );
-          } else {
-            return (
-              <div className="mb-6 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400 font-semibold shadow-md animate-fadeIn">
-                Perfil completo! Suas vagas já foram liberadas. 🎉
-              </div>
-            );
-          }
-        })()}
-      {/* Header */}
-      <ProfileHeader user={user} onEditClick={openEditProfileModal} />
+        if (missingFields.length > 0) {
+          return (
+            <div className="mb-4 mx-8 mt-6 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-400 flex flex-col md:flex-row md:items-center justify-between gap-2 shadow-md animate-fadeIn">
+              <p className="font-medium">
+                Para liberar o seu painel de vagas, preencha:{" "}
+                <span className="font-bold underline">{missingFields.join(", ")}</span>.
+              </p>
+              <button
+                onClick={openEditProfileModal}
+                className="text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 px-3 py-1.5 rounded border border-amber-500/30 transition-colors uppercase"
+              >
+                Preencher agora
+              </button>
+            </div>
+          );
+        } else {
+          return (
+            <div className="mb-4 mx-8 mt-6 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400 font-semibold shadow-md animate-fadeIn">
+              Perfil completo! Suas vagas já foram liberadas. 🎉
+            </div>
+          );
+        }
+      })()}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Coluna Esquerda */}
-        <div className="md:col-span-1 space-y-6">
-          <ProfileBio
-            role={user.role}
-            bio={user.bio}
-            onOpenModal={openBioModal}
-          />
-
-          {/*Links */}
-          <ProfileLinks links={user.links} onOpenModal={openLinkModal} />
-        </div>
-
-        {/*Coluna Direita */}
-        <div className="md:col-span-2 space-y-6">
-          {user.role === "STUDENT" ? (
-            // Visão do Aluno
-            <>
-              {/* Skills */}
-              <ProfileSkills
-                skills={user.skills}
-                onOpenModal={openSkillModal}
+      <main className="flex-1 flex flex-col items-center">
+        {/* Center Column Constraint */}
+        <div className="w-full max-w-[1024px] mx-auto">
+          {/* Premium Hero Area */}
+          <div className="relative w-full">
+            {/* Hero Banner */}
+            <div className="h-[320px] w-full overflow-hidden relative rounded-b-3xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                className="w-full h-full object-cover brightness-[0.6]"
+                src={bannerSrc}
+                alt="Banner do Perfil"
               />
+              <div className="absolute inset-0 bg-linear-to-t from-[#111317] via-transparent to-transparent"></div>
+            </div>
 
-              {/* Vitrine de projetos */}
-              <ProfileProjects
-                projects={user.projects}
-                onOpenModal={openProjectModal}
-              />
-            </>
-          ) : (
-            // Visão do Recrutador
-            <>
-              <div className="flex items-center justify-between rounded-2xl border border-purple-500/30 bg-purple-900/10 p-6 shadow-[0_0_20px_rgba(168,85,247,0.05)] backdrop-blur-md">
-                <div>
-                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <FiTarget className="text-purple-400" /> Oportunidades
-                    Abertas
-                  </h2>
-                  <p className="text-sm text-zinc-400 mt-1">
-                    Gerencia suas vagas e encontre os melhores talentos
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    setEditingJobId(null);
-                    setJobFormData({
-                      title: "",
-                      type: "Tempo Integral",
-                      description: "",
-                      skillsInput: "",
-                      desirableSkillsInput: "",
-                      isInternship: false,
-                    });
-                    setIsJobModalOpen(true);
-                  }}
-                  className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-purple-700"
-                >
-                  <FiPlus /> Criar Vaga
-                </button>
-              </div>
-
-              {/* Prateleira de Vagas Reais */}
-              <div className="space-y-4">
-                {companyJobs.length === 0 ? (
-                  <p className="text-sm text-zinc-500 italic">
-                    Nenhuma vaga publicada ainda.
-                  </p>
-                ) : (
-                  companyJobs.map((job) => (
-                    <div
-                      key={job.id}
-                      className="group relative flex flex-col md:flex-row md:items-center justify-between overflow-hidden rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-5 transition-all hover:border-purple-500/50 hover:bg-zinc-800/60 backdrop-blur-md"
-                    >
-                      <div className="absolute inset-0 bg-linear-to-r from-purple-500/0 via-purple-500/5 to-purple-500/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
-
-                      <div className="relative z-10 mb-4 md:mb-0 max-w-2xl flex-1 pr-4">
-                        <h3 className="text-lg font-bold text-zinc-100 group-hover:text-purple-300 transition-colors">
-                          {job.title}
-                        </h3>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <span className="rounded-md bg-zinc-800 px-2.5 py-1 text-xs font-medium text-zinc-300 border border-zinc-700">
-                            {job.type}
-                          </span>
-                          {job.isInternship && (
-                            <span className="rounded-md bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-400 border border-amber-500/20">
-                              Estágio
-                            </span>
-                          )}
-                          {job.requiredSkills.map((skill, i) => (
-                            <span
-                              key={i}
-                              className="rounded-md bg-zinc-800 px-2.5 py-1 text-xs font-medium text-zinc-300 border border-zinc-700"
-                            >
-                              {skill}
-                            </span>
-                          ))}
-                          {job.desirableSkills?.map((skill, i) => (
-                            <span
-                              key={`des-${i}`}
-                              className="rounded-md bg-purple-900/20 px-2.5 py-1 text-xs font-medium text-purple-300 border border-purple-900/30"
-                              title="Desejável (Plus)"
-                            >
-                              +{skill}
-                            </span>
-                          ))}
-                        </div>
-
-                        {/* Nova Descrição com Ver Mais / Ver Menos */}
-                        {job.description && (
-                          <div className="mt-3">
-                            <p
-                              className={`text-sm text-zinc-400 transition-all ${expandedJobIds.includes(job.id) ? "whitespace-pre-wrap" : "line-clamp-2"}`}
-                            >
-                              {job.description}
-                            </p>
-                            <button
-                              onClick={() => toggleJobDescription(job.id)}
-                              className="text-xs font-semibold text-purple-400 hover:text-purple-300 mt-1 transition-colors"
-                            >
-                              {expandedJobIds.includes(job.id)
-                                ? "Ver menos"
-                                : "Ver mais"}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="relative z-10 flex items-center gap-4">
-                        <button
-                          onClick={() => {
-                            setSelectedJob(job);
-                            setIsViewJobModalOpen(true);
-                          }}
-                          className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-bold text-zinc-900 transition-all hover:bg-white hover:scale-105"
-                        >
-                          Ver Vaga
-                        </button>
-                      </div>
+            {/* Profile Info Overlap */}
+            <div className="px-6 md:px-8 mt-[-80px] relative z-10 flex flex-col md:flex-row items-end gap-6">
+              {/* Large Overlapping Photo */}
+              <div className="relative shrink-0">
+                <div className="w-44 h-44 rounded-full border-8 border-[#111317] p-1 bg-[#111317] shadow-xl overflow-hidden flex items-center justify-center">
+                  {user.avatarUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      className="w-full h-full rounded-full object-cover shadow-inner"
+                      src={user.avatarUrl}
+                      alt={user.name}
+                    />
+                  ) : (
+                    <div className="w-full h-full rounded-full bg-zinc-700 flex items-center justify-center text-4xl font-bold text-white uppercase">
+                      {user.name.charAt(0)}
                     </div>
-                  ))
+                  )}
+                </div>
+                {user.isPioneer && (
+                  <div className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-[#316cf4] border-4 border-[#111317] flex items-center justify-center shadow-lg" title="Membro Fundador">
+                    <MdVerified className="text-white text-lg" />
+                  </div>
                 )}
               </div>
-            </>
-          )}
-        </div>
-      </div>
 
-      {/* Modais */}
-      {/* Modal de Skills */}
+              {/* Text Header Content */}
+              <div className="flex-1 pb-4 min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight wrap-break-word">
+                    {user.name}
+                  </h2>
+                  {user.isPioneer && (
+                    <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-500 border border-amber-500/30 font-black text-[10px] tracking-widest uppercase shrink-0">
+                      PIONEIRO
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-[#316cf4] font-semibold text-lg md:text-xl mb-2 leading-snug">
+                  {user.role === "STUDENT"
+                    ? `${user.course || "Aluno"} na ${user.institution || "Instituição de Ensino"}`
+                    : "Recrutador Corporativo"}
+                </p>
+
+                {user.role === "STUDENT" && (
+                  <div className="flex flex-wrap items-center gap-3 text-gray-500 text-sm">
+                    {user.startDate && user.endDate && (
+                      <span className="flex items-center gap-1">
+                        <FiCalendar className="text-lg" />
+                        {user.startDate} até {user.endDate}
+                      </span>
+                    )}
+                    <span className="opacity-30">•</span>
+                    <span className="flex items-center gap-1">
+                      <FiMapPin className="text-lg" />
+                      {user.location || "Maringá, PR"}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Primary Action */}
+              <div className="pb-6 w-full md:w-auto">
+                <button
+                  onClick={openEditProfileModal}
+                  className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-[#282a2e] border border-[#2a2d32] text-white font-semibold hover:bg-[#333539] transition-all whitespace-nowrap shadow-lg text-sm"
+                >
+                  <FiEdit3 className="text-lg" />
+                  <span>Editar Perfil</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Two Column Grid Layout */}
+          <div className="grid grid-cols-12 gap-6 px-6 md:px-8 mt-8 pb-12">
+            {/* Left Column (Support Modules) */}
+            <aside className="col-span-12 md:col-span-4 space-y-6">
+              {/* Profile Completion (Professional Focused) */}
+              {user.role === "STUDENT" && (
+                <section className="bg-[#1e2024] p-6 rounded-xl border border-[#2a2d32] shadow-sm">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold text-lg text-white">Completar Perfil</h3>
+                    <span className="text-[#316cf4] font-bold text-lg">{completionPercent}%</span>
+                  </div>
+                  <div className="w-full bg-[#333539] h-2 rounded-full mb-6 overflow-hidden">
+                    <div
+                      className="bg-[#316cf4] h-full rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(49,108,244,0.5)]"
+                      style={{ width: `${completionPercent}%` }}
+                    ></div>
+                  </div>
+                  <ul className="space-y-3">
+                    <li className="flex items-center justify-between text-gray-400">
+                      <div className="flex items-center gap-2">
+                        {user.bio ? (
+                          <FiCheckCircle className="text-[#316cf4] text-lg shrink-0" />
+                        ) : (
+                          <FiCircle className="text-gray-600 text-lg shrink-0" />
+                        )}
+                        <span className={`text-sm ${user.bio ? "text-gray-300" : ""}`}>Biografia acadêmica</span>
+                      </div>
+                      {!user.bio && <span className="text-[#316cf4] font-semibold text-xs">+25%</span>}
+                    </li>
+                    <li className="flex items-center justify-between text-gray-400">
+                      <div className="flex items-center gap-2">
+                        {hasSkills ? (
+                          <FiCheckCircle className="text-[#316cf4] text-lg shrink-0" />
+                        ) : (
+                          <FiCircle className="text-gray-600 text-lg shrink-0" />
+                        )}
+                        <span className={`text-sm ${hasSkills ? "text-gray-300" : ""}`}>Competências técnicas</span>
+                      </div>
+                      {!hasSkills && <span className="text-[#316cf4] font-semibold text-xs">+25%</span>}
+                    </li>
+                    <li className="flex items-center justify-between text-gray-400">
+                      <div className="flex items-center gap-2">
+                        {hasProjects ? (
+                          <FiCheckCircle className="text-[#316cf4] text-lg shrink-0" />
+                        ) : (
+                          <FiCircle className="text-gray-600 text-lg shrink-0" />
+                        )}
+                        <span className={`text-sm ${hasProjects ? "text-gray-300" : ""}`}>Vitrine de projetos</span>
+                      </div>
+                      {!hasProjects && <span className="text-[#316cf4] font-semibold text-xs">+25%</span>}
+                    </li>
+                  </ul>
+                  <button
+                    onClick={openProjectModal}
+                    className="w-full mt-6 py-2.5 border border-[#316cf4]/30 text-[#316cf4] rounded-lg font-bold hover:bg-[#316cf4]/5 transition-all text-xs uppercase"
+                  >
+                    Adicionar Projeto
+                  </button>
+                </section>
+              )}
+
+              {/* Conquistas (Badges Module) */}
+              <section className="bg-[#1e2024] p-6 rounded-xl border border-[#2a2d32] shadow-sm">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-bold text-lg text-white">Conquistas</h3>
+                  <span className="text-xs font-semibold text-gray-500">{badgeCount} / 12</span>
+                </div>
+                {(() => {
+                  const achievements = [
+                    {
+                      id: "verified",
+                      name: "Perfil verificado",
+                      icon: FiShield,
+                      unlocked: hasBasicProfile,
+                      className: "border-blue-500/40 bg-blue-500/10 text-blue-400",
+                    },
+                    {
+                      id: "pioneer",
+                      name: "Pioneiro ConnectU",
+                      icon: FiAward,
+                      unlocked: !!user.isPioneer,
+                      className: "border-amber-500/40 bg-amber-500/10 text-amber-400",
+                    },
+                    {
+                      id: "match",
+                      name: "Primeiro Match",
+                      icon: FiTarget,
+                      unlocked: (user.skills && user.skills.length >= 5),
+                      className: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400",
+                    },
+                    {
+                      id: "innovation",
+                      name: "Projeto inovador",
+                      icon: FiCpu,
+                      unlocked: hasProjects,
+                      className: "border-violet-500/40 bg-violet-500/10 text-violet-400",
+                    },
+                  ];
+                  return (
+                    <div className="grid grid-cols-4 gap-3">
+                      {achievements.map((achievement) => {
+                        const Icon = achievement.unlocked
+                          ? achievement.icon
+                          : FiLock;
+
+                        return (
+                          <button
+                            key={achievement.id}
+                            type="button"
+                            title={
+                              achievement.unlocked
+                                ? achievement.name
+                                : "Conquista bloqueada"
+                            }
+                            aria-label={
+                              achievement.unlocked
+                                ? achievement.name
+                                : "Conquista bloqueada"
+                            }
+                            className={`flex h-11 w-11 items-center justify-center rounded-full border transition ${
+                              achievement.unlocked
+                                ? achievement.className
+                                : "border-zinc-800 bg-zinc-900/60 text-zinc-700"
+                            }`}
+                          >
+                            <Icon className="h-4 w-4" />
+                          </button>
+                        );
+                      })}
+                      {[...Array(8)].map((_, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          title="Conquista bloqueada"
+                          aria-label="Conquista bloqueada"
+                          className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900/60 text-zinc-700 opacity-30 cursor-not-allowed"
+                        >
+                          <FiLock className="h-4 w-4" />
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </section>
+
+              {/* Official Links */}
+              <section className="bg-[#1e2024] p-6 rounded-xl border border-[#2a2d32] shadow-sm">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-bold text-lg text-white">Links Profissionais</h3>
+                  <button
+                    onClick={openLinkModal}
+                    type="button"
+                    title="Configurar links profissionais"
+                    aria-label="Configurar links profissionais"
+                    className="text-zinc-500 transition-colors hover:text-blue-400"
+                  >
+                    <FiSettings className="h-4 w-4" />
+                  </button>
+                </div>
+                {(() => {
+                  function getLinkIcon(label: string) {
+                    const cleanLabel = label.toLowerCase();
+                    if (cleanLabel.includes("linkedin")) return FiLinkedin;
+                    if (cleanLabel.includes("github")) return FiGithub;
+                    return FiGlobe;
+                  }
+                  return (
+                    <div className="space-y-2">
+                      {user.links && user.links.length > 0 ? (
+                        user.links.map((link) => {
+                          const Icon = getLinkIcon(link.label);
+                          return (
+                            <a
+                              key={link.label}
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-between rounded-lg border border-zinc-800 px-3 py-3 text-sm text-zinc-300 transition-colors hover:border-blue-500/40 hover:bg-blue-500/5 hover:text-white"
+                            >
+                              <span className="flex items-center gap-3">
+                                <Icon className="h-4 w-4 text-zinc-500" />
+                                {link.label}
+                              </span>
+
+                              <FiExternalLink className="h-3.5 w-3.5 text-zinc-600" />
+                            </a>
+                          );
+                        })
+                      ) : (
+                        <p className="text-sm text-gray-600 italic py-2">
+                          Nenhum link adicionado. Clique na engrenagem ao lado para gerenciar.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
+              </section>
+            </aside>
+
+            {/* Right Column (Main Content) */}
+            <div className="col-span-12 md:col-span-8 space-y-6">
+              {/* Sobre Mim */}
+              <section className="bg-[#1e2024] p-6 md:p-8 rounded-xl border border-[#2a2d32] relative shadow-sm">
+                <button
+                  onClick={openBioModal}
+                  type="button"
+                  aria-label="Editar sobre mim"
+                  title="Editar sobre mim"
+                  className="absolute top-6 right-6 text-zinc-500 transition-colors hover:text-blue-400"
+                >
+                  <FiEdit3 className="h-4 w-4" />
+                </button>
+                <h3 className="font-bold text-lg text-white mb-3">Sobre Mim</h3>
+                <p className="text-gray-400 leading-relaxed text-base whitespace-pre-wrap">
+                  {user.bio || "Escreva uma breve apresentação sobre sua carreira acadêmica e profissional."}
+                </p>
+              </section>
+
+              {/* Competências (Skills) */}
+              {user.role === "STUDENT" && (
+                <section className="bg-[#1e2024] p-6 md:p-8 rounded-xl border border-[#2a2d32] shadow-sm">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="font-bold text-lg text-white">Hard Skills</h3>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Habilidades validadas que impulsionam o seu Match nas vagas do ConnectU.
+                      </p>
+                    </div>
+                    <button
+                      onClick={openSkillModal}
+                      className="p-2 bg-[#316cf4]/10 text-[#316cf4] rounded-full hover:bg-[#316cf4]/20 transition-colors"
+                    >
+                      <FiPlus className="text-[20px]" />
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {user.skills && user.skills.length > 0 ? (
+                      user.skills.map((skill, index) => (
+                        <span
+                          key={index}
+                          className="px-4 py-2 rounded-lg bg-[#316cf4] text-white font-semibold text-xs shadow-[0_4px_12px_rgba(49,108,244,0.3)]"
+                        >
+                          {skill}
+                        </span>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-600 italic py-2">
+                        Nenhuma competência adicionada. Clique no botão de mais para incluir suas hard skills.
+                      </p>
+                    )}
+                  </div>
+                </section>
+              )}
+
+              {/* Seção Exclusiva de Vagas (Recrutador) */}
+              {user.role === "RECRUITER" && (
+                <section className="space-y-4">
+                  <div className="flex items-center justify-between rounded-xl border border-purple-500/30 bg-purple-900/10 p-6 shadow-[0_0_20px_rgba(168,85,247,0.05)]">
+                    <div>
+                      <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                        <FiTarget className="text-purple-400" /> Oportunidades Abertas
+                      </h2>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Gerencie suas vagas e encontre os melhores talentos.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setEditingJobId(null);
+                        setJobFormData({
+                          title: "",
+                          type: "Tempo Integral",
+                          description: "",
+                          skillsInput: "",
+                          desirableSkillsInput: "",
+                          isInternship: false,
+                        });
+                        setIsJobModalOpen(true);
+                      }}
+                      className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-purple-700"
+                    >
+                      <FiPlus /> Criar Vaga
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {companyJobs.length === 0 ? (
+                      <div className="bg-[#1e2024] border border-[#2a2d32] rounded-xl p-8 text-center text-gray-500">
+                        Nenhuma vaga publicada ainda.
+                      </div>
+                    ) : (
+                      companyJobs.map((job) => (
+                        <div
+                          key={job.id}
+                          className="group relative flex flex-col md:flex-row md:items-center justify-between rounded-xl border border-[#2a2d32] bg-[#1e2024]/40 p-5 hover:border-purple-500/40 hover:bg-[#1e2024] transition-all"
+                        >
+                          <div className="mb-4 md:mb-0 max-w-2xl flex-1 pr-4">
+                            <h3 className="text-base font-bold text-white group-hover:text-purple-300 transition-colors">
+                              {job.title}
+                            </h3>
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              <span className="rounded bg-zinc-800 px-2.5 py-0.5 text-xs text-zinc-300 border border-zinc-700">
+                                {job.type}
+                              </span>
+                              {job.isInternship && (
+                                <span className="rounded bg-amber-500/10 px-2.5 py-0.5 text-xs text-amber-400 border border-amber-500/20">
+                                  Estágio
+                                </span>
+                              )}
+                              {job.requiredSkills.map((skill, i) => (
+                                <span
+                                  key={i}
+                                  className="rounded bg-zinc-800 px-2.5 py-0.5 text-xs text-zinc-300 border border-zinc-700"
+                                >
+                                  {skill}
+                                </span>
+                              ))}
+                              {job.desirableSkills?.map((skill, i) => (
+                                <span
+                                  key={`des-${i}`}
+                                  className="rounded bg-purple-950/30 px-2.5 py-0.5 text-xs text-purple-300 border border-purple-900/30"
+                                  title="Desejável (Plus)"
+                                >
+                                  +{skill}
+                                </span>
+                              ))}
+                            </div>
+
+                            {job.description && (
+                              <div className="mt-3">
+                                <p className={`text-sm text-gray-400 transition-all ${expandedJobIds.includes(job.id) ? "whitespace-pre-wrap" : "line-clamp-2"}`}>
+                                  {job.description}
+                                </p>
+                                <button
+                                  onClick={() => toggleJobDescription(job.id)}
+                                  className="text-xs font-semibold text-purple-400 hover:text-purple-300 mt-1 transition-colors"
+                                >
+                                  {expandedJobIds.includes(job.id) ? "Ver menos" : "Ver mais"}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          <button
+                            onClick={() => {
+                              setSelectedJob(job);
+                              setIsViewJobModalOpen(true);
+                            }}
+                            className="rounded-lg bg-white hover:bg-gray-200 px-4 py-2 text-xs font-bold text-black transition-all"
+                          >
+                            Ver Vaga
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </section>
+              )}
+
+              {/* Vitrine de Projetos */}
+              {user.role === "STUDENT" && (
+                <section className="space-y-4">
+                  <div className="flex justify-between items-center px-1">
+                    <h3 className="font-bold text-lg text-white">Vitrine de Projetos</h3>
+                    <button
+                      onClick={openProjectModal}
+                      className="flex items-center gap-1 text-[#316cf4] font-bold text-xs hover:underline uppercase"
+                    >
+                      <FiPlusCircle className="text-[18px]" />
+                      <span>Novo Projeto</span>
+                    </button>
+                  </div>
+
+                  {user.projects && user.projects.length > 0 ? (
+                    user.projects.map((proj, idx) => (
+                      <div
+                        key={idx}
+                        className="group bg-[#1e2024] rounded-2xl border border-[#2a2d32] overflow-hidden hover:border-[#316cf4]/40 transition-all duration-500 shadow-sm"
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-5">
+                          <div className="md:col-span-2 relative h-56 md:h-72 overflow-hidden bg-zinc-950">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 brightness-[0.7]"
+                              src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1740&auto=format&fit=crop"
+                              alt="Capa do projeto"
+                            />
+                            <div className="absolute inset-0 bg-linear-to-r from-black/60 to-transparent"></div>
+                            {idx === 0 && (
+                              <div className="absolute top-4 left-4">
+                                <span className="px-3 py-1 rounded-full bg-[#316cf4] text-white text-[10px] font-black uppercase tracking-widest shadow-lg">DESTAQUE</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="md:col-span-3 p-6 flex flex-col justify-between">
+                            <div>
+                              <h4 className="font-bold text-lg text-white mb-2">{proj.title}</h4>
+                              <p className="text-gray-400 text-sm leading-relaxed line-clamp-4 whitespace-pre-wrap mb-4">
+                                {proj.description}
+                              </p>
+                            </div>
+                            <div className="flex items-center justify-between border-t border-[#2a2d32] pt-4 mt-auto">
+                              {proj.link ? (
+                                <a
+                                  href={proj.link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-[#316cf4] font-bold text-xs hover:underline group/link"
+                                >
+                                  <span>Explorar Projeto</span>
+                                  <FiArrowRight className="text-[16px] transition-transform group-hover/link:translate-x-1" />
+                                </a>
+                              ) : (
+                                <span className="text-xs text-gray-600 italic">Sem link de visualização</span>
+                              )}
+                              <button onClick={openProjectModal} className="text-gray-500 hover:text-white transition-colors" title="Editar Projeto">
+                                <FiEdit3 className="text-[20px]" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="bg-[#1e2024] border border-dashed border-[#2a2d32] rounded-xl p-12 text-center text-gray-500">
+                      Nenhum projeto cadastrado na sua vitrine. Compartilhe suas melhores criações!
+                    </div>
+                  )}
+                </section>
+              )}
+            </div>
+          </div>
+
+
+        </div>
+      </main>
+
+      {/* Modais existentes conectados à lógica da página */}
       <EditSkillModal
         isOpen={isSkillModalOpen}
         onClose={() => setIsSkillModalOpen(false)}
@@ -924,7 +1333,6 @@ export default function ProfilePage() {
         isSaving={isSaving}
       />
 
-      {/* Modal de Bio */}
       <EditBioModal
         isOpen={isBioModalOpen}
         onClose={() => setIsBioModalOpen(false)}
@@ -934,7 +1342,6 @@ export default function ProfilePage() {
         isSaving={isSavingBio}
       />
 
-      {/* Modal de Links */}
       <EditLinkModal
         isOpen={isLinkModalOpen}
         onClose={() => setIsLinkModalOpen(false)}
@@ -949,7 +1356,6 @@ export default function ProfilePage() {
         isSaving={isSavingLinks}
       />
 
-      {/* Modal de Projetos */}
       <EditProjectModal
         isOpen={isProjectModalOpen}
         onClose={() => setIsProjectModalOpen(false)}
@@ -966,8 +1372,6 @@ export default function ProfilePage() {
         isSaving={isSavingProjects}
       />
 
-      {/*Modal de Criar/Editar Vagas (Exclusivo para recrutadores ou empresas) */}
-
       <EditJobModal
         isOpen={isJobModalOpen}
         onClose={() => setIsJobModalOpen(false)}
@@ -978,7 +1382,6 @@ export default function ProfilePage() {
         editingJobId={editingJobId}
       />
 
-      {/* Modal Visualizar/ Gerenciar Vaga */}
       <ViewJobModal
         isOpen={isViewJobModalOpen}
         onClose={() => setIsViewJobModalOpen(false)}
@@ -988,7 +1391,6 @@ export default function ProfilePage() {
         onEdit={handleEditJob}
       />
 
-      {/* Modal de Editar Perfil Básico */}
       <EditBasicProfileModal
         isOpen={isEditProfileModalOpen}
         onClose={() => setIsEditProfileModalOpen(false)}
@@ -1014,6 +1416,9 @@ export default function ProfilePage() {
         setResumeFile={setResumeFile}
         onSave={handleSaveBasicProfile}
         isSaving={isSavingProfile}
+        editLocation={editLocation}
+        setEditLocation={setEditLocation}
+        editResumeUrl={editResumeUrl}
       />
     </div>
   );

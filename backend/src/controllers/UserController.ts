@@ -64,6 +64,7 @@ export class UserController {
         startDate,
         endDate,
         resumeUrl,
+        location,
       } = req.body;
 
       const updatedUser = await prisma.user.update({
@@ -78,6 +79,7 @@ export class UserController {
           startDate,
           endDate,
           resumeUrl,
+          location,
           bio,
           skills,
           ...(links && {
@@ -108,6 +110,7 @@ export class UserController {
           startDate: true,
           endDate: true,
           resumeUrl: true,
+          location: true,
           isPioneer: true,
           bio: true,
           skills: true,
