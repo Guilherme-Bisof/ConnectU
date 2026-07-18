@@ -20,6 +20,7 @@ import {
   FiLinkedin,
   FiGithub,
   FiExternalLink,
+  FiX,
 } from "react-icons/fi";
 import { MdVerified } from "react-icons/md";
 import { EditBioModal } from "@/app/components/profile/EditBioModal";
@@ -165,6 +166,14 @@ export default function ProfilePage() {
 
   // Estados para controlar quais vagas estão expandidas (Ver mais/ Ver menos)
   const [expandedJobIds, setExpandedJobIds] = useState<string[]>([]);
+
+  // Estado para exibir barra de perfil concluído
+  const [showCompleteMsg, setShowCompleteMsg] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("hasSeenProfileComplete") !== "true";
+    }
+    return false;
+  });
 
   useEffect(() => {
     const loadUser = async () => {
@@ -784,13 +793,24 @@ export default function ProfilePage() {
               </button>
             </div>
           );
-        } else {
+        } else if (showCompleteMsg) {
           return (
-            <div className="mb-4 mx-8 mt-6 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400 font-semibold shadow-md animate-fadeIn">
-              Perfil completo! Suas vagas já foram liberadas. 🎉
+            <div className="mb-4 mx-8 mt-6 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400 font-semibold shadow-md animate-fadeIn flex justify-between items-center">
+              <span>Perfil completo! Suas vagas já foram liberadas. 🎉</span>
+              <button
+                onClick={() => {
+                  setShowCompleteMsg(false);
+                  localStorage.setItem("hasSeenProfileComplete", "true");
+                }}
+                className="text-emerald-500 hover:text-emerald-400 p-1 rounded transition-colors"
+                title="Fechar aviso"
+              >
+                <FiX className="text-lg" />
+              </button>
             </div>
           );
         }
+        return null;
       })()}
 
       <main className="flex-1 flex flex-col items-center">
@@ -1242,79 +1262,141 @@ export default function ProfilePage() {
                 </section>
               )}
 
-              {/* Vitrine de Projetos */}
+              {/* Vitrine de Projetos re-posicionada */}
               {user.role === "STUDENT" && (
-                <section className="space-y-4">
-                  <div className="flex justify-between items-center px-1">
-                    <h3 className="font-bold text-lg text-white">Vitrine de Projetos</h3>
+                <section>
+                  <div className="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-lg font-bold text-white">
+                        Vitrine de Projetos
+                      </h2>
+                      <p className="mt-1 text-sm text-zinc-400">
+                        Projetos que demonstram suas competências na prática.
+                      </p>
+                    </div>
                     <button
                       onClick={openProjectModal}
-                      className="flex items-center gap-1 text-[#316cf4] font-bold text-xs hover:underline uppercase"
+                      className="flex items-center gap-2 text-sm font-bold text-[#316cf4] hover:text-[#316cf4]/80 transition-colors"
                     >
-                      <FiPlusCircle className="text-[18px]" />
-                      <span>Novo Projeto</span>
+                      <FiPlusCircle className="h-5 w-5" />
+                      Novo projeto
                     </button>
                   </div>
 
-                  {user.projects && user.projects.length > 0 ? (
-                    user.projects.map((proj, idx) => (
-                      <div
-                        key={idx}
-                        className="group bg-[#1e2024] rounded-2xl border border-[#2a2d32] overflow-hidden hover:border-[#316cf4]/40 transition-all duration-500 shadow-sm"
-                      >
-                        <div className="grid grid-cols-1 md:grid-cols-5">
-                          <div className="md:col-span-2 relative h-56 md:h-72 overflow-hidden bg-zinc-950">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 brightness-[0.7]"
-                              src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1740&auto=format&fit=crop"
-                              alt="Capa do projeto"
-                            />
-                            <div className="absolute inset-0 bg-linear-to-r from-black/60 to-transparent"></div>
-                            {idx === 0 && (
-                              <div className="absolute top-4 left-4">
-                                <span className="px-3 py-1 rounded-full bg-[#316cf4] text-white text-[10px] font-black uppercase tracking-widest shadow-lg">DESTAQUE</span>
-                              </div>
-                            )}
-                          </div>
-                          <div className="md:col-span-3 p-6 flex flex-col justify-between">
-                            <div>
-                              <h4 className="font-bold text-lg text-white mb-2">{proj.title}</h4>
-                              <p className="text-gray-400 text-sm leading-relaxed line-clamp-4 whitespace-pre-wrap mb-4">
-                                {proj.description}
-                              </p>
-                            </div>
-                            <div className="flex items-center justify-between border-t border-[#2a2d32] pt-4 mt-auto">
-                              {proj.link ? (
-                                <a
-                                  href={proj.link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-1 text-[#316cf4] font-bold text-xs hover:underline group/link"
-                                >
-                                  <span>Explorar Projeto</span>
-                                  <FiArrowRight className="text-[16px] transition-transform group-hover/link:translate-x-1" />
-                                </a>
-                              ) : (
-                                <span className="text-xs text-gray-600 italic">Sem link de visualização</span>
-                              )}
-                              <button onClick={openProjectModal} className="text-gray-500 hover:text-white transition-colors" title="Editar Projeto">
-                                <FiEdit3 className="text-[20px]" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))
+                  {!user.projects || user.projects.length === 0 ? (
+                    <div className="bg-[#1e2024] border border-dashed border-[#2a2d32] rounded-xl p-8 text-center text-gray-500 text-sm">
+                      Nenhum projeto cadastrado na sua vitrine.
+                    </div>
                   ) : (
-                    <div className="bg-[#1e2024] border border-dashed border-[#2a2d32] rounded-xl p-12 text-center text-gray-500">
-                      Nenhum projeto cadastrado na sua vitrine. Compartilhe suas melhores criações!
+                    <div
+                      className={`grid gap-4 ${
+                        user.projects!.length === 1
+                          ? "grid-cols-1"
+                          : "grid-cols-1 md:grid-cols-2"
+                      }`}
+                    >
+                      {user.projects!.map((proj, idx) => {
+                        const isSingle = user.projects!.length === 1;
+
+                        if (isSingle) {
+                          return (
+                            <div
+                              key={idx}
+                              className="grid overflow-hidden rounded-xl border border-[#2a2d32] bg-[#1e2024] md:grid-cols-[42%_1fr] shadow-sm hover:border-[#316cf4]/40 transition-all duration-500 group"
+                            >
+                              <div className="relative h-48 md:h-full min-h-48">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1740&auto=format&fit=crop"
+                                  alt={proj.title}
+                                  className="h-full w-full object-cover brightness-[0.7] group-hover:scale-105 transition-transform duration-700"
+                                />
+                                <div className="absolute inset-0 bg-linear-to-r from-black/60 to-transparent md:bg-linear-to-t md:from-transparent"></div>
+                              </div>
+                              <div className="flex flex-col p-5 justify-between">
+                                <div>
+                                  <h3 className="line-clamp-2 text-base font-bold text-white mb-2">
+                                    {proj.title}
+                                  </h3>
+                                  <p className="line-clamp-3 text-sm leading-relaxed text-zinc-400 mb-4 whitespace-pre-wrap">
+                                    {proj.description}
+                                  </p>
+                                </div>
+                                <div className="flex items-center justify-between border-t border-[#2a2d32] pt-4 mt-auto">
+                                  {proj.link ? (
+                                    <a
+                                      href={proj.link}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-1 text-[#316cf4] font-bold text-xs hover:underline group/link"
+                                    >
+                                      <span>Ver projeto</span>
+                                      <FiArrowRight className="text-[14px] transition-transform group-hover/link:translate-x-1" />
+                                    </a>
+                                  ) : (
+                                    <span className="text-xs text-zinc-500 italic">Em desenvolvimento</span>
+                                  )}
+                                  <button onClick={openProjectModal} className="text-gray-500 hover:text-white transition-colors" title="Editar Projeto">
+                                    <FiEdit3 className="text-[18px]" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div
+                            key={idx}
+                            className="flex h-full flex-col overflow-hidden rounded-xl border border-[#2a2d32] bg-[#1e2024] shadow-sm hover:border-[#316cf4]/40 transition-all duration-500 group"
+                          >
+                            <div className="relative overflow-hidden">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1740&auto=format&fit=crop"
+                                alt={proj.title}
+                                className="aspect-video w-full object-cover brightness-[0.7] group-hover:scale-105 transition-transform duration-700"
+                              />
+                            </div>
+                            <div className="flex flex-1 flex-col p-4 justify-between">
+                              <div>
+                                <h3 className="line-clamp-2 text-base font-bold text-white mb-2">
+                                  {proj.title}
+                                </h3>
+                                <p className="line-clamp-3 text-sm leading-relaxed text-zinc-400 mb-4 whitespace-pre-wrap">
+                                  {proj.description}
+                                </p>
+                              </div>
+                              <div className="flex items-center justify-between border-t border-[#2a2d32] pt-3 mt-auto">
+                                {proj.link ? (
+                                  <a
+                                    href={proj.link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1 text-[#316cf4] font-bold text-xs hover:underline group/link"
+                                  >
+                                    <span>Ver projeto</span>
+                                    <FiArrowRight className="text-[14px] transition-transform group-hover/link:translate-x-1" />
+                                  </a>
+                                ) : (
+                                  <span className="text-xs text-zinc-500 italic">Em desenvolvimento</span>
+                                )}
+                                <button onClick={openProjectModal} className="text-gray-500 hover:text-white transition-colors" title="Editar Projeto">
+                                  <FiEdit3 className="text-[18px]" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </section>
               )}
+
             </div>
           </div>
+
 
 
         </div>
