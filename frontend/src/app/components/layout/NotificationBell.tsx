@@ -139,6 +139,33 @@ export function NotificationBell({
     return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
   };
 
+  const handleNotificationClick = (notification: Notification) => {
+    if (!notification.read) {
+      const prev = [...notifications];
+      setNotifications((p) => p.map((n) => (n.id === notification.id ? { ...n, read: true } : n)));
+
+      const token = localStorage.getItem("connectu_token");
+      fetch(`https://connectu-gd1z.onrender.com/notifications/${notification.id}/read`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(res => {
+         if (!res.ok) throw new Error("Falha na API");
+      }).catch(error => {
+        console.error("Erro ao marcar como lida:", error);
+        setNotifications(prev);
+        setToastMsg({ title: "Erro", description: "Não foi possível marcar como lida." });
+      });
+    }
+
+    setIsOpen(false);
+
+    if (notification.resourceUrl && notification.resourceUrl.startsWith("/dashboard/")) {
+      router.push(notification.resourceUrl);
+    } else {
+      console.warn("[Notification Click] URL inválida ou não interna:", notification.resourceUrl);
+    }
+  };
+
   const displayedNotifications = notifications.filter((n) => activeTab === "ALL" || !n.read);
 
   const groupByDate = (notifs: Notification[]) => {
@@ -171,10 +198,11 @@ export function NotificationBell({
 
   const renderNotificationItem = (notification: Notification) => {
     return (
-      <div
+      <button
         key={notification.id}
+        type="button"
         onClick={() => handleNotificationClick(notification)}
-        className={`p-md rounded-lg flex gap-md transition-all hover:bg-surface-variant cursor-pointer group ${!notification.read ? "bg-primary/5" : ""}`}
+        className={`w-full text-left p-md rounded-lg flex gap-md transition-all hover:bg-surface-variant cursor-pointer group outline-none focus-visible:ring-2 focus-visible:ring-primary ${!notification.read ? "bg-primary/5" : ""}`}
       >
         <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-surface-variant text-primary relative">
           {notification.actor?.avatarUrl ? (
@@ -211,36 +239,11 @@ export function NotificationBell({
             </div>
           )}
         </div>
-      </div>
+      </button>
     );
   };
 
-  const handleNotificationClick = async (notification: Notification) => {
-    if (!notification.read) {
-      const prev = [...notifications];
-      setNotifications((p) => p.map((n) => (n.id === notification.id ? { ...n, read: true } : n)));
 
-      const token = localStorage.getItem("connectu_token");
-      try {
-        await fetch(
-          `https://connectu-gd1z.onrender.com/notifications/${notification.id}/read`,
-          {
-            method: "PUT",
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-      } catch (error) {
-        console.error("Erro ao marcar como lida:", error);
-        setNotifications(prev);
-      }
-    }
-
-    setIsOpen(false);
-
-    if (notification.resourceUrl && notification.resourceUrl.startsWith("/dashboard/")) {
-      router.push(notification.resourceUrl);
-    }
-  };
 
   const handleMarkAllAsRead = async () => {
     const token = localStorage.getItem("connectu_token");
