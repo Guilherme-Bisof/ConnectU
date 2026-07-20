@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { NotificationBell } from "../components/layout/NotificationBell";
+import { SocketProvider } from "../components/providers/SocketProvider";
 
 interface UserData {
   id: string;
@@ -58,8 +59,9 @@ export default function DashboardLayout({
     }`;
 
   return (
-    <div className="min-h-screen bg-[#0d0f11] text-white font-sans">
-      {/* ===== HEADER GLOBAL FIXO ===== */}
+    <SocketProvider>
+      <div className="min-h-screen bg-[#0d0f11] text-white font-sans">
+        {/* ===== HEADER GLOBAL FIXO ===== */}
       <header
         className="fixed top-0 left-0 right-0 h-16 bg-[#0d0f11] border-b border-[#2a2d32] z-50 flex items-center px-4 md:px-6 justify-between"
         data-purpose="global-header"
@@ -67,8 +69,9 @@ export default function DashboardLayout({
         {/* Logo */}
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 text-white font-bold text-xl">
-            <div className="w-8 h-8 bg-white rounded flex items-center justify-center">
-              <span className="text-[#0d0f11] font-extrabold">C</span>
+            <div className="w-10 h-10 flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="ConnectU Logo" className="w-full h-full object-contain" />
             </div>
             <span className="hidden sm:inline">ConnectU</span>
           </div>
@@ -591,6 +594,7 @@ export default function DashboardLayout({
           {children}
         </main>
       </div>
-    </div>
+      </div>
+    </SocketProvider>
   );
 }

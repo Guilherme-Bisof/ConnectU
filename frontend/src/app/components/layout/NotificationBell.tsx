@@ -6,19 +6,23 @@ import {
   FiCheck,
   FiMessageSquare,
   FiHeart,
-  FiUser,
 } from "react-icons/fi";
 import { useRouter } from "next/navigation";
-import { io, Socket } from "socket.io-client";
-import { read } from "fs";
+import { socket } from "../../../lib/socket";
 
 interface Notification {
   id: string;
-  type: "LIKE" | "COMMENT" | "MESSAGE" | "SYSTEM";
+  type: string;
   title: string;
-  content: string;
+  description: string;
+  actor?: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+  };
+  resourceUrl?: string;
+  metadata?: Record<string, unknown>;
   read: boolean;
-  postId?: string;
   createdAt: string;
 }
 
@@ -27,14 +31,24 @@ export function NotificationBell({
 }: {
   placement?: "top" | "bottom";
 }) {
+  console.log("[NotificationBell] renderizado");
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [activeTab, setActiveTab] = useState<"ALL" | "UNREAD">("ALL");
   const [isOpen, setIsOpen] = useState(false);
+  const [toastMsg, setToastMsg] = useState<{title: string; description: string} | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
+  useEffect(() => {
+    if (toastMsg) {
+      const timer = setTimeout(() => setToastMsg(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMsg]);
+
   const dropdownPosition =
     placement === "bottom"
-      ? "bottom-full left-0 mb-3"
+      ? "top-full right-0 mt-3"
       : "top-full right-0 mt-3";
 
   useEffect(() => {
@@ -74,19 +88,41 @@ export function NotificationBell({
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("connectu_token");
-    if (!token) return;
+    if (!socket) {
+      console.error("[NotificationBell] socket indisponível");
+      return;
+    }
 
-    const socket: Socket = io("https://connectu-gd1z.onrender.com", {
-      auth: { token },
+    console.log("[NotificationBell] registrando listener", {
+      connected: socket.connected,
+      socketId: socket.id,
     });
 
-    socket.on("notification:received", (newNotification: Notification) => {
-      setNotifications((prev) => [newNotification, ...prev]);
-    });
+    const debugAnyEvent = (eventName: string, ...args: unknown[]) => {
+      console.log("[Socket ANY]", eventName, args);
+    };
+    socket.onAny(debugAnyEvent);
+
+    const handleNotification = (newNotification: Notification) => {
+      console.log("[NotificationBell] notification:received", newNotification);
+
+      setNotifications((current) => {
+        const duplicated = current.some((item) => item.id === newNotification.id);
+        console.log("[NotificationBell] duplicada:", duplicated);
+
+        if (duplicated) {
+          return current;
+        }
+        return [newNotification, ...current];
+      });
+    };
+
+    socket.on("notification:received", handleNotification);
 
     return () => {
-      socket.disconnect();
+      console.log("[NotificationBell] removendo listener");
+      socket.off("notification:received", handleNotification);
+      socket.offAny(debugAnyEvent);
     };
   }, []);
 
@@ -105,8 +141,103 @@ export function NotificationBell({
     }
   };
 
+  const formatTime = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const diffMins = Math.floor((new Date().getTime() - date.getTime()) / 60000);
+    if (diffMins < 1) return "Agora";
+    if (diffMins < 60) return `Há ${diffMins} min`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `Há ${diffHours} h`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return "Ontem";
+    if (diffDays < 7) return `Há ${diffDays} d`;
+    return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+  };
+
+  const displayedNotifications = notifications.filter((n) => activeTab === "ALL" || !n.read);
+
+  const groupByDate = (notifs: Notification[]) => {
+    const today: Notification[] = [];
+    const yesterday: Notification[] = [];
+    const older: Notification[] = [];
+
+    const now = new Date();
+    const todayStr = now.toLocaleDateString("pt-BR");
+    
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterdayStr = yesterdayDate.toLocaleDateString("pt-BR");
+
+    notifs.forEach((n) => {
+      const d = new Date(n.createdAt).toLocaleDateString("pt-BR");
+      if (d === todayStr) {
+        today.push(n);
+      } else if (d === yesterdayStr) {
+        yesterday.push(n);
+      } else {
+        older.push(n);
+      }
+    });
+
+    return { today, yesterday, older };
+  };
+
+  const grouped = groupByDate(displayedNotifications);
+
+  const renderNotificationItem = (notification: Notification) => {
+    return (
+      <div
+        key={notification.id}
+        onClick={() => handleNotificationClick(notification)}
+        className={`p-md rounded-lg flex gap-md transition-all hover:bg-surface-variant cursor-pointer group ${!notification.read ? "bg-primary/5" : ""}`}
+      >
+        <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-surface-variant text-primary relative">
+          {notification.actor?.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={notification.actor.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+          ) : (
+            <span className="font-bold text-lg">{notification.actor?.name?.charAt(0) || getIcon(notification.type)}</span>
+          )}
+          {notification.actor?.avatarUrl && (
+            <div className="absolute bottom-0 right-0 bg-surface-container-low border border-outline-variant rounded-full p-1 text-[10px] shadow-sm">
+              {getIcon(notification.type)}
+            </div>
+          )}
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex min-w-0 items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <h4 className="text-body-md font-bold text-on-surface truncate pr-2">
+                 {notification.type === "MESSAGE" 
+                    ? (notification.actor?.name ? `${notification.actor.name} enviou uma nova mensagem` : "Nova mensagem") 
+                    : (notification.title.includes("undefined") ? "Nova notificação" : notification.title)
+                 }
+              </h4>
+            </div>
+            <time className="shrink-0 text-on-surface-variant text-[11px] whitespace-nowrap pt-0.5">
+               {formatTime(notification.createdAt)}
+            </time>
+          </div>
+          <p className="text-body-sm text-on-surface-variant line-clamp-1 mb-2">
+            {notification.description}
+          </p>
+          {!notification.read && (
+            <div className="flex items-center justify-end">
+              <div className="w-2.5 h-2.5 bg-primary rounded-full"></div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.read) {
+      const prev = [...notifications];
+      setNotifications((p) => p.map((n) => (n.id === notification.id ? { ...n, read: true } : n)));
+
       const token = localStorage.getItem("connectu_token");
       try {
         await fetch(
@@ -116,22 +247,16 @@ export function NotificationBell({
             headers: { Authorization: `Bearer ${token}` },
           },
         );
-
-        setNotifications((prev) =>
-          prev.map((n) =>
-            n.id === notification.id ? { ...n, read: true } : n,
-          ),
-        );
       } catch (error) {
         console.error("Erro ao marcar como lida:", error);
+        setNotifications(prev);
       }
     }
 
     setIsOpen(false);
 
-    if (notification.type === "MESSAGE") {
-      router.push("/dashboard/chat");
-    } else if (notification.postId) {
+    if (notification.resourceUrl && notification.resourceUrl.startsWith("/dashboard/")) {
+      router.push(notification.resourceUrl);
     }
   };
 
@@ -177,62 +302,101 @@ export function NotificationBell({
       {/* Dropdown de Notificações */}
       {isOpen && (
         <div
-          className={`absolute ${dropdownPosition} w-80 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xl z-50 overflow-hidden animate-fadeIn`}
+          className={`absolute ${dropdownPosition} w-[400px] bg-surface-container-low border border-outline-variant rounded-[14px] shadow-2xl z-50 flex flex-col max-h-[calc(100vh-100px)] overflow-hidden animate-fadeIn`}
         >
-          <div className="flex items-center justify-between p-4 border-b border-zinc-800 bg-zinc-900/50">
-            <h3 className="text-sm font-bold text-white">Notificações</h3>
-            {unreadCount > 0 && (
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-blue-500 font-medium">
-                  {unreadCount} não lidas
-                </span>
-
-                <button
-                  onClick={handleMarkAllAsRead}
-                  className="flex items-center gap-1 text-[10px] uppercase font-bold text-zinc-400 hover:text-blue-400 transition-colors bg-zinc-800/50 hover:bg-zinc-800 px-2 py-1 rounded-md border border-zinc-800"
-                  title="Marcar todas como lidas"
-                >
-                  <FiCheck size={12} /> Lidas
-                </button>
-              </div>
-            )}
+          {/* Header Fixo */}
+          <div className="p-md flex items-center justify-between border-b border-outline-variant/30 bg-surface-container-low">
+            <h2 className="font-headline-md text-headline-md text-on-surface">Notificações</h2>
+            <button 
+              onClick={handleMarkAllAsRead}
+              disabled={unreadCount === 0}
+              className="text-primary hover:text-primary-container transition-colors text-body-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Marcar todas como lidas
+            </button>
           </div>
 
-          <div className="max-h-80 overflow-y-auto custom-scrollbar">
-            {notifications.length === 0 ? (
-              <div className="p-8 text-center text-zinc-500">
+          {/* Tabs */}
+          <div className="flex items-center px-md pt-md bg-surface-container-low">
+            <button 
+              onClick={() => setActiveTab("ALL")}
+              className={`flex-1 py-2 text-body-md font-semibold text-center relative transition-all ${
+                activeTab === "ALL" 
+                  ? "text-primary after:content-[''] after:absolute after:-bottom-2 after:left-1/2 after:-translate-x-1/2 after:w-[40px] after:h-[2px] after:bg-primary" 
+                  : "text-on-surface-variant hover:bg-surface-variant rounded-t-lg"
+              }`}
+            >
+              Todas
+            </button>
+            <button 
+              onClick={() => setActiveTab("UNREAD")}
+              className={`flex-1 py-2 text-body-md font-semibold text-center flex items-center justify-center gap-sm relative transition-all ${
+                activeTab === "UNREAD" 
+                  ? "text-primary after:content-[''] after:absolute after:-bottom-2 after:left-1/2 after:-translate-x-1/2 after:w-[40px] after:h-[2px] after:bg-primary" 
+                  : "text-on-surface-variant hover:bg-surface-variant rounded-t-lg"
+              }`}
+            >
+              Não lidas
+              {unreadCount > 0 && (
+                 <span className="bg-primary/20 text-primary text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold">{unreadCount}</span>
+              )}
+            </button>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar mt-sm pb-md">
+            {displayedNotifications.length === 0 ? (
+              <div className="p-8 text-center text-on-surface-variant">
                 <FiBell className="mx-auto text-3xl mb-2 opacity-20" />
-                <p className="text-sm">Nenhuma notificação ainda.</p>
+                <p className="text-body-sm">Nenhuma notificação {activeTab === "UNREAD" ? "não lida" : "ainda"}.</p>
               </div>
             ) : (
-              <div className="flex flex-col">
-                {notifications.map((notification) => (
-                  <button
-                    key={notification.id}
-                    onClick={() => handleNotificationClick(notification)}
-                    className={`flex items-start gap-3 p-4 text-left transition-colors border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/50 ${!notification.read ? "bg-blue-500/5" : ""}`}
-                  >
-                    <div className="mt-1 shrink-0 bg-zinc-800 p-2 rounded-full">
-                      {getIcon(notification.type)}
+              <>
+                {grouped.today.length > 0 && (
+                  <div className="mt-sm px-md mb-md">
+                    <p className="text-label-md font-bold text-on-surface-variant mb-item-gap">Hoje</p>
+                    <div className="flex flex-col gap-xs">
+                      {grouped.today.map((notification) => renderNotificationItem(notification))}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className={`text-sm truncate ${!notification.read ? "text-white font-bold" : "text-zinc-300 font-medium"}`}
-                      >
-                        {notification.title}
-                      </p>
-                      <p className="text-xs text-zinc-400 mt-0.5 line-clamp-2">
-                        {notification.content}
-                      </p>
+                  </div>
+                )}
+                {grouped.yesterday.length > 0 && (
+                  <div className="px-md mb-md">
+                    <p className="text-label-md font-bold text-on-surface-variant mb-item-gap">Ontem</p>
+                    <div className="flex flex-col gap-xs">
+                      {grouped.yesterday.map((notification) => renderNotificationItem(notification))}
                     </div>
-                    {!notification.read && (
-                      <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-2"></div>
-                    )}
-                  </button>
-                ))}
-              </div>
+                  </div>
+                )}
+                {grouped.older.length > 0 && (
+                  <div className="px-md mb-md">
+                    <p className="text-label-md font-bold text-on-surface-variant mb-item-gap">Anteriores</p>
+                    <div className="flex flex-col gap-xs">
+                      {grouped.older.map((notification) => renderNotificationItem(notification))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
+
+          {/* Rodapé Fixo */}
+          <div className="p-md bg-surface-container-low border-t border-outline-variant/30 text-center">
+            <button onClick={() => setToastMsg({title: "Em breve", description: "A página de notificações completas está em desenvolvimento."})} className="text-primary font-bold text-body-md hover:underline transition-all">Ver todas as notificações</button>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification (Customizado ConnectU) */}
+      {toastMsg && (
+        <div className="fixed bottom-6 right-6 bg-surface-container-highest border border-outline-variant rounded-xl shadow-2xl p-4 min-w-[300px] z-300 animate-fadeIn flex flex-col gap-1">
+          <div className="flex justify-between items-center gap-2">
+             <h3 className="text-body-md font-bold text-on-surface">{toastMsg.title}</h3>
+             <button onClick={() => setToastMsg(null)} className="text-on-surface-variant hover:text-on-surface transition-colors">
+               <FiCheck />
+             </button>
+          </div>
+          <p className="text-body-sm text-on-surface-variant">{toastMsg.description}</p>
         </div>
       )}
     </div>

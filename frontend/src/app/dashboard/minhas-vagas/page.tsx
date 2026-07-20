@@ -425,29 +425,26 @@ export default function MinhasVagasPage() {
   return (
     <div className="mx-auto max-w-7xl pb-12 relative px-4 xl:px-0">
       {/* Header */}
-      <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 p-8 rounded-2xl border border-white/5 bg-linear-to-br from-zinc-900/80 to-black overflow-hidden shadow-2xl">
-
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-[#2a2d32]">
+        <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2.5 bg-blue-500/10 rounded-xl border border-blue-500/20">
-              <FiBriefcase className="text-blue-400 text-xl" />
+            <div className="p-2 bg-[#316cf4]/10 rounded-lg text-[#316cf4]">
+              <FiBriefcase className="text-xl" />
             </div>
-            <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-white to-zinc-400 tracking-tight">
+            <h1 className="text-2xl font-bold text-white tracking-tight">
               Minhas Vagas
             </h1>
           </div>
-          <p className="text-sm text-zinc-400 max-w-md leading-relaxed ml-1">
+          <p className="text-sm text-zinc-400 max-w-md">
             Gerencie seu funil de recrutamento, acompanhe candidatos e encontre os talentos com maior fit para sua empresa.
           </p>
         </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="relative z-10 group flex items-center justify-center gap-2 bg-white hover:bg-zinc-100 text-black px-6 py-3 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] hover:-translate-y-0.5"
+          className="flex items-center justify-center gap-2 bg-[#316cf4] hover:bg-[#2556cc] text-white px-5 py-2.5 rounded-lg font-medium transition-colors"
         >
-          <FiPlus className="text-lg group-hover:rotate-90 transition-transform duration-300" /> Nova Vaga
+          <FiPlus className="text-lg" /> Nova Vaga
         </button>
       </div>
 

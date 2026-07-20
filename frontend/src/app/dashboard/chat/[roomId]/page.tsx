@@ -3,41 +3,29 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { io } from "socket.io-client";
+import { socket } from "../layout";
 import {
   FiSend,
   FiMessageSquare,
-  FiSearch,
   FiArrowLeft,
   FiMoreVertical,
-  FiPhone,
-  FiVideo,
-  FiSmile,
+  FiEdit2,
+  FiTrash2,
   FiX,
   FiImage,
-  FiMoreHorizontal,
-  FiEdit2,
-  FiTrash2
+  FiSmile,
+  FiUser,
+  FiSidebar,
+  FiCheck,
+  FiCheckCircle,
+  FiVolume2,
+  FiVolumeX,
+  FiEyeOff,
+  FiPlusCircle,
+  FiBriefcase,
+  FiUsers
 } from "react-icons/fi";
-
-const token =
-  typeof window !== "undefined" ? localStorage.getItem("connectu_token") : "";
-
-const socket = io("https://connectu-gd1z.onrender.com", {
-  auth: {
-    token: token,
-  },
-  autoConnect: true,
-  transports: ["websocket"],
-  withCredentials: true
-});
-
-interface Participant {
-  id: string;
-  name: string;
-  avatarUrl: string | null;
-  role: string;
-}
+import type { Participant, Room } from "../layout";
 
 interface Message {
   id: string;
@@ -46,13 +34,6 @@ interface Message {
   isEdited?: boolean;
   senderId: string;
   createdAt: string;
-}
-
-interface Room {
-  id: string;
-  context: string;
-  users: Participant[];
-  messages: Message[];
 }
 
 interface UserData {
@@ -66,23 +47,6 @@ export default function ChatRoomPage() {
   const { roomId } = useParams();
   const router = useRouter();
 
-  const [conversations, setConversations] = useState<Room[]>(() => {
-    if (typeof window !== "undefined") {
-      const cached = sessionStorage.getItem("connectu_conversations_cache");
-      return cached ? JSON.parse(cached) : [];
-    }
-    return [];
-  });
-
-  const [activeFilter, setActiveFilter] = useState<
-    "TODOS" | "STUDENT" | "RECRUITER"
-  >("TODOS");
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const [isListLoading, setIsListLoading] = useState(
-    conversations.length === 0,
-  );
-
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -93,19 +57,17 @@ export default function ChatRoomPage() {
   const [isMuted, setIsMuted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [activeChatUser, setActiveChatUser] = useState<Participant | null>(
-    () => {
-      if (typeof window !== "undefined") {
-        const cached = sessionStorage.getItem("connectu_conversations_cache");
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          const currentRoom = parsed.find((r: Room) => r.id === roomId);
-          if (currentRoom && currentRoom.users[0]) return currentRoom.users[0];
-        }
+  const [activeChatUser, setActiveChatUser] = useState<Participant | null>(() => {
+    if (typeof window !== "undefined") {
+      const cached = sessionStorage.getItem("connectu_conversations_cache");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const currentRoom = parsed.find((r: Room) => r.id === roomId);
+        if (currentRoom && currentRoom.users[0]) return currentRoom.users[0];
       }
-      return null;
-    },
-  );
+    }
+    return null;
+  });
 
   const [user] = useState<UserData | null>(() => {
     if (typeof window !== "undefined") {
@@ -117,28 +79,19 @@ export default function ChatRoomPage() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Buscar a lista de conversas
   useEffect(() => {
-    async function fetchConversations() {
+    async function fetchActiveUser() {
+      if (activeChatUser) return;
       try {
         const tokenStr = localStorage.getItem("connectu_token");
-        const res = await fetch(
-          "https://connectu-gd1z.onrender.com/conversations",
-          {
-            method: "GET",
-            headers: { Authorization: `Bearer ${tokenStr}` },
-          },
-        );
+        const res = await fetch("https://connectu-gd1z.onrender.com/conversations", {
+          method: "GET",
+          headers: { Authorization: `Bearer ${tokenStr}` },
+        });
 
         if (res.ok) {
           const data = await res.json();
-          setConversations(data);
-
-          sessionStorage.setItem(
-            "connectu_conversations_cache",
-            JSON.stringify(data),
-          );
-
+          sessionStorage.setItem("connectu_conversations_cache", JSON.stringify(data));
           const currentRoom = data.find((r: Room) => r.id === roomId);
           if (currentRoom && currentRoom.users[0]) {
             setActiveChatUser(currentRoom.users[0]);
@@ -146,26 +99,10 @@ export default function ChatRoomPage() {
         }
       } catch (error) {
         console.error("Erro ao buscar conversas:", error);
-      } finally {
-        setIsListLoading(false);
       }
     }
-
-    fetchConversations();
-  }, [roomId]);
-
-  // Filtro derivado
-  const filteredConversations = conversations.filter((room) => {
-    const matchRole =
-      activeFilter === "TODOS" ||
-      room.users.some((u) => u.role === activeFilter);
-    const matchSearch =
-      searchQuery.trim() === "" ||
-      room.users.some((u) =>
-        u.name.toLowerCase().includes(searchQuery.toLowerCase()),
-      );
-    return matchRole && matchSearch;
-  });
+    fetchActiveUser();
+  }, [roomId, activeChatUser]);
 
   // Lógica Socket.io 
   useEffect(() => {
@@ -175,11 +112,11 @@ export default function ChatRoomPage() {
     
     socket.emit("request_online_users");
 
-    socket.on("online_users_list", (usersArray: string[]) => {
+    const onOnlineUsersList = (usersArray: string[]) => {
       setOnlineUsers(usersArray);
-    });
+    };
 
-    socket.on("user_status_change", (data: { userId: string; status: "online" | "offline" }) => {
+    const onUserStatusChange = (data: { userId: string; status: "online" | "offline" }) => {
       setOnlineUsers((prev) => {
         if (data.status === "online") {
           if (!prev.includes(data.userId)) return [...prev, data.userId];
@@ -188,42 +125,51 @@ export default function ChatRoomPage() {
           return prev.filter((id) => id !== data.userId);
         }
       });
-    });
+    };
 
-    socket.on("receive_message", (message: Message) => {
+    const onReceiveMessage = (message: Message) => {
       setMessages((prev) => [...prev, message]);
-    });
+    };
 
-    socket.on("message_edited", (updatedMsg: Message) => {
+    const onMessageEdited = (updatedMsg: Message) => {
       setMessages((prev) => prev.map((m) => (m.id === updatedMsg.id ? updatedMsg : m)));
-    });
+    };
 
-    socket.on("message_deleted", (data: { messageId: string }) => {
+    const onMessageDeleted = (data: { messageId: string }) => {
       setMessages((prev) => prev.filter((m) => m.id !== data.messageId));
-    });
+    };
 
-    socket.on("room_deleted", (deletedRoomId: string) => {
+    const onRoomDeleted = (deletedRoomId: string) => {
       if (deletedRoomId === roomId) {
         alert("Esta conversa foi apagada.");
         router.push("/dashboard/chat");
       }
-    });
+    };
+
+    socket.on("online_users_list", onOnlineUsersList);
+    socket.on("user_status_change", onUserStatusChange);
+    socket.on("receive_message", onReceiveMessage);
+    socket.on("message_edited", onMessageEdited);
+    socket.on("message_deleted", onMessageDeleted);
+    socket.on("room_deleted", onRoomDeleted);
 
     return () => {
-      socket.off("online_users_list");
-      socket.off("user_status_change");
-      socket.off("receive_message");
-      socket.off("message_edited");
-      socket.off("message_deleted");
-      socket.off("room_deleted");
+      socket.off("online_users_list", onOnlineUsersList);
+      socket.off("user_status_change", onUserStatusChange);
+      socket.off("receive_message", onReceiveMessage);
+      socket.off("message_edited", onMessageEdited);
+      socket.off("message_deleted", onMessageDeleted);
+      socket.off("room_deleted", onRoomDeleted);
     };
-  }, [roomId]);
+  }, [roomId, router]);
 
   useEffect(() => {
     // Carrega o estado de mute atual
     if (typeof window !== "undefined" && roomId) {
-      const mutedRooms = JSON.parse(localStorage.getItem("connectu_muted_rooms") || "[]");
-      setIsMuted(mutedRooms.includes(roomId));
+      setTimeout(() => {
+        const mutedRooms = JSON.parse(localStorage.getItem("connectu_muted_rooms") || "[]");
+        setIsMuted(mutedRooms.includes(roomId));
+      }, 0);
     }
   }, [roomId]);
 
@@ -237,7 +183,7 @@ export default function ChatRoomPage() {
           `https://connectu-gd1z.onrender.com/conversations/${roomId}/messages`,
           {
             headers: { Authorization: `Bearer ${tokenStr}` },
-          },
+          }
         );
         if (res.ok) {
           const data = await res.json();
@@ -292,7 +238,7 @@ export default function ChatRoomPage() {
         } else {
           console.error("Erro ao enviar imagem");
           setIsUploading(false);
-          return; // abort message if image fails
+          return; 
         }
       } catch (err) {
         console.error(err);
@@ -338,408 +284,358 @@ export default function ChatRoomPage() {
     }
   };
 
-  const handleDeleteRoom = () => {
-    if (confirm("ATENÇÃO: Deseja apagar esta conversa permanentemente para ambos os usuários?")) {
-      socket.emit("delete_room", roomId);
-    }
-  };
-
   const handleMute = () => {
-    // Comunica com o backend para salvar no banco de dados (assim a notificação não é criada)
     socket.emit("toggle_mute_room", roomId);
-
     const mutedRooms = JSON.parse(localStorage.getItem("connectu_muted_rooms") || "[]");
     
     if (isMuted) {
-      // Desilenciar
       const updatedRooms = mutedRooms.filter((id: string) => id !== roomId);
       localStorage.setItem("connectu_muted_rooms", JSON.stringify(updatedRooms));
       setIsMuted(false);
     } else {
-      // Silenciar
       mutedRooms.push(roomId);
       localStorage.setItem("connectu_muted_rooms", JSON.stringify(mutedRooms));
       setIsMuted(true);
     }
-    
     setIsMenuOpen(false);
   };
 
+  const isOnline = activeChatUser ? onlineUsers.includes(activeChatUser.id) : false;
+
   return (
-    <div className="flex h-[calc(100vh-4rem)] w-full bg-black text-white overflow-hidden">
-      {/* COLUNA DA ESQUERDA: LISTA DE CONVERSAS */}
-      <aside className="hidden md:flex w-[400px] border-r border-white/5 bg-zinc-950/80 flex-col h-full shrink-0 relative z-10 backdrop-blur-xl">
-        <div className="p-5 border-b border-white/5 space-y-5 bg-linear-to-b from-zinc-900/50 to-transparent">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-extrabold tracking-tight text-transparent bg-clip-text bg-linear-to-r from-white to-zinc-400">
-              Mensagens
-            </h1>
-            <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20">
-              <FiMessageSquare size={16} />
-            </div>
-          </div>
-          
-          <div className="relative group">
-            <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-400 transition-colors" />
-            <input
-              type="text"
-              placeholder="Pesquisar mensagens..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-zinc-900/60 border border-white/5 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-zinc-500 outline-none focus:border-blue-500/50 focus:bg-zinc-900 transition-all shadow-inner"
-            />
-          </div>
-          
-          <div className="flex p-1 bg-zinc-900/80 border border-white/5 rounded-lg">
-            {(["TODOS", "STUDENT", "RECRUITER"] as const).map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setActiveFilter(filter)}
-                className={`flex-1 text-[11px] font-bold uppercase tracking-wider py-1.5 rounded-md transition-all ${
-                  activeFilter === filter
-                    ? "bg-zinc-800 text-white shadow-sm border border-white/10"
-                    : "text-zinc-500 hover:text-zinc-300"
-                }`}
-              >
-                {filter === "TODOS"
-                  ? "Todos"
-                  : filter === "STUDENT"
-                    ? "Alunos"
-                    : "Recrutadores"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
-          {isListLoading ? (
-            <div className="flex flex-col items-center justify-center py-16 text-zinc-500 gap-3">
-              <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          ) : (
-            filteredConversations.map((room) => {
-              const other = room.users[0];
-              if (!other) return null;
-              const isCurrent = room.id === roomId;
-
-              return (
-                <div
-                  key={room.id}
-                  onClick={() => router.push(`/dashboard/chat/${room.id}`)}
-                  className={`relative flex items-center gap-3 p-3 rounded-xl cursor-pointer border transition-all overflow-hidden group ${
-                    isCurrent
-                      ? "bg-zinc-900 border-white/10 shadow-inner"
-                      : "border-transparent hover:bg-zinc-900 hover:border-white/5"
-                  }`}
-                >
-                  {!isCurrent && (
-                    <div className="absolute inset-0 bg-linear-to-r from-blue-500/0 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                  )}
-
-                  {isCurrent && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500" />
-                  )}
-
-                  <div className="relative w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-blue-500 shrink-0 shadow-inner">
-                    {other.avatarUrl ? (
-                      <Image
-                        src={other.avatarUrl}
-                        alt={other.name}
-                        width={48}
-                        height={48}
-                        unoptimized
-                        className="w-full h-full object-cover rounded-full"
-                      />
-                    ) : (
-                      other.name.charAt(0)
-                    )}
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-zinc-950 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
-                  </div>
-                  
-                  <div className="flex-1 min-w-0 pr-2">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <h4 className={`font-bold text-sm truncate transition-colors ${isCurrent ? "text-white" : "text-zinc-100 group-hover:text-blue-400"}`}>
-                        {other.name}
-                      </h4>
-                      <span className="text-[10px] text-zinc-500 whitespace-nowrap">
-                        12:34
-                      </span>
-                    </div>
-                    <p className="text-xs text-zinc-400 truncate pr-4">
-                      {room.messages && room.messages[0]
-                        ? room.messages[0].content
-                        : "Envie uma mensagem para começar..."}
-                    </p>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </aside>
-
-      {/* CHAT ATIVO */}
-      <main className="flex-1 flex flex-col h-full bg-zinc-950 relative">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-blue-900/10 via-zinc-950 to-zinc-950 pointer-events-none" />
-
-        {/* Chat Header */}
-        <div className="p-4 px-6 border-b border-white/5 flex items-center justify-between gap-3 backdrop-blur-md bg-zinc-950/70 sticky top-0 z-20 shadow-sm">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.push("/dashboard/chat")}
-              className="md:hidden w-10 h-10 flex items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition-colors"
-            >
-              <FiArrowLeft size={18} />
+    <>
+      {/* Column 2: Central Chat (600-650px) */}
+      <main className="flex-1 min-h-0 flex flex-col bg-surface relative border-r border-outline-variant min-w-[500px]">
+        
+        {/* Header */}
+        <header className="h-[64px] flex items-center justify-between px-md border-b border-outline-variant bg-surface/90 backdrop-blur-md z-10 shrink-0">
+          <div className="flex items-center gap-md">
+            <button onClick={() => router.push('/dashboard/chat')} className="md:hidden p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors">
+              <FiArrowLeft size={20} />
             </button>
-
-            <div className="relative w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-blue-400 overflow-hidden shadow-inner">
+            <div className="relative">
               {activeChatUser?.avatarUrl ? (
                 <Image
                   src={activeChatUser.avatarUrl}
                   alt={activeChatUser.name}
-                  width={48}
-                  height={48}
+                  width={40}
+                  height={40}
                   unoptimized
-                  className="w-full h-full object-cover"
+                  className="w-10 h-10 rounded-full object-cover"
                 />
               ) : (
-                activeChatUser?.name.charAt(0) || "?"
+                <div className="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center font-bold text-primary">
+                  {activeChatUser?.name?.charAt(0) || "U"}
+                </div>
               )}
+              <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 border-2 border-surface rounded-full ${isOnline ? "bg-[#10B981]" : "bg-gray-500"}`}></div>
             </div>
-
             <div>
-              <h2 className="font-extrabold text-base text-zinc-100 tracking-tight">
-                {activeChatUser?.name || "Carregando..."}
-              </h2>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className={`w-2 h-2 rounded-full ${
-                  activeChatUser && onlineUsers.includes(activeChatUser.id)
-                    ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" 
-                    : "bg-zinc-600"
-                }`}></span>
-                <p className="text-[11px] text-zinc-400 font-medium">
-                  {activeChatUser?.role === "RECRUITER" ? "Recrutador" : "Candidato"} • {
-                    activeChatUser && onlineUsers.includes(activeChatUser.id) ? "Online" : "Offline"
-                  }
-                </p>
-              </div>
+              <h3 className="font-bold text-on-surface leading-none text-[15px]">{activeChatUser?.name || "Usuário"}</h3>
+              <p className="text-[12px] text-on-surface-variant mt-1">
+                {activeChatUser?.role === "RECRUITER" ? "Recrutador" : "Aluno(a)"} · <span className={isOnline ? "text-[#10B981] font-medium" : "text-gray-400 font-medium"}>{isOnline ? "Disponível agora" : "Offline"}</span>
+              </p>
             </div>
           </div>
           
-          {/* Ações */}
-          <div className="flex items-center gap-2">
-            <button className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors" title="Chamada de Áudio (Em breve)">
-              <FiPhone size={18} />
+          <div className="flex items-center gap-xs">
+            <button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" title="Ver Perfil">
+              <FiUser size={20} />
             </button>
-            <button className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors" title="Chamada de Vídeo (Em breve)">
-              <FiVideo size={18} />
+            <button className="hidden xl:block p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" title="Alternar Painel">
+              <FiSidebar size={20} />
             </button>
-            <div className="w-px h-6 bg-zinc-800 mx-1"></div>
-            {/* Menu (3 pontinhos) */}
             <div className="relative">
-              <button 
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                  isMenuOpen ? "text-white bg-zinc-800" : "text-zinc-400 hover:text-white hover:bg-zinc-800"
-                }`}
-              >
-                <FiMoreVertical size={18} />
+              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors">
+                <FiMoreVertical size={20} />
               </button>
-              
-              {/* Overlay */}
               {isMenuOpen && (
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setIsMenuOpen(false)}
-                />
+                <div className="absolute right-0 top-full mt-2 w-48 bg-surface-container-highest border border-outline-variant rounded-xl shadow-xl overflow-hidden py-1 z-50">
+                  <button onClick={handleMute} className="w-full text-left px-4 py-2 text-sm text-on-surface hover:bg-surface-bright transition-colors flex items-center gap-2">
+                    {isMuted ? <FiVolume2 size={18} /> : <FiVolumeX size={18} />}
+                    {isMuted ? "Desativar Mudo" : "Silenciar"}
+                  </button>
+                  <button onClick={() => { setIsMenuOpen(false); alert("Ocultar não implementado"); }} className="w-full text-left px-4 py-2 text-sm text-on-surface hover:bg-surface-bright transition-colors flex items-center gap-2">
+                    <FiEyeOff size={18} />
+                    Ocultar Conversa
+                  </button>
+                </div>
               )}
-
-              {/* Dropdown */}
-              <div className={`absolute right-0 top-full mt-2 flex-col bg-zinc-800/90 backdrop-blur-md rounded-xl p-2 shadow-2xl border border-zinc-700 w-48 z-50 ${
-                isMenuOpen ? "flex" : "hidden"
-              }`}>
-                <button 
-                  onClick={() => router.push(activeChatUser ? `/dashboard/perfil/${activeChatUser.id}` : "#")}
-                  className="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:text-white hover:bg-zinc-700 rounded-lg transition-colors"
-                >
-                  Ver Perfil
-                </button>
-                <button 
-                  onClick={handleMute}
-                  className="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:text-white hover:bg-zinc-700 rounded-lg transition-colors"
-                >
-                  {isMuted ? "Desilenciar Notificações" : "Silenciar Notificações"}
-                </button>
-                <div className="w-full h-px bg-zinc-700 my-1"></div>
-                <button 
-                  onClick={handleDeleteRoom}
-                  className="w-full text-left px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition-colors"
-                >
-                  Apagar Conversa
-                </button>
-              </div>
             </div>
           </div>
-        </div>
+        </header>
 
-        {/* Área de mensagens */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 relative z-10 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
-          {/* Timestamp */}
-          <div className="flex justify-center mb-8 mt-2">
-            <span className="px-3 py-1 rounded-full bg-zinc-900/80 border border-zinc-800 text-[10px] font-bold text-zinc-500 uppercase tracking-widest backdrop-blur-sm">
-              Hoje
-            </span>
-          </div>
-
-          {messages.map((msg, index) => {
-            const isMine = msg.senderId === user?.id;
-            const isLastMessageFromSender = index === messages.length - 1 || messages[index + 1].senderId !== msg.senderId;
-
-            return (
-              <div
-                key={msg.id}
-                className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}
-              >
-                <div
-                  className={`relative max-w-[85%] md:max-w-[70%] px-4 py-3 text-sm shadow-md transition-all flex flex-col group/msg ${
-                    isMine
-                      ? "bg-blue-600 text-white rounded-2xl rounded-br-sm shadow-blue-600/20"
-                      : "bg-zinc-900/90 border border-white/5 text-zinc-200 rounded-2xl rounded-bl-sm backdrop-blur-md"
-                  } ${!isLastMessageFromSender && isMine ? "rounded-br-2xl mb-1" : ""} 
-                    ${!isLastMessageFromSender && !isMine ? "rounded-bl-2xl mb-1" : ""}`}
-                >
-                  {/* Menu flutuante de ações da mensagem (Apenas se for o remetente) */}
-                  {isMine && (
-                    <div className="absolute -left-9 top-1/2 -translate-y-1/2 hidden group-hover/msg:flex flex-col gap-1 bg-zinc-800/90 backdrop-blur-sm rounded-lg p-1 shadow-xl border border-zinc-700 z-10">
-                      <button onClick={() => startEditing(msg)} className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-700 rounded-md transition-colors" title="Editar">
-                        <FiEdit2 size={13} />
-                      </button>
-                      <button onClick={() => deleteMessage(msg.id)} className="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-zinc-700 rounded-md transition-colors" title="Apagar">
-                        <FiTrash2 size={13} />
-                      </button>
-                    </div>
-                  )}
-                  {msg.imageUrl && (
-                    <div className="mb-2 w-full max-w-[300px] rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition-opacity">
-                      <Image 
-                        src={msg.imageUrl} 
-                        alt="Imagem enviada" 
-                        width={300} 
-                        height={300} 
-                        className="w-full h-auto object-cover rounded-xl"
-                        unoptimized
-                      />
-                    </div>
-                  )}
-
-                  {msg.content && (
-                    <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                  )}
-                  
-                  {/* Hora da mensagem */}
-                  <div className={`text-[10px] flex items-center gap-1 mt-1 font-medium ${isMine ? "text-blue-200 justify-end" : "text-zinc-500 justify-start"}`}>
-                    {msg.isEdited && <span className="italic opacity-80 mr-1">(editado)</span>}
-                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        {/* Message List */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-lg space-y-md custom-scrollbar">
+          
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-70">
+              <FiMessageSquare className="w-12 h-12 mb-3" />
+              <p className="text-sm font-medium">Nenhuma mensagem ainda.</p>
+              <p className="text-xs">Comece a conversa com {activeChatUser?.name}!</p>
+            </div>
+          ) : (
+            <>
+              {activeChatUser?.role === "RECRUITER" && (
+                <div className="flex justify-center py-sm mb-4">
+                  <div className="flex items-center gap-xs px-4 py-1.5 bg-surface-container-low border border-outline-variant rounded-full">
+                    <FiCheckCircle className="text-primary" size={16} />
+                    <p className="text-[12px] font-medium text-on-surface-variant">
+                      Candidatura enviada · <span className="text-primary font-bold">87% de Match</span>
+                    </p>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-          <div ref={scrollRef} className="h-4" />
+              )}
+              {messages.map((msg, idx) => {
+              const isMine = msg.senderId === user?.id;
+              const showAvatar = !isMine && (idx === 0 || messages[idx - 1].senderId !== msg.senderId);
+              
+              return (
+                <div key={msg.id} className={`flex flex-col gap-1 ${isMine ? "items-end" : "items-start"}`}>
+                  <div className={`flex gap-sm max-w-[85%] ${isMine ? "" : (showAvatar ? "" : "ml-10")}`}>
+                    {!isMine && showAvatar && (
+                      <div className="shrink-0 self-end mb-1">
+                         {activeChatUser?.avatarUrl ? (
+                            <Image
+                              src={activeChatUser.avatarUrl}
+                              alt="Avatar"
+                              width={32}
+                              height={32}
+                              unoptimized
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center font-bold text-primary text-xs">
+                              {activeChatUser?.name?.charAt(0) || "U"}
+                            </div>
+                          )}
+                      </div>
+                    )}
+                    
+                    <div className="relative group/msg">
+                      <div className={`${isMine ? "bg-primary text-white rounded-br-none shadow-md" : "bg-surface-container-high text-on-surface rounded-bl-none shadow-sm border border-outline-variant"} p-3 rounded-2xl`}>
+                        {msg.imageUrl && (
+                          <div className="mb-2 rounded-lg overflow-hidden border border-black/10">
+                            <Image src={msg.imageUrl} alt="Imagem enviada" width={300} height={200} className="object-cover max-w-full h-auto" unoptimized />
+                          </div>
+                        )}
+                        {msg.content && (
+                          <p className="text-[14px] leading-relaxed wrap-break-word whitespace-pre-wrap">{msg.content}</p>
+                        )}
+                      </div>
+
+                      {/* Msg Actions */}
+                      {isMine && (
+                        <div className="absolute top-1/2 -translate-y-1/2 -left-16 opacity-0 group-hover/msg:opacity-100 transition-opacity flex items-center gap-1 bg-surface-container-high rounded-full px-2 py-1 shadow-md border border-outline-variant">
+                          <button onClick={() => startEditing(msg)} className="text-on-surface-variant hover:text-primary p-1" title="Editar">
+                            <FiEdit2 size={12} />
+                          </button>
+                          <button onClick={() => deleteMessage(msg.id)} className="text-on-surface-variant hover:text-red-500 p-1" title="Apagar">
+                            <FiTrash2 size={12} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className={`flex items-center gap-1 mt-0.5 px-1 ${isMine ? "justify-end" : "justify-start ml-10"}`}>
+                    <span className="text-[10px] text-on-surface-variant">
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {msg.isEdited && " (Editado)"}
+                    </span>
+                    {isMine && <FiCheck size={14} className="text-primary" />}
+                  </div>
+                </div>
+              );
+            })}
+            </>
+          )}
+          <div ref={scrollRef} />
         </div>
 
-        {/* Preview da imagem */}
-        {selectedImage && (
-          <div className="px-4 pt-4 pb-0 bg-transparent relative z-20">
-            <div className="max-w-4xl mx-auto">
-              <div className="relative inline-block bg-zinc-900/80 backdrop-blur-xl border border-white/10 p-2 rounded-2xl shadow-xl">
-                <button 
-                  onClick={() => setSelectedImage(null)}
-                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors z-30"
-                >
-                  <FiX size={14} />
-                </button>
-                <div className="relative w-32 h-32 rounded-xl overflow-hidden bg-zinc-950 border border-white/5">
-                  <Image 
-                    src={URL.createObjectURL(selectedImage)} 
-                    alt="Preview" 
-                    fill 
-                    className="object-cover opacity-90"
-                  />
-                  {isUploading && (
-                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                      <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Input */}
-        <div className="p-4 bg-transparent relative z-20 flex flex-col gap-2">
+        {/* Composer */}
+        <div className="p-md bg-surface border-t border-outline-variant shrink-0">
+          
           {editingMessageId && (
-            <div className="max-w-4xl mx-auto w-full flex items-center justify-between bg-zinc-900/90 border border-blue-500/30 px-4 py-2 rounded-xl backdrop-blur-md">
-              <div className="flex items-center gap-2 text-sm text-blue-400 font-medium">
-                <FiEdit2 size={14} />
-                <span>Editando mensagem...</span>
-              </div>
-              <button onClick={cancelEditing} className="text-zinc-400 hover:text-white p-1 rounded-md transition-colors">
-                <FiX size={16} />
+            <div className="flex items-center justify-between bg-surface-container p-2 rounded-lg mb-2 border border-primary/30">
+              <span className="text-xs text-on-surface-variant font-medium flex items-center gap-2">
+                <FiEdit2 className="text-primary" /> Editando mensagem...
+              </span>
+              <button onClick={cancelEditing} className="text-on-surface-variant hover:text-white">
+                <FiX size={14} />
               </button>
             </div>
           )}
+          
+          {selectedImage && (
+             <div className="flex items-center justify-between bg-surface-container p-2 rounded-lg mb-2 border border-outline-variant">
+                <span className="text-xs text-on-surface-variant flex items-center gap-2">
+                  <FiImage className="text-primary" /> {selectedImage.name}
+                </span>
+                <button onClick={() => setSelectedImage(null)} className="text-on-surface-variant hover:text-red-500">
+                  <FiX size={14} />
+                </button>
+             </div>
+          )}
 
-          <div className="max-w-4xl mx-auto w-full flex items-end gap-2 bg-zinc-900/80 backdrop-blur-xl border border-white/10 p-2 rounded-2xl shadow-2xl">
-            
-            <input 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
+          <div className="bg-surface-container-low border border-outline-variant rounded-xl px-2 py-1 flex items-center gap-2 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/30 transition-all min-h-12">
+            <input
+              type="file"
               ref={fileInputRef}
               onChange={handleImageChange}
+              accept="image/*"
+              className="hidden"
             />
-
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              className="p-3 shrink-0 rounded-xl text-zinc-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
-            >
-              <FiImage size={20} />
+            <button onClick={() => fileInputRef.current?.click()} className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-on-surface-variant hover:text-primary transition-colors">
+              <FiPlusCircle size={20} />
             </button>
             
             <textarea
+              className="min-w-0 flex-1 resize-none bg-transparent py-2 leading-5 outline-none custom-scrollbar placeholder:text-on-surface-variant/50 text-[14px]"
+              placeholder={isMuted ? "Você silenciou as notificações desta conversa..." : "Escreva uma mensagem..."}
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+              rows={1}
+              onChange={(e) => {
+                setNewMessage(e.target.value);
+                e.target.style.height = "auto";
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 96)}px`;
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   sendMessage();
+                  e.currentTarget.style.height = "auto";
                 }
               }}
-              placeholder="Escreva sua mensagem..."
-              rows={1}
-              className="flex-1 bg-transparent text-white text-sm py-3 px-2 resize-none outline-none placeholder-zinc-500 min-h-[44px] max-h-32 scrollbar-thin scrollbar-thumb-zinc-700"
             />
             
-            <button className="p-3 shrink-0 rounded-xl text-zinc-400 hover:text-amber-400 hover:bg-zinc-800 transition-colors">
-              <FiSmile size={20} />
-            </button>
-
-            <button
-              onClick={sendMessage}
-              disabled={(!newMessage.trim() && !selectedImage) || isUploading}
-              className="group p-3 shrink-0 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] disabled:shadow-none relative overflow-hidden flex items-center justify-center"
-            >
-              {isUploading ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin m-0.5"></div>
-              ) : (
-                <FiSend size={18} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-disabled:translate-x-0 group-disabled:translate-y-0" />
-              )}
-            </button>
+            <div className="flex items-center gap-1 self-end mb-1">
+              <button className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-on-surface-variant hover:text-primary transition-colors">
+                <FiSmile size={20} />
+              </button>
+              <button
+                onClick={() => {
+                   sendMessage();
+                   if (document.querySelector('textarea')) (document.querySelector('textarea') as HTMLTextAreaElement).style.height = "auto";
+                }}
+                disabled={isUploading || (!newMessage.trim() && !selectedImage)}
+                className="w-9 h-9 bg-primary text-white rounded-lg flex items-center justify-center hover:brightness-110 shadow-md shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isUploading ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <FiSend size={16} />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </main>
-    </div>
+
+      {/* Column 3: Context Panel (300-320px) */}
+      <aside className="hidden lg:flex min-h-0 w-[310px] bg-surface-container-low overflow-y-auto custom-scrollbar shrink-0 flex-col border-l border-outline-variant">
+        <div className="p-lg flex flex-col gap-lg">
+          
+          {/* Identity Section */}
+          <div className="flex flex-col items-center text-center">
+            <div className="relative mb-md">
+              {activeChatUser?.avatarUrl ? (
+                <Image
+                  src={activeChatUser.avatarUrl}
+                  alt={activeChatUser.name}
+                  width={80}
+                  height={80}
+                  unoptimized
+                  className="w-20 h-20 rounded-full object-cover ring-4 ring-surface-container shadow-xl"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-full ring-4 ring-surface-container shadow-xl bg-surface-container-highest flex items-center justify-center font-bold text-primary text-2xl">
+                  {activeChatUser?.name?.charAt(0) || "U"}
+                </div>
+              )}
+              <div className={`absolute bottom-1 right-1 w-4 h-4 border-[3px] border-surface-container-low rounded-full ${isOnline ? "bg-[#10B981]" : "bg-gray-500"}`}></div>
+            </div>
+            
+            <h2 className="text-[17px] font-bold text-on-surface">{activeChatUser?.name || "Usuário"}</h2>
+            <p className="text-[13px] text-on-surface-variant">
+               {activeChatUser?.role === "RECRUITER" ? "Tech Recruiter" : "Aluno(a)"}
+            </p>
+            
+            {activeChatUser?.role === "RECRUITER" && (
+              <div className="mt-2 flex items-center gap-xs px-2 py-0.5 bg-surface-container-highest rounded text-[11px] font-bold text-primary uppercase tracking-wider">
+                <FiCheckCircle size={14} className="mr-1" />
+                Recrutador Verificado
+              </div>
+            )}
+            
+            <button className="w-full mt-lg py-2.5 bg-surface-container-highest border border-outline-variant rounded-lg text-label-md font-bold text-on-surface hover:bg-surface-bright transition-colors">
+              Ver perfil completo
+            </button>
+          </div>
+          
+          <div className="h-px bg-outline-variant w-full"></div>
+          
+          {/* Match & Status Section */}
+          <div className="space-y-sm">
+            <div className="flex items-center justify-between">
+              <h4 className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">
+                 {activeChatUser?.role === "RECRUITER" ? "Vaga Relacionada" : "Sobre o Aluno"}
+              </h4>
+              <span className="text-[11px] font-bold text-primary cursor-pointer hover:underline">Ver todas</span>
+            </div>
+            
+            <div className="p-3 bg-surface-container border border-outline-variant rounded-xl group hover:border-primary transition-colors cursor-pointer shadow-sm">
+              <h5 className="font-bold text-on-surface group-hover:text-primary transition-colors text-[14px]">
+                 {activeChatUser?.role === "RECRUITER" ? "Desenvolvedor Front-end Júnior" : "Full Stack Pleno"}
+              </h5>
+              <p className="text-[12px] text-on-surface-variant mt-0.5">
+                 {activeChatUser?.role === "RECRUITER" ? "TechSolutions · São Paulo" : "Disponível para trabalho"}
+              </p>
+              
+              <div className="flex flex-wrap gap-xs mt-3">
+                <span className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded">87% Match</span>
+                <span className="px-2 py-0.5 bg-surface-container-highest text-on-surface-variant text-[10px] font-bold rounded">
+                  {activeChatUser?.role === "RECRUITER" ? "Remoto · CLT" : "Remoto"}
+                </span>
+              </div>
+            </div>
+
+            {/* Status Block */}
+            {activeChatUser?.role === "RECRUITER" && (
+              <div className="p-3 bg-surface-container border border-outline-variant rounded-xl flex items-center justify-between mt-2">
+                <span className="text-[12px] font-medium text-on-surface">Status da candidatura</span>
+                <span className="px-2 py-0.5 bg-amber-500/10 text-amber-500 text-[10px] font-bold rounded uppercase">
+                  Em análise
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Company Info (Placeholder) */}
+          {activeChatUser?.role === "RECRUITER" && (
+            <div className="space-y-sm mt-2">
+              <h4 className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">Sobre a empresa</h4>
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-md">
+                  <FiBriefcase className="text-on-surface-variant" size={18} />
+                  <span className="text-[13px] text-on-surface">TechSolutions, SaaS · São Paulo</span>
+                </div>
+                <div className="flex items-center gap-md">
+                  <FiUsers className="text-on-surface-variant" size={18} />
+                  <span className="text-[13px] text-on-surface">250 - 500 colaboradores</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Final Actions */}
+          <div className="flex flex-col gap-sm mt-auto pt-md pb-md">
+            <button className="w-full py-3 bg-primary text-white rounded-xl font-bold text-[14px] shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
+               {activeChatUser?.role === "RECRUITER" ? "Ver detalhes da vaga" : "Convidar para vaga"}
+            </button>
+          </div>
+        </div>
+      </aside>
+    </>
   );
 }

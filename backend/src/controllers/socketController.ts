@@ -1,5 +1,6 @@
 import { Server, Socket } from "socket.io";
 import { prisma } from "../lib/prisma.js";
+import { serializeNotification } from "../utils/notificationUtils.js";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../middlewares/authMiddleware.js";
 
@@ -127,20 +128,51 @@ export const registerSocketEvents = (io: Server) => {
               const isMuted = user.mutedRooms && user.mutedRooms.includes(roomId);
               
               if (!isMuted) {
+                console.log("[Notification] criando", {
+                  senderId,
+                  recipientId: user.id,
+                  roomId,
+                  messageId: savedMessage.id,
+                });
+
                 const notification = await prisma.notification.create({
                   data: {
                     userId: user.id,
                     senderId: senderId,
                     type: "MESSAGE",
-                    title: `Nova mensagem de ${senderName}`,
+                    title: `${senderName} enviou uma nova mensagem`,
                     content: content ? content.substring(0, 50) + (content.length > 50 ? "..." : "") : "Enviou uma imagem",
-                  }
+                    metadata: { roomId, messageId: savedMessage.id },
+                    resourceUrl: `/dashboard/chat/${roomId}`,
+                  },
+                  include: {
+                    sender: {
+                      select: { id: true, name: true, avatarUrl: true },
+                    },
+                  },
                 });
 
+                const payload = serializeNotification(notification);
+                console.log("[Notification] payload", payload);
+
                 // Emite o evento de notificação se o usuário estiver online
-                const receiverSocketId = onlineUsers.get(user.id);
-                if (receiverSocketId) {
-                  io.to(receiverSocketId).emit("notification:received", notification);
+                const recipientSocketId = onlineUsers.get(user.id);
+                
+                console.log("[Notification] socket destinatário", {
+                  recipientId: user.id,
+                  recipientSocketId,
+                });
+                
+                if (recipientSocketId) {
+                  io.to(String(recipientSocketId)).emit("notification:received", payload);
+
+                  console.log("[Notification] emit realizado", {
+                    event: "notification:received",
+                    recipientSocketId,
+                    notificationId: payload.id,
+                  });
+                } else {
+                  console.warn("[Notification] destinatário sem socket online");
                 }
               }
             }

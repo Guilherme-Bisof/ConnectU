@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
+import { serializeNotification } from "../utils/notificationUtils.js";
 
 export class NotificationController {
   // Listar notificações
@@ -15,9 +16,18 @@ export class NotificationController {
         where: { userId },
         orderBy: { createdAt: "desc" },
         take: 30,
+        include: {
+          sender: {
+            select: {
+              id: true,
+              name: true,
+              avatarUrl: true,
+            },
+          },
+        },
       });
 
-      res.json(notifications);
+      res.json(notifications.map(serializeNotification));
     } catch (error) {
       console.error("Erro ao buscar notificações:", error);
       res.status(500).json({ error: "Erro interno ao buscar notificações." });
@@ -44,9 +54,14 @@ export class NotificationController {
       const updatedNotification = await prisma.notification.update({
         where: { id: String(id) },
         data: { read: true },
+        include: {
+          sender: {
+            select: { id: true, name: true, avatarUrl: true },
+          },
+        },
       });
 
-      res.json(updatedNotification);
+      res.json(serializeNotification(updatedNotification));
     } catch (error) {
       console.error("Erro ao atualizar notificação:", error);
       res.status(500).json({ error: "Erro interno ao atualizar notificação." });

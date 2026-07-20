@@ -72,7 +72,8 @@ model User {
   messages      Message[]
   likes         Like[]
   comments      Comment[]
-  notifications Notification[]
+  notifications      Notification[]
+  sentNotifications  Notification[] @relation("NotificationSender")
 
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id])
@@ -201,18 +202,24 @@ model Comment {
 }
 
 model Notification {
-  id        String   @id @default(uuid())
-  userId    String
-  senderId  String?
-  type      String
-  title     String
-  content   String
-  read      Boolean  @default(false)
-  postId    String?
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  userId      String
+  senderId    String?
+  type        String
+  title       String
+  content     String
+  read        Boolean  @default(false)
+  postId      String?
+  metadata    Json?
+  resourceUrl String?
+  createdAt   DateTime @default(now())
 
-  // Relação
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Relações
+  user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sender User? @relation("NotificationSender", fields: [senderId], references: [id], onDelete: SetNull)
 
   @@index([userId])
+  @@index([senderId])
+  @@index([read])
+  @@index([createdAt])
 }

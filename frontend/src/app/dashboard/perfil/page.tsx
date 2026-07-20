@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   FiPlus,
   FiTarget,
@@ -168,12 +169,39 @@ export default function ProfilePage() {
   const [expandedJobIds, setExpandedJobIds] = useState<string[]>([]);
 
   // Estado para exibir barra de perfil concluído
-  const [showCompleteMsg, setShowCompleteMsg] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("hasSeenProfileComplete") !== "true";
+  const [showCompleteMsg, setShowCompleteMsg] = useState<boolean>(false);
+  const [toastMsg, setToastMsg] = useState<{title: string; description: string} | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const completionKey = `profileCompletionSeen:${user.id}`;
+    const completion = getProfileCompletion(user);
+
+    if (completion < 100) {
+      localStorage.removeItem(completionKey);
+      setTimeout(() => setShowCompleteMsg(false), 0);
+    } else if (completion === 100 && !localStorage.getItem(completionKey)) {
+      setTimeout(() => setShowCompleteMsg(true), 0);
     }
-    return false;
-  });
+  }, [user]);
+
+  useEffect(() => {
+    if (user && getProfileCompletion(user) === 100 && showCompleteMsg) {
+      const completionKey = `profileCompletionSeen:${user.id}`;
+      const timer = setTimeout(() => {
+        setShowCompleteMsg(false);
+        localStorage.setItem(completionKey, "true");
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, showCompleteMsg]);
+
+  useEffect(() => {
+    if (toastMsg) {
+      const timer = setTimeout(() => setToastMsg(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMsg]);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -770,8 +798,50 @@ export default function ProfilePage() {
 
   return (
     <div className="-m-6 flex flex-col min-h-screen">
-      {/* Aviso de perfil incompleto para aluno */}
-      {user.role === "STUDENT" && (() => {
+      {/* Toast de Perfil Completo */}
+      {user && getProfileCompletion(user) === 100 && showCompleteMsg && (
+        <div className="fixed top-20 right-8 z-50 rounded-lg border border-emerald-500/20 bg-[#1e2024] px-4 py-3 text-sm text-emerald-400 font-semibold shadow-2xl animate-fadeIn flex justify-between items-center gap-4">
+          <span>Perfil completo! Suas vagas foram liberadas. 🎉</span>
+          <button
+            onClick={() => {
+              setShowCompleteMsg(false);
+              localStorage.setItem(`profileCompletionSeen:${user.id}`, "true");
+            }}
+            className="text-emerald-500 hover:text-emerald-400 p-1 rounded transition-colors"
+            title="Fechar aviso"
+          >
+            <FiX className="text-lg" />
+          </button>
+        </div>
+      )}
+
+      {/* Toast Personalizado (Em breve) */}
+      {toastMsg && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed top-20 right-6 w-80 bg-zinc-900/90 backdrop-blur-md border border-zinc-800 rounded-xl p-5 shadow-2xl z-50 animate-fadeIn"
+        >
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="text-sm font-semibold text-zinc-100">{toastMsg.title}</h3>
+            <button onClick={() => setToastMsg(null)} className="text-zinc-500 hover:text-zinc-300 transition-colors">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <p className="text-xs text-zinc-400 leading-relaxed mb-4">
+            {toastMsg.description}
+          </p>
+          <div className="inline-flex w-fit items-center gap-1.5 text-[9px] font-semibold text-blue-400/70 uppercase tracking-wider bg-blue-500/5 py-1 px-2 rounded-md border border-blue-500/10">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400/60"></span>
+            Disponível em breve
+          </div>
+        </div>
+      )}
+
+      {/* Aviso de perfil incompleto (Bloqueio) para aluno */}
+      {user?.role === "STUDENT" && getProfileCompletion(user) < 100 && (() => {
         const missingFields = [];
         if (!user.course?.trim()) missingFields.push("Curso");
         if (!user.institution?.trim()) missingFields.push("Instituição");
@@ -790,22 +860,6 @@ export default function ProfilePage() {
                 className="text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 px-3 py-1.5 rounded border border-amber-500/30 transition-colors uppercase"
               >
                 Preencher agora
-              </button>
-            </div>
-          );
-        } else if (showCompleteMsg) {
-          return (
-            <div className="mb-4 mx-8 mt-6 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400 font-semibold shadow-md animate-fadeIn flex justify-between items-center">
-              <span>Perfil completo! Suas vagas já foram liberadas. 🎉</span>
-              <button
-                onClick={() => {
-                  setShowCompleteMsg(false);
-                  localStorage.setItem("hasSeenProfileComplete", "true");
-                }}
-                className="text-emerald-500 hover:text-emerald-400 p-1 rounded transition-colors"
-                title="Fechar aviso"
-              >
-                <FiX className="text-lg" />
               </button>
             </div>
           );
@@ -909,59 +963,114 @@ export default function ProfilePage() {
             <aside className="col-span-12 md:col-span-4 space-y-6">
               {/* Profile Completion (Professional Focused) */}
               {user.role === "STUDENT" && (
-                <section className="bg-[#1e2024] p-6 rounded-xl border border-[#2a2d32] shadow-sm">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-bold text-lg text-white">Completar Perfil</h3>
-                    <span className="text-[#316cf4] font-bold text-lg">{completionPercent}%</span>
-                  </div>
-                  <div className="w-full bg-[#333539] h-2 rounded-full mb-6 overflow-hidden">
-                    <div
-                      className="bg-[#316cf4] h-full rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(49,108,244,0.5)]"
-                      style={{ width: `${completionPercent}%` }}
-                    ></div>
-                  </div>
-                  <ul className="space-y-3">
-                    <li className="flex items-center justify-between text-gray-400">
-                      <div className="flex items-center gap-2">
-                        {user.bio ? (
-                          <FiCheckCircle className="text-[#316cf4] text-lg shrink-0" />
-                        ) : (
-                          <FiCircle className="text-gray-600 text-lg shrink-0" />
-                        )}
-                        <span className={`text-sm ${user.bio ? "text-gray-300" : ""}`}>Biografia acadêmica</span>
-                      </div>
-                      {!user.bio && <span className="text-[#316cf4] font-semibold text-xs">+25%</span>}
-                    </li>
-                    <li className="flex items-center justify-between text-gray-400">
-                      <div className="flex items-center gap-2">
-                        {hasSkills ? (
-                          <FiCheckCircle className="text-[#316cf4] text-lg shrink-0" />
-                        ) : (
-                          <FiCircle className="text-gray-600 text-lg shrink-0" />
-                        )}
-                        <span className={`text-sm ${hasSkills ? "text-gray-300" : ""}`}>Competências técnicas</span>
-                      </div>
-                      {!hasSkills && <span className="text-[#316cf4] font-semibold text-xs">+25%</span>}
-                    </li>
-                    <li className="flex items-center justify-between text-gray-400">
-                      <div className="flex items-center gap-2">
-                        {hasProjects ? (
-                          <FiCheckCircle className="text-[#316cf4] text-lg shrink-0" />
-                        ) : (
-                          <FiCircle className="text-gray-600 text-lg shrink-0" />
-                        )}
-                        <span className={`text-sm ${hasProjects ? "text-gray-300" : ""}`}>Vitrine de projetos</span>
-                      </div>
-                      {!hasProjects && <span className="text-[#316cf4] font-semibold text-xs">+25%</span>}
-                    </li>
-                  </ul>
-                  <button
-                    onClick={openProjectModal}
-                    className="w-full mt-6 py-2.5 border border-[#316cf4]/30 text-[#316cf4] rounded-lg font-bold hover:bg-[#316cf4]/5 transition-all text-xs uppercase"
-                  >
-                    Adicionar Projeto
-                  </button>
-                </section>
+                completionPercent < 100 ? (
+                  <section className="bg-[#1e2024] p-6 rounded-xl border border-[#2a2d32] shadow-sm">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-bold text-lg text-white">Completar Perfil</h3>
+                      <span className="text-[#316cf4] font-bold text-lg">{completionPercent}%</span>
+                    </div>
+                    <div className="w-full bg-[#333539] h-2 rounded-full mb-6 overflow-hidden">
+                      <div
+                        className="bg-[#316cf4] h-full rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(49,108,244,0.5)]"
+                        style={{ width: `${completionPercent}%` }}
+                      ></div>
+                    </div>
+                    <ul className="space-y-3">
+                      <li className="flex items-center justify-between text-gray-400">
+                        <div className="flex items-center gap-2">
+                          {user.bio ? (
+                            <FiCheckCircle className="text-[#316cf4] text-lg shrink-0" />
+                          ) : (
+                            <FiCircle className="text-gray-600 text-lg shrink-0" />
+                          )}
+                          <span className={`text-sm ${user.bio ? "text-gray-300" : ""}`}>Biografia acadêmica</span>
+                        </div>
+                        {!user.bio && <span className="text-[#316cf4] font-semibold text-xs">+25%</span>}
+                      </li>
+                      <li className="flex items-center justify-between text-gray-400">
+                        <div className="flex items-center gap-2">
+                          {hasSkills ? (
+                            <FiCheckCircle className="text-[#316cf4] text-lg shrink-0" />
+                          ) : (
+                            <FiCircle className="text-gray-600 text-lg shrink-0" />
+                          )}
+                          <span className={`text-sm ${hasSkills ? "text-gray-300" : ""}`}>Competências técnicas</span>
+                        </div>
+                        {!hasSkills && <span className="text-[#316cf4] font-semibold text-xs">+25%</span>}
+                      </li>
+                      <li className="flex items-center justify-between text-gray-400">
+                        <div className="flex items-center gap-2">
+                          {hasProjects ? (
+                            <FiCheckCircle className="text-[#316cf4] text-lg shrink-0" />
+                          ) : (
+                            <FiCircle className="text-gray-600 text-lg shrink-0" />
+                          )}
+                          <span className={`text-sm ${hasProjects ? "text-gray-300" : ""}`}>Vitrine de projetos</span>
+                        </div>
+                        {!hasProjects && <span className="text-[#316cf4] font-semibold text-xs">+25%</span>}
+                      </li>
+                    </ul>
+                    <button
+                      onClick={openProjectModal}
+                      className="w-full mt-6 py-2.5 border border-[#316cf4]/30 text-[#316cf4] rounded-lg font-bold hover:bg-[#316cf4]/5 transition-all text-xs uppercase"
+                    >
+                      {hasProjects ? "Adicionar Outro Projeto" : "Adicionar Projeto"}
+                    </button>
+                  </section>
+                ) : (
+                  <section className="bg-[#1e2024] p-6 rounded-xl border border-[#2a2d32] shadow-sm">
+                    <h3 className="font-bold text-lg text-white mb-2">Próximos passos</h3>
+                    <p className="text-sm text-gray-400 mb-6">Seu perfil está pronto. Explore vagas compatíveis com suas competências.</p>
+                    <Link
+                      href="/dashboard/explorar"
+                      className="w-full flex items-center justify-center py-2.5 bg-[#316cf4] hover:bg-[#2556cc] text-white rounded-lg font-bold transition-all text-sm mb-4"
+                    >
+                      EXPLORAR VAGAS
+                    </Link>
+                    <div className="space-y-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setToastMsg({
+                            title: "Disponibilidade profissional",
+                            description: "Essa configuração estará disponível em breve.",
+                          })
+                        }
+                        className="flex w-full items-center justify-between rounded-md px-2 py-2 text-sm text-gray-400 hover:bg-[#2a2d32] hover:text-white transition-colors gap-2"
+                      >
+                        <span className="flex items-center gap-2 min-w-0">
+                          <FiCalendar className="text-lg text-[#316cf4]/80 shrink-0" />
+                          <span className="truncate text-left leading-snug">Atualizar disponibilidade</span>
+                        </span>
+                        <span className="rounded-full bg-[#316cf4]/10 px-2 py-0.5 text-xs text-[#316cf4] shrink-0 whitespace-nowrap font-medium">
+                          Em breve
+                        </span>
+                      </button>
+                      
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setToastMsg({
+                            title: "Preferências de vaga",
+                            description: "Em breve você poderá personalizar cargos, modalidades e localizações de interesse.",
+                          })
+                        }
+                        className="flex w-full items-center justify-between rounded-md px-2 py-2 text-sm text-gray-400 hover:bg-[#2a2d32] hover:text-white transition-colors gap-2"
+                      >
+                        <span className="flex items-center gap-2 min-w-0">
+                          <svg className="w-4 h-4 text-[#316cf4]/80 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                          </svg>
+                          <span className="truncate text-left leading-snug">Revisar preferências</span>
+                        </span>
+                        <span className="rounded-full bg-[#316cf4]/10 px-2 py-0.5 text-xs text-[#316cf4] shrink-0 whitespace-nowrap font-medium">
+                          Em breve
+                        </span>
+                      </button>
+                    </div>
+                  </section>
+                )
               )}
 
               {/* Conquistas (Badges Module) */}
