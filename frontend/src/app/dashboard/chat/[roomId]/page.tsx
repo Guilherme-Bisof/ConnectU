@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { socket } from "../layout";
+import { socket } from "../../../../lib/socket";
 import {
   FiSend,
   FiMessageSquare,

@@ -20,3 +20,6 @@ yarn-error.log*
 # Sistema Operacional
 .DS_Store
 Thumbs.db
+
+prisma/schema.backup.prisma
+prisma/migrations_backup/

@@ -128,13 +128,6 @@ export const registerSocketEvents = (io: Server) => {
               const isMuted = user.mutedRooms && user.mutedRooms.includes(roomId);
               
               if (!isMuted) {
-                console.log("[Notification] criando", {
-                  senderId,
-                  recipientId: user.id,
-                  roomId,
-                  messageId: savedMessage.id,
-                });
-
                 const notification = await prisma.notification.create({
                   data: {
                     userId: user.id,
@@ -153,24 +146,10 @@ export const registerSocketEvents = (io: Server) => {
                 });
 
                 const payload = serializeNotification(notification);
-                console.log("[Notification] payload", payload);
-
-                // Emite o evento de notificação se o usuário estiver online
-                const recipientSocketId = onlineUsers.get(user.id);
+                const isActive = onlineUsers.get(user.id) ? true : false;
                 
-                console.log("[Notification] socket destinatário", {
-                  recipientId: user.id,
-                  recipientSocketId,
-                });
-                
-                if (recipientSocketId) {
-                  io.to(String(recipientSocketId)).emit("notification:received", payload);
-
-                  console.log("[Notification] emit realizado", {
-                    event: "notification:received",
-                    recipientSocketId,
-                    notificationId: payload.id,
-                  });
+                if (isActive) {
+                  io.to(user.id).emit("notification:received", payload);
                 } else {
                   console.warn("[Notification] destinatário sem socket online");
                 }

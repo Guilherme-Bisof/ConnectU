@@ -31,7 +31,6 @@ export function NotificationBell({
 }: {
   placement?: "top" | "bottom";
 }) {
-  console.log("[NotificationBell] renderizado");
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [activeTab, setActiveTab] = useState<"ALL" | "UNREAD">("ALL");
   const [isOpen, setIsOpen] = useState(false);
@@ -93,23 +92,10 @@ export function NotificationBell({
       return;
     }
 
-    console.log("[NotificationBell] registrando listener", {
-      connected: socket.connected,
-      socketId: socket.id,
-    });
-
-    const debugAnyEvent = (eventName: string, ...args: unknown[]) => {
-      console.log("[Socket ANY]", eventName, args);
-    };
-    socket.onAny(debugAnyEvent);
-
     const handleNotification = (newNotification: Notification) => {
-      console.log("[NotificationBell] notification:received", newNotification);
-
       setNotifications((current) => {
         const duplicated = current.some((item) => item.id === newNotification.id);
-        console.log("[NotificationBell] duplicada:", duplicated);
-
+        
         if (duplicated) {
           return current;
         }
@@ -120,9 +106,7 @@ export function NotificationBell({
     socket.on("notification:received", handleNotification);
 
     return () => {
-      console.log("[NotificationBell] removendo listener");
       socket.off("notification:received", handleNotification);
-      socket.offAny(debugAnyEvent);
     };
   }, []);
 
@@ -207,20 +191,18 @@ export function NotificationBell({
         </div>
         
         <div className="flex-1 min-w-0">
-          <div className="flex min-w-0 items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <h4 className="text-body-md font-bold text-on-surface truncate pr-2">
-                 {notification.type === "MESSAGE" 
-                    ? (notification.actor?.name ? `${notification.actor.name} enviou uma nova mensagem` : "Nova mensagem") 
-                    : (notification.title.includes("undefined") ? "Nova notificação" : notification.title)
-                 }
-              </h4>
-            </div>
+          <div className="flex min-w-0 items-start gap-3">
+            <p className="min-w-0 flex-1 truncate text-body-md font-bold text-on-surface">
+               {notification.type === "MESSAGE" 
+                  ? (notification.actor?.name ? `${notification.actor.name} enviou uma nova mensagem` : "Nova mensagem") 
+                  : (notification.title.includes("undefined") ? "Nova notificação" : notification.title)
+               }
+            </p>
             <time className="shrink-0 text-on-surface-variant text-[11px] whitespace-nowrap pt-0.5">
                {formatTime(notification.createdAt)}
             </time>
           </div>
-          <p className="text-body-sm text-on-surface-variant line-clamp-1 mb-2">
+          <p className="text-body-sm text-on-surface-variant line-clamp-1 mb-2 mt-1">
             {notification.description}
           </p>
           {!notification.read && (
@@ -301,9 +283,7 @@ export function NotificationBell({
 
       {/* Dropdown de Notificações */}
       {isOpen && (
-        <div
-          className={`absolute ${dropdownPosition} w-[400px] bg-surface-container-low border border-outline-variant rounded-[14px] shadow-2xl z-50 flex flex-col max-h-[calc(100vh-100px)] overflow-hidden animate-fadeIn`}
-        >
+        <div className="absolute right-0 mt-3 w-100 bg-surface-container-low border border-outline-variant/30 rounded-2xl shadow-2xl overflow-hidden z-50 flex flex-col max-h-[85vh] origin-top-right ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-200">
           {/* Header Fixo */}
           <div className="p-md flex items-center justify-between border-b border-outline-variant/30 bg-surface-container-low">
             <h2 className="font-headline-md text-headline-md text-on-surface">Notificações</h2>
@@ -320,11 +300,7 @@ export function NotificationBell({
           <div className="flex items-center px-md pt-md bg-surface-container-low">
             <button 
               onClick={() => setActiveTab("ALL")}
-              className={`flex-1 py-2 text-body-md font-semibold text-center relative transition-all ${
-                activeTab === "ALL" 
-                  ? "text-primary after:content-[''] after:absolute after:-bottom-2 after:left-1/2 after:-translate-x-1/2 after:w-[40px] after:h-[2px] after:bg-primary" 
-                  : "text-on-surface-variant hover:bg-surface-variant rounded-t-lg"
-              }`}
+              className={`relative px-4 py-3 text-[13px] font-bold transition-colors ${activeTab === "ALL" ? "text-primary after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-10 after:h-0.5 after:bg-primary after:rounded-t-full" : "text-on-surface-variant hover:text-on-surface"}`}
             >
               Todas
             </button>
@@ -389,7 +365,7 @@ export function NotificationBell({
 
       {/* Toast Notification (Customizado ConnectU) */}
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 bg-surface-container-highest border border-outline-variant rounded-xl shadow-2xl p-4 min-w-[300px] z-300 animate-fadeIn flex flex-col gap-1">
+        <div className="fixed bottom-6 right-6 bg-surface-container-highest border border-outline-variant rounded-xl shadow-2xl p-4 min-w-75 z-300 animate-fadeIn flex flex-col gap-1">
           <div className="flex justify-between items-center gap-2">
              <h3 className="text-body-md font-bold text-on-surface">{toastMsg.title}</h3>
              <button onClick={() => setToastMsg(null)} className="text-on-surface-variant hover:text-on-surface transition-colors">

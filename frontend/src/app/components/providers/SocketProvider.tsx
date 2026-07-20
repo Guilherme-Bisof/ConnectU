@@ -5,20 +5,14 @@ import { socket } from "../../../lib/socket";
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    console.log("[SocketProvider] montado");
-
     if (!socket) {
       console.error("[SocketProvider] socket não existe");
       return;
     }
 
-    const handleConnect = () => {
-      console.log("[SocketProvider] conectado:", socket.id);
-    };
+    const handleConnect = () => {};
 
-    const handleDisconnect = (reason: string) => {
-      console.warn("[SocketProvider] desconectado:", reason);
-    };
+    const handleDisconnect = () => {};
 
     const handleConnectError = (error: Error) => {
       console.error("[SocketProvider] erro de conexão:", error);
@@ -28,12 +22,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     socket.on("disconnect", handleDisconnect);
     socket.on("connect_error", handleConnectError);
 
-    if (socket.connected) {
-      console.log("[SocketProvider] já estava conectado:", socket.id);
-    }
-
     return () => {
-      console.log("[SocketProvider] desmontado");
       socket.off("connect", handleConnect);
       socket.off("disconnect", handleDisconnect);
       socket.off("connect_error", handleConnectError);
