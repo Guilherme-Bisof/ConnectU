@@ -378,7 +378,7 @@ export default function ChatRoomPage() {
   return (
     <>
       {/* Column 2: Central Chat (600-650px) */}
-      <main className="w-full lg:flex-1 lg:w-auto min-h-0 flex flex-col bg-surface relative border-r border-outline-variant min-w-0">
+      <main className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden bg-surface relative border-r border-outline-variant">
         
         {/* Header */}
         <header className="h-16 flex items-center justify-between px-md border-b border-outline-variant bg-surface/90 backdrop-blur-md z-10 shrink-0">
@@ -439,7 +439,7 @@ export default function ChatRoomPage() {
         </header>
 
         {/* Message List */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-lg space-y-md custom-scrollbar">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-lg space-y-md custom-scrollbar">
           
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-70">

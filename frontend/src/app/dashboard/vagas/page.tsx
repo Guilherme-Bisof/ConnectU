@@ -701,7 +701,7 @@ export default function VagasPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-0 flex-1">
+    <div className="flex h-full flex-col min-h-0 min-w-0 flex-1">
       {/* Header */}
       <header className="px-8 py-6 border-b border-[#434655] shrink-0 bg-[#0d0f11]/95 backdrop-blur-sm">
         <h2 className="text-2xl md:text-3xl font-bold text-white mb-1">

@@ -194,7 +194,7 @@ export default function DashboardLayout({
       </header>
 
       {/*  CONTEÚDO ABAIXO DO HEADER */}
-      <div className="pt-16 flex flex-1 min-h-dvh min-w-0">
+      <div className="fixed inset-x-0 bottom-0 top-[64px] flex min-h-0 min-w-0 overflow-hidden">
         {/*  SIDEBAR ESQUERDA (Desktop)  */}
         <aside
           className="w-64 fixed left-0 top-16 bottom-0 overflow-y-auto hidden lg:block border-r border-[#2a2d32] p-4 space-y-8"
@@ -568,7 +568,14 @@ export default function DashboardLayout({
         )}
 
         {/*  ÁREA PRINCIPAL DE CONTEÚDO */}
-        <main className="flex-1 min-h-0 min-w-0 flex flex-col lg:ml-[256px] p-[12px] sm:p-[16px] lg:p-[24px]">
+        <main
+          className={`flex-1 min-h-0 min-w-0 flex flex-col lg:ml-[256px] p-[12px] sm:p-[16px] lg:p-[24px] ${
+            pathname.startsWith("/dashboard/chat") ||
+            pathname.startsWith("/dashboard/vagas")
+              ? "overflow-hidden"
+              : "overflow-y-auto"
+          }`}
+        >
           {children}
         </main>
       </div>
