@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 import { ioInstance } from "../controllers/socketController.js";
+import { getUserRoom } from "../utils/socketRooms.js";
 
 interface CreateNotificationInput {
     userId: string;
@@ -30,7 +31,7 @@ export class NotificationService {
             });
 
             if (ioInstance) {
-                ioInstance.to(userId).emit("notification:received", notification);
+                ioInstance.to(getUserRoom(userId)).emit("notification:received", notification);
             }
 
             return notification;

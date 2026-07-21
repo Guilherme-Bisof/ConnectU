@@ -4,6 +4,19 @@ import { serializeNotification } from "../utils/notificationUtils.js";
 import { calculateTotalUnread } from "./ChatController.js";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../middlewares/authMiddleware.js";
+import { getUserRoom } from "../utils/socketRooms.js";
+
+interface SocketJwtPayload extends jwt.JwtPayload {
+  id?: string;
+  userId?: string;
+  name?: string;
+  email?: string;
+}
+
+interface SocketUser {
+  id: string;
+  name: string;
+}
 
 export let ioInstance: Server;
 
@@ -30,8 +43,17 @@ export const registerSocketEvents = (io: Server) => {
       const cleanToken = token.startsWith("Bearer ")
         ? token.split(" ")[1]
         : token;
-      const decoded = jwt.verify(cleanToken, JWT_SECRET);
-      (socket as any).user = decoded; 
+      const decoded = jwt.verify(cleanToken, JWT_SECRET) as SocketJwtPayload;
+      const userId = decoded.id ?? decoded.userId ?? decoded.sub;
+
+      if (!userId) {
+        return next(new Error("Token do Socket não contém um usuário válido."));
+      }
+
+      socket.data.user = {
+        id: String(userId),
+        name: decoded.name ?? decoded.email ?? "Usuário",
+      } satisfies SocketUser;
       next();
     } catch (err) {
       return next(
@@ -40,11 +62,8 @@ export const registerSocketEvents = (io: Server) => {
     }
   });
 
-  io.on("connection", (socket: Socket) => {
-    const authUser = (socket as any).user;
-    console.log(
-      `Usuário autenticado conectado ao Socket: ${authUser.name} (${socket.id})`,
-    );
+  io.on("connection", async (socket: Socket) => {
+    const authUser = socket.data.user as SocketUser;
 
     const currentCount = onlineUsers.get(authUser.id) || 0;
     if (currentCount === 0) {
@@ -53,7 +72,16 @@ export const registerSocketEvents = (io: Server) => {
     }
     onlineUsers.set(authUser.id, currentCount + 1);
 
-    socket.join(authUser.id);
+    const personalRoom = getUserRoom(authUser.id);
+    await socket.join(personalRoom);
+
+    console.log("[Socket Connected]", {
+      socketId: socket.id,
+      userId: authUser.id,
+      name: authUser.name,
+      personalRoom,
+      rooms: Array.from(socket.rooms),
+    });
     
     // Quando entra, pede a lista de quem já tá online
     socket.on("request_online_users", () => {
@@ -125,6 +153,8 @@ export const registerSocketEvents = (io: Server) => {
 
             const otherUsers = room.users.filter((u: any) => u.id !== senderId);
             for (const user of otherUsers) {
+              const recipientRoom = getUserRoom(user.id);
+              
               // Verifica se a sala está silenciada para este usuário
               const isMuted = user.mutedRooms && user.mutedRooms.includes(roomId);
               
@@ -147,21 +177,13 @@ export const registerSocketEvents = (io: Server) => {
                 });
 
                 const payload = serializeNotification(notification);
-                io.to(user.id).emit("notification:received", payload);
+                io.to(recipientRoom).emit("notification:received", payload);
               }
               
               // Emite a atualização de contagem de Unread para o destinatário, mesmo que mudo para push (ele vê o badge atualizado)
               const summary = await calculateTotalUnread(user.id);
               
-              console.log("[Unread Emit]", {
-                recipientUserId: user.id,
-                roomId: roomId,
-                messageId: savedMessage.id,
-                unreadCount: summary.byRoom[roomId] || 0,
-                totalUnread: summary.totalUnread
-              });
-
-              io.to(user.id).emit("chat:unread-updated", {
+              io.to(recipientRoom).emit("chat:unread-updated", {
                 roomId: roomId,
                 messageId: savedMessage.id,
                 unreadCount: summary.byRoom[roomId] || 0,
@@ -172,7 +194,7 @@ export const registerSocketEvents = (io: Server) => {
         } catch (error) {
           console.error("Erro ao salvar e transmitir mensagem:", error);
         }
-      },
+      }
     );
 
     socket.on("edit_message", async (data: { messageId: string, newContent: string, roomId: string }) => {

@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { ioInstance } from "./socketController.js";
+import { getUserRoom } from "../utils/socketRooms.js";
 
 export async function calculateTotalUnread(userId: string) {
   const userRooms = await prisma.room.findMany({
@@ -117,19 +118,16 @@ export class ChatController {
       const updatedSummary = await calculateTotalUnread(userId);
 
       if (ioInstance) {
-        console.log("[Room Read Emit]", {
-          userId,
-          roomId,
-          totalUnread: updatedSummary.totalUnread
-        });
+        const personalRoom = getUserRoom(userId);
+        const connectedSockets = await ioInstance.in(personalRoom).fetchSockets();
 
-        ioInstance.to(userId).emit("chat:room-read", {
+        ioInstance.to(personalRoom).emit("chat:room-read", {
           roomId,
           unreadCount: 0,
           totalUnread: updatedSummary.totalUnread
         });
         
-        ioInstance.to(userId).emit("notifications:room-read", {
+        ioInstance.to(personalRoom).emit("notifications:room-read", {
           roomId,
           resourceUrl: `/dashboard/chat/${roomId}`
         });

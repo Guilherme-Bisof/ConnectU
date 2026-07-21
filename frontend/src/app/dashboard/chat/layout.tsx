@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
-import { socket } from "../../../lib/socket";
 import { FiMessageSquare, FiSearch, FiEdit3 } from "react-icons/fi";
 import { useUnreadMessages } from "../../components/providers/UnreadMessagesProvider";
+import { useSocket } from "../../components/providers/SocketProvider";
+import { API_URL } from "../../../lib/api";
 
 export interface Participant {
   id: string;
@@ -31,6 +32,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
   const params = useParams();
   const activeRoomId = params?.roomId as string | undefined;
   const { unreadByRoom, markRoomAsRead } = useUnreadMessages();
+  const { socket } = useSocket();
 
   const [conversations, setConversations] = useState<Room[]>([]);
   const [activeFilter, setActiveFilter] = useState<
@@ -41,13 +43,15 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
 
   useEffect(() => {
+    if (!socket) return;
+
     socket.emit("request_online_users");
 
-    socket.on("online_users_list", (usersArray: string[]) => {
+    const handleOnlineUsersList = (usersArray: string[]) => {
       setOnlineUsers(usersArray);
-    });
+    };
 
-    socket.on("user_status_change", (data: { userId: string; status: "online" | "offline" }) => {
+    const handleUserStatusChange = (data: { userId: string; status: "online" | "offline" }) => {
       setOnlineUsers((prev) => {
         if (data.status === "online") {
           if (!prev.includes(data.userId)) return [...prev, data.userId];
@@ -56,20 +60,23 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
           return prev.filter((id) => id !== data.userId);
         }
       });
-    });
+    };
+
+    socket.on("online_users_list", handleOnlineUsersList);
+    socket.on("user_status_change", handleUserStatusChange);
 
     return () => {
-      socket.off("online_users_list");
-      socket.off("user_status_change");
+      socket.off("online_users_list", handleOnlineUsersList);
+      socket.off("user_status_change", handleUserStatusChange);
     };
-  }, []);
+  }, [socket]);
 
   // Buscar conversas do usuário logado
   useEffect(() => {
     async function fetchConversations() {
       try {
         const token = localStorage.getItem("connectu_token");
-        const res = await fetch("https://connectu-gd1z.onrender.com/conversations", {
+        const res = await fetch(`${API_URL}/conversations`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,

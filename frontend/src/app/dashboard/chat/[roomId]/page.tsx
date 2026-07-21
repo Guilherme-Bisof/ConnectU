@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { socket } from "../../../../lib/socket";
 import {
   FiSend,
   FiMessageSquare,
@@ -27,6 +26,8 @@ import {
 } from "react-icons/fi";
 import type { Participant, Room } from "../layout";
 import { useUnreadMessages } from "../../../components/providers/UnreadMessagesProvider";
+import { useSocket } from "../../../components/providers/SocketProvider";
+import { API_URL } from "../../../../lib/api";
 
 interface Message {
   id: string;
@@ -48,6 +49,7 @@ export default function ChatRoomPage() {
   const { roomId } = useParams();
   const router = useRouter();
   const { unreadByRoom, markRoomAsRead } = useUnreadMessages();
+  const { socket } = useSocket();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -86,7 +88,7 @@ export default function ChatRoomPage() {
       if (activeChatUser) return;
       try {
         const tokenStr = localStorage.getItem("connectu_token");
-        const res = await fetch("https://connectu-gd1z.onrender.com/conversations", {
+        const res = await fetch(`${API_URL}/conversations`, {
           method: "GET",
           headers: { Authorization: `Bearer ${tokenStr}` },
         });
@@ -108,6 +110,8 @@ export default function ChatRoomPage() {
 
   // Lógica Socket.io 
   useEffect(() => {
+    if (!socket) return;
+
     if (roomId) {
       socket.emit("join_room", roomId);
     }
@@ -163,7 +167,7 @@ export default function ChatRoomPage() {
       socket.off("message_deleted", onMessageDeleted);
       socket.off("room_deleted", onRoomDeleted);
     };
-  }, [roomId, router]);
+  }, [roomId, router, socket]);
 
   useEffect(() => {
     // Carrega o estado de mute atual
@@ -182,7 +186,7 @@ export default function ChatRoomPage() {
       try {
         const tokenStr = localStorage.getItem("connectu_token");
         const res = await fetch(
-          `https://connectu-gd1z.onrender.com/conversations/${roomId}/messages`,
+          `${API_URL}/conversations/${roomId}/messages`,
           {
             headers: { Authorization: `Bearer ${tokenStr}` },
           }
@@ -232,7 +236,7 @@ export default function ChatRoomPage() {
   }, [roomId, unreadByRoom, markRoomAsRead, messages]);
 
   const sendMessage = async () => {
-    if ((!newMessage.trim() && !selectedImage) || !user || !roomId || isUploading) return;
+    if ((!newMessage.trim() && !selectedImage) || !user || !roomId || isUploading || !socket) return;
 
     if (editingMessageId) {
       socket.emit("edit_message", { 
@@ -254,7 +258,7 @@ export default function ChatRoomPage() {
 
       try {
         const tokenStr = localStorage.getItem("connectu_token");
-        const res = await fetch("https://connectu-gd1z.onrender.com/conversations/upload-image", {
+        const res = await fetch(`${API_URL}/conversations/upload-image`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${tokenStr}`,
@@ -310,12 +314,12 @@ export default function ChatRoomPage() {
 
   const deleteMessage = (msgId: string) => {
     if (confirm("Tem certeza que deseja apagar esta mensagem para todos?")) {
-      socket.emit("delete_message", { messageId: msgId, roomId });
+      socket?.emit("delete_message", { messageId: msgId, roomId });
     }
   };
 
   const handleMute = () => {
-    socket.emit("toggle_mute_room", roomId);
+    socket?.emit("toggle_mute_room", roomId);
     const mutedRooms = JSON.parse(localStorage.getItem("connectu_muted_rooms") || "[]");
     
     if (isMuted) {

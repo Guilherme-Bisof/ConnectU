@@ -9,6 +9,7 @@ import {
 } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { useSocket } from "../providers/SocketProvider";
+import { API_URL } from "../../../lib/api";
 
 interface Notification {
   id: string;
@@ -71,7 +72,7 @@ export function NotificationBell({
 
       try {
         const res = await fetch(
-          "https://connectu-gd1z.onrender.com/notifications",
+          `${API_URL}/notifications`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -116,12 +117,20 @@ export function NotificationBell({
       );
     };
 
+    const handleAllRead = () => {
+      setNotifications((current) =>
+        current.map((notification) => ({ ...notification, read: true })),
+      );
+    };
+
     socket.on("notification:received", handleNotification);
     socket.on("notifications:room-read", handleRoomRead);
+    socket.on("notifications:all-read", handleAllRead);
 
     return () => {
       socket.off("notification:received", handleNotification);
       socket.off("notifications:room-read", handleRoomRead);
+      socket.off("notifications:all-read", handleAllRead);
     };
   }, [socket]);
 
@@ -160,7 +169,7 @@ export function NotificationBell({
       setNotifications((p) => p.map((n) => (n.id === notification.id ? { ...n, read: true } : n)));
 
       const token = localStorage.getItem("connectu_token");
-      fetch(`https://connectu-gd1z.onrender.com/notifications/${notification.id}/read`, {
+      fetch(`${API_URL}/notifications/${notification.id}/read`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` }
       }).then(res => {
@@ -264,23 +273,33 @@ export function NotificationBell({
     const token = localStorage.getItem("connectu_token");
     if (!token) return;
 
+    const previousNotifications = notifications;
+    setNotifications((current) =>
+      current.map((notification) => ({ ...notification, read: true })),
+    );
+
     try {
       const res = await fetch(
-        "https://connectu-gd1z.onrender.com/notifications/read-all",
+        `${API_URL}/notifications/read-all`,
         {
           method: "PUT",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
         },
       );
 
-      if (res.ok) {
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || `Falha ao marcar notificações (${res.status}).`);
       }
     } catch (error) {
       console.error("Erro ao marcar todas como lidas:", error);
+      setNotifications(previousNotifications);
+      setToastMsg({
+        title: "Erro",
+        description: "Não foi possível marcar todas como lidas.",
+      });
     }
   };
 

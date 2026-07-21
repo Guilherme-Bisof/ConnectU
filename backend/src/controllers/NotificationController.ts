@@ -1,6 +1,8 @@
 import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { serializeNotification } from "../utils/notificationUtils.js";
+import { ioInstance } from "./socketController.js";
+import { getUserRoom } from "../utils/socketRooms.js";
 
 export class NotificationController {
   // Listar notificações
@@ -68,26 +70,42 @@ export class NotificationController {
     }
   }
 
-  async markAllAsRead(req: Request, res: Response){
+  async markAllAsRead(req: Request, res: Response) {
     try {
       const userId = (req as any).user?.id;
 
       if (!userId) {
-        return res.status(401).json({ error: "Usuário não encontrado."});
+        return res.status(401).json({ error: "Usuário não autenticado." });
       }
 
-      await prisma.notification.updateMany({
+      const result = await prisma.notification.updateMany({
         where: {
-          userId: userId,
-          read: false
+          userId,
+          read: false,
         },
-        data: { read: true},
+        data: {
+          read: true,
+        },
       });
 
-      res.json({message: "Todas as notificações foram marcadas como lidas."});
-    } catch(error){
-      console.error("Erro ao marcar todas como lidas:", error);
-      res.status(500).json({ error: "Erro interno ao atualizar notificações. "});
+      if (ioInstance) {
+        ioInstance.to(getUserRoom(userId)).emit("notifications:all-read", {
+          updatedCount: result.count,
+        });
+      }
+
+      return res.status(200).json({
+        message: "Todas as notificações foram marcadas como lidas.",
+        updatedCount: result.count,
+      });
+    } catch (error) {
+      console.error("[Notifications Read All Error]", {
+        userId: (req as any).user?.id,
+        error,
+      });
+      return res.status(500).json({
+        error: "Erro interno ao atualizar notificações.",
+      });
     }
   }
 }
