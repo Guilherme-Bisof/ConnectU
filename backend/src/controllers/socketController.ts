@@ -75,13 +75,44 @@ export const registerSocketEvents = (io: Server) => {
     const personalRoom = getUserRoom(authUser.id);
     await socket.join(personalRoom);
 
-    console.log("[Socket Connected]", {
-      socketId: socket.id,
-      userId: authUser.id,
-      name: authUser.name,
-      personalRoom,
-      rooms: Array.from(socket.rooms),
-    });
+    // Sincronização após reconexão
+    try {
+      // @ts-ignore (cache da IDE não reconhece a migration ainda)
+      const pendingReceipts = await prisma.messageReceipt.findMany({
+        where: { userId: authUser.id, deliveredAt: null },
+        include: { message: true }
+      });
+      if (pendingReceipts.length > 0) {
+        const now = new Date();
+        // @ts-ignore
+        await prisma.messageReceipt.updateMany({
+          where: { userId: authUser.id, deliveredAt: null },
+          data: { deliveredAt: now }
+        });
+        
+        const bySender = pendingReceipts.reduce((acc: Record<string, string[]>, r: any) => {
+          const senderId = r.message.senderId;
+          if (!acc[senderId]) {
+            acc[senderId] = [];
+          }
+          acc[senderId].push(r.messageId);
+          return acc;
+        }, {} as Record<string, string[]>);
+        
+        for (const senderId of Object.keys(bySender)) {
+          for (const msgId of bySender[senderId]) {
+            io.to(getUserRoom(senderId)).emit("message:receipt-updated", {
+              messageId: msgId,
+              userId: authUser.id,
+              deliveredAt: now,
+              readAt: null
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Erro sincronizando receipts pendentes:", err);
+    }
     
     // Quando entra, pede a lista de quem já tá online
     socket.on("request_online_users", () => {
@@ -105,9 +136,34 @@ export const registerSocketEvents = (io: Server) => {
       }
 
       socket.join(roomId);
-      console.log(
-        `Usuário ${authUser.name} entrou com segurança na sala: ${roomId}`,
-      );
+    });
+
+    socket.on("message:delivered", async ({ messageId, roomId }) => {
+      try {
+        // @ts-ignore
+        const receipt = await prisma.messageReceipt.findUnique({
+          where: { messageId_userId: { messageId, userId: authUser.id } },
+          include: { message: true }
+        });
+
+        if (!receipt || receipt.message.roomId !== roomId) return;
+        if (receipt.deliveredAt) return; // Idempotente
+
+        // @ts-ignore
+        const updated = await prisma.messageReceipt.update({
+          where: { id: receipt.id },
+          data: { deliveredAt: new Date() }
+        });
+
+        io.to(getUserRoom(receipt.message.senderId)).emit("message:receipt-updated", {
+          messageId,
+          userId: authUser.id,
+          deliveredAt: updated.deliveredAt,
+          readAt: updated.readAt
+        });
+      } catch (error) {
+        console.error("Erro no message:delivered", error);
+      }
     });
 
     socket.on(
@@ -129,30 +185,55 @@ export const registerSocketEvents = (io: Server) => {
 
           if (!belongsToRoom) return;
 
-          const savedMessage = await prisma.message.create({
-            data: {
-              content: content || null,
-              imageUrl: imageUrl || null,
-              roomId,
-              senderId,
-            },
-          });
-
-          io.to(roomId).emit("receive_message", savedMessage);
-
-          // Criar notificação para os outros membros da sala
           const room = await prisma.room.findUnique({
             where: { id: roomId },
             include: { users: true }
           });
           
-          if (room) {
-            // Busca o nome real do remetente
-            const realSender = await prisma.user.findUnique({ where: { id: senderId } });
-            const senderName = realSender?.name || "Usuário";
+          if (!room) return;
 
-            const otherUsers = room.users.filter((u: any) => u.id !== senderId);
-            for (const user of otherUsers) {
+          const otherUsers = room.users.filter((u: any) => u.id !== senderId);
+
+          const savedMessage = await prisma.$transaction(async (tx) => {
+            const msg = await tx.message.create({
+              data: {
+                content: content || null,
+                imageUrl: imageUrl || null,
+                roomId,
+                senderId,
+              },
+            });
+
+            const receiptsData = otherUsers.map(u => ({
+              messageId: msg.id,
+              userId: u.id,
+              deliveredAt: null,
+              readAt: null
+            }));
+
+            if (receiptsData.length > 0) {
+              // @ts-ignore
+              await tx.messageReceipt.createMany({
+                data: receiptsData
+              });
+            }
+            return msg;
+          });
+
+          io.to(roomId).emit("receive_message", savedMessage);
+          
+          for (const user of otherUsers) {
+            io.to(getUserRoom(user.id)).emit("message:delivery-request", {
+              messageId: savedMessage.id,
+              roomId
+            });
+          }
+
+          // Busca o nome real do remetente
+          const realSender = await prisma.user.findUnique({ where: { id: senderId } });
+          const senderName = realSender?.name || "Usuário";
+
+          for (const user of otherUsers) {
               const recipientRoom = getUserRoom(user.id);
               
               // Verifica se a sala está silenciada para este usuário
@@ -190,7 +271,6 @@ export const registerSocketEvents = (io: Server) => {
                 totalUnread: summary.totalUnread
               });
             }
-          }
         } catch (error) {
           console.error("Erro ao salvar e transmitir mensagem:", error);
         }
@@ -278,7 +358,6 @@ export const registerSocketEvents = (io: Server) => {
     });
 
     socket.on("disconnect", () => {
-      console.log(`Usuário desconectado do Socket: ${authUser.name}`);
       const currentCount = onlineUsers.get(authUser.id) || 0;
       if (currentCount <= 1) {
         onlineUsers.delete(authUser.id);

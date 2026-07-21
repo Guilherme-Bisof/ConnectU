@@ -75,6 +75,7 @@ model User {
   notifications      Notification[]
   sentNotifications  Notification[] @relation("NotificationSender")
   readStates         RoomReadState[]
+  messageReceipts    MessageReceipt[]
 
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id])
@@ -163,6 +164,7 @@ model Message {
 
   senderId String
   sender   User   @relation(fields: [senderId], references: [id])
+  receipts MessageReceipt[]
 }
 
 model RoomReadState {
@@ -180,6 +182,24 @@ model RoomReadState {
   @@unique([roomId, userId])
   @@index([userId])
   @@index([roomId])
+}
+
+model MessageReceipt {
+  id          String    @id @default(uuid())
+  messageId   String
+  userId      String
+  deliveredAt DateTime?
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId, deliveredAt])
+  @@index([userId, readAt])
 }
 
 model Application {
