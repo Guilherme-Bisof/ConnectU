@@ -49,8 +49,8 @@ export function NotificationBell({
 
   const dropdownPosition =
     placement === "bottom"
-      ? "top-full -right-4 sm:right-0 mt-3"
-      : "top-full -right-4 sm:right-0 mt-3";
+      ? "fixed top-[76px] right-4 left-4 sm:left-auto sm:absolute sm:top-full sm:right-0 sm:mt-3"
+      : "fixed top-[76px] right-4 left-4 sm:left-auto sm:absolute sm:top-full sm:right-0 sm:mt-3";
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -319,7 +319,7 @@ export function NotificationBell({
 
       {/* Dropdown de Notificações */}
       {isOpen && (
-        <div className={`absolute ${dropdownPosition} w-[calc(100vw-32px)] sm:w-[400px] max-w-[calc(100vw-32px)] sm:max-w-none bg-surface-container-low border border-outline-variant/30 rounded-2xl shadow-2xl overflow-hidden z-[100] flex flex-col max-h-[85vh] origin-top-right ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-200`}>
+        <div className={`${dropdownPosition} w-auto sm:w-[400px] bg-surface-container-low border border-outline-variant/30 rounded-2xl shadow-2xl overflow-hidden z-[100] flex flex-col max-h-[85vh] origin-top-right ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-200`}>
           {/* Header Fixo */}
           <div className="p-md flex items-center justify-between border-b border-outline-variant/30 bg-surface-container-low">
             <h2 className="font-headline-md text-headline-md text-on-surface">Notificações</h2>
