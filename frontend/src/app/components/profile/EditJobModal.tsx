@@ -32,7 +32,7 @@ export function EditJobModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl max-h-[90vh] overflow-auto">
+      <div className="w-full max-w-[512px] rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl max-h-[90vh] overflow-auto">
         <div className="mb-6 flex items-center justify-between border-b border-zinc-800 pb-4">
           <div>
             <h2 className="text-xl font-bold text-white flex items-center gap-2">

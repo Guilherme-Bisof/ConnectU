@@ -435,7 +435,7 @@ export default function MinhasVagasPage() {
               Minhas Vagas
             </h1>
           </div>
-          <p className="text-sm text-zinc-400 max-w-md">
+          <p className="text-sm text-zinc-400 max-w-[420px]">
             Gerencie seu funil de recrutamento, acompanhe candidatos e encontre os talentos com maior fit para sua empresa.
           </p>
         </div>
@@ -452,7 +452,7 @@ export default function MinhasVagasPage() {
       <div className="flex flex-col lg:flex-row gap-6">
 
         {/* Lista */}
-        <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 flex flex-col gap-4">
+        <div className="w-full lg:w-100 xl:w-112.5 shrink-0 flex flex-col gap-4">
           {vagas.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-zinc-700 bg-zinc-900/50 p-12 text-center">
               <FiBriefcase className="mx-auto mb-4 text-4xl text-zinc-600" />

@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { socket } from "../../../../lib/socket";
 import {
   FiSend,
   FiMessageSquare,
@@ -26,6 +25,9 @@ import {
   FiUsers
 } from "react-icons/fi";
 import type { Participant, Room } from "../layout";
+import { useUnreadMessages } from "../../../components/providers/UnreadMessagesProvider";
+import { useSocket } from "../../../components/providers/SocketProvider";
+import { API_URL } from "../../../../lib/api";
 
 interface Message {
   id: string;
@@ -46,6 +48,8 @@ interface UserData {
 export default function ChatRoomPage() {
   const { roomId } = useParams();
   const router = useRouter();
+  const { unreadByRoom, markRoomAsRead } = useUnreadMessages();
+  const { socket } = useSocket();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -84,7 +88,7 @@ export default function ChatRoomPage() {
       if (activeChatUser) return;
       try {
         const tokenStr = localStorage.getItem("connectu_token");
-        const res = await fetch("https://connectu-gd1z.onrender.com/conversations", {
+        const res = await fetch(`${API_URL}/conversations`, {
           method: "GET",
           headers: { Authorization: `Bearer ${tokenStr}` },
         });
@@ -106,6 +110,8 @@ export default function ChatRoomPage() {
 
   // Lógica Socket.io 
   useEffect(() => {
+    if (!socket) return;
+
     if (roomId) {
       socket.emit("join_room", roomId);
     }
@@ -161,7 +167,7 @@ export default function ChatRoomPage() {
       socket.off("message_deleted", onMessageDeleted);
       socket.off("room_deleted", onRoomDeleted);
     };
-  }, [roomId, router]);
+  }, [roomId, router, socket]);
 
   useEffect(() => {
     // Carrega o estado de mute atual
@@ -180,7 +186,7 @@ export default function ChatRoomPage() {
       try {
         const tokenStr = localStorage.getItem("connectu_token");
         const res = await fetch(
-          `https://connectu-gd1z.onrender.com/conversations/${roomId}/messages`,
+          `${API_URL}/conversations/${roomId}/messages`,
           {
             headers: { Authorization: `Bearer ${tokenStr}` },
           }
@@ -201,8 +207,36 @@ export default function ChatRoomPage() {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Lógica Otimizada de Leitura Automática com Debounce
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    const checkAndMark = () => {
+      const isVisibleAndFocused = document.visibilityState === "visible" && document.hasFocus();
+      const hasUnread = unreadByRoom[roomId as string] > 0;
+
+      if (hasUnread && isVisibleAndFocused) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          markRoomAsRead(roomId as string);
+        }, 500);
+      }
+    };
+
+    checkAndMark();
+
+    window.addEventListener("focus", checkAndMark);
+    document.addEventListener("visibilitychange", checkAndMark);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("focus", checkAndMark);
+      document.removeEventListener("visibilitychange", checkAndMark);
+    };
+  }, [roomId, unreadByRoom, markRoomAsRead, messages]);
+
   const sendMessage = async () => {
-    if ((!newMessage.trim() && !selectedImage) || !user || !roomId || isUploading) return;
+    if ((!newMessage.trim() && !selectedImage) || !user || !roomId || isUploading || !socket) return;
 
     if (editingMessageId) {
       socket.emit("edit_message", { 
@@ -224,7 +258,7 @@ export default function ChatRoomPage() {
 
       try {
         const tokenStr = localStorage.getItem("connectu_token");
-        const res = await fetch("https://connectu-gd1z.onrender.com/conversations/upload-image", {
+        const res = await fetch(`${API_URL}/conversations/upload-image`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${tokenStr}`,
@@ -280,12 +314,12 @@ export default function ChatRoomPage() {
 
   const deleteMessage = (msgId: string) => {
     if (confirm("Tem certeza que deseja apagar esta mensagem para todos?")) {
-      socket.emit("delete_message", { messageId: msgId, roomId });
+      socket?.emit("delete_message", { messageId: msgId, roomId });
     }
   };
 
   const handleMute = () => {
-    socket.emit("toggle_mute_room", roomId);
+    socket?.emit("toggle_mute_room", roomId);
     const mutedRooms = JSON.parse(localStorage.getItem("connectu_muted_rooms") || "[]");
     
     if (isMuted) {
@@ -305,10 +339,10 @@ export default function ChatRoomPage() {
   return (
     <>
       {/* Column 2: Central Chat (600-650px) */}
-      <main className="flex-1 min-h-0 flex flex-col bg-surface relative border-r border-outline-variant min-w-[500px]">
+      <main className="flex-1 min-h-0 flex flex-col bg-surface relative border-r border-outline-variant min-w-125">
         
         {/* Header */}
-        <header className="h-[64px] flex items-center justify-between px-md border-b border-outline-variant bg-surface/90 backdrop-blur-md z-10 shrink-0">
+        <header className="h-16 flex items-center justify-between px-md border-b border-outline-variant bg-surface/90 backdrop-blur-md z-10 shrink-0">
           <div className="flex items-center gap-md">
             <button onClick={() => router.push('/dashboard/chat')} className="md:hidden p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors">
               <FiArrowLeft size={20} />
@@ -533,7 +567,7 @@ export default function ChatRoomPage() {
       </main>
 
       {/* Column 3: Context Panel (300-320px) */}
-      <aside className="hidden lg:flex min-h-0 w-[310px] bg-surface-container-low overflow-y-auto custom-scrollbar shrink-0 flex-col border-l border-outline-variant">
+      <aside className="hidden lg:flex min-h-0 w-77.5 bg-surface-container-low overflow-y-auto custom-scrollbar shrink-0 flex-col border-l border-outline-variant">
         <div className="p-lg flex flex-col gap-lg">
           
           {/* Identity Section */}

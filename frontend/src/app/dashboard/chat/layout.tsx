@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
-import { socket } from "../../../lib/socket";
 import { FiMessageSquare, FiSearch, FiEdit3 } from "react-icons/fi";
+import { useUnreadMessages } from "../../components/providers/UnreadMessagesProvider";
+import { useSocket } from "../../components/providers/SocketProvider";
+import { API_URL } from "../../../lib/api";
 
 export interface Participant {
   id: string;
@@ -29,6 +31,8 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
   const router = useRouter();
   const params = useParams();
   const activeRoomId = params?.roomId as string | undefined;
+  const { unreadByRoom, markRoomAsRead } = useUnreadMessages();
+  const { socket } = useSocket();
 
   const [conversations, setConversations] = useState<Room[]>([]);
   const [activeFilter, setActiveFilter] = useState<
@@ -39,13 +43,15 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
 
   useEffect(() => {
+    if (!socket) return;
+
     socket.emit("request_online_users");
 
-    socket.on("online_users_list", (usersArray: string[]) => {
+    const handleOnlineUsersList = (usersArray: string[]) => {
       setOnlineUsers(usersArray);
-    });
+    };
 
-    socket.on("user_status_change", (data: { userId: string; status: "online" | "offline" }) => {
+    const handleUserStatusChange = (data: { userId: string; status: "online" | "offline" }) => {
       setOnlineUsers((prev) => {
         if (data.status === "online") {
           if (!prev.includes(data.userId)) return [...prev, data.userId];
@@ -54,20 +60,23 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
           return prev.filter((id) => id !== data.userId);
         }
       });
-    });
+    };
+
+    socket.on("online_users_list", handleOnlineUsersList);
+    socket.on("user_status_change", handleUserStatusChange);
 
     return () => {
-      socket.off("online_users_list");
-      socket.off("user_status_change");
+      socket.off("online_users_list", handleOnlineUsersList);
+      socket.off("user_status_change", handleUserStatusChange);
     };
-  }, []);
+  }, [socket]);
 
   // Buscar conversas do usuário logado
   useEffect(() => {
     async function fetchConversations() {
       try {
         const token = localStorage.getItem("connectu_token");
-        const res = await fetch("https://connectu-gd1z.onrender.com/conversations", {
+        const res = await fetch(`${API_URL}/conversations`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -172,11 +181,15 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
 
               const isOnline = onlineUsers.includes(otherUser.id);
               const isActive = activeRoomId === room.id;
+              const unreadCount = unreadByRoom[room.id] || 0;
 
               return (
                 <div
                   key={room.id}
-                  onClick={() => router.push(`/dashboard/chat/${room.id}`)}
+                  onClick={() => {
+                    if (unreadCount > 0) markRoomAsRead(room.id);
+                    router.push(`/dashboard/chat/${room.id}`);
+                  }}
                   className={`px-3 py-3 cursor-pointer transition-colors border-l-2 ${
                     isActive 
                       ? "bg-surface-container-highest border-primary shadow-inner" 
@@ -206,7 +219,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
                     
                     <div className="min-w-0 flex-1">
                       <div className="flex min-w-0 items-center justify-between gap-2">
-                        <span className={`min-w-0 truncate text-[14px] ${isActive ? "font-bold text-white" : "font-semibold text-on-surface"}`}>
+                        <span className={`min-w-0 truncate text-[14px] ${isActive ? "font-bold text-white" : (unreadCount > 0 ? "font-bold text-on-surface" : "font-semibold text-on-surface")}`}>
                           {otherUser.name}
                         </span>
                         <time className={`shrink-0 text-[10px] font-bold tracking-wider ${isActive ? "text-primary" : "text-on-surface-variant"}`}>
@@ -216,10 +229,15 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
                       <p className={`text-[11px] font-medium truncate mb-0.5 ${isActive ? "text-primary/80" : "text-on-surface-variant"}`}>
                         {otherUser.role === "RECRUITER" ? "Recrutador" : "Aluno(a)"}
                       </p>
-                      <div className="flex items-center">
-                        <p className={`text-[13px] truncate ${isActive ? "text-on-surface" : "text-on-surface-variant"}`}>
+                      <div className="flex items-center justify-between gap-2 mt-0.5">
+                        <p className={`text-[13px] truncate ${isActive ? "text-on-surface" : (unreadCount > 0 ? "text-on-surface font-medium" : "text-on-surface-variant")}`}>
                           {lastMessage ? lastMessage.content : "Envie uma mensagem..."}
                         </p>
+                        {unreadCount > 0 && !isActive && (
+                          <span className="shrink-0 bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -674,11 +674,11 @@ export default function VagasPage() {
   if (isProfileIncomplete) {
     return (
       <div className="mx-auto max-w-5xl pb-12 flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <div className="bg-[#131313] border border-[#2a2d32] rounded-2xl p-12 max-w-xl shadow-xl flex flex-col items-center">
+        <div className="bg-[#131313] border border-[#2a2d32] rounded-2xl p-12 max-w-[576px] shadow-xl flex flex-col items-center">
           <div className="w-16 h-16 bg-red-500/10 text-red-500 border border-red-500/20 rounded-full flex items-center justify-center text-2xl mb-6 shadow-[0_0_20px_rgba(239,68,68,0.1)]">
             <FiLock />
           </div>
-          <p className="text-gray-300 leading-relaxed text-sm md:text-base max-w-md mb-8">
+          <p className="text-gray-300 leading-relaxed text-sm md:text-base max-w-[420px] mb-8">
             Para visualizarmos as vagas ideais e calcularmos a sua
             compatibilidade com as empresas, precisamos conhecer você um pouco
             melhor.

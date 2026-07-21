@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { NotificationBell } from "../components/layout/NotificationBell";
 import { SocketProvider } from "../components/providers/SocketProvider";
+import { UnreadMessagesProvider, useUnreadMessages } from "../components/providers/UnreadMessagesProvider";
 
 interface UserData {
   id: string;
@@ -60,8 +61,9 @@ export default function DashboardLayout({
 
   return (
     <SocketProvider>
-      <div className="min-h-screen bg-[#0d0f11] text-white font-sans">
-        {/* ===== HEADER GLOBAL FIXO ===== */}
+      <UnreadMessagesProvider>
+        <div className="min-h-screen bg-[#0d0f11] text-white font-sans">
+          {/* ===== HEADER GLOBAL FIXO ===== */}
       <header
         className="fixed top-0 left-0 right-0 h-16 bg-[#0d0f11] border-b border-[#2a2d32] z-50 flex items-center px-4 md:px-6 justify-between"
         data-purpose="global-header"
@@ -294,25 +296,7 @@ export default function DashboardLayout({
                 )}
               </li>
               <li>
-                <Link
-                  href="/dashboard/chat"
-                  className={linkClass(isActivePrefix("/dashboard/chat"))}
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                    />
-                  </svg>
-                  Mensagens
-                </Link>
+                <SidebarMessagesLink active={isActivePrefix("/dashboard/chat")} />
               </li>
               <li>
                 <Link
@@ -540,13 +524,7 @@ export default function DashboardLayout({
                     )}
                   </li>
                   <li>
-                    <Link
-                      href="/dashboard/chat"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className={linkClass(isActivePrefix("/dashboard/chat"))}
-                    >
-                      Mensagens
-                    </Link>
+                    <SidebarMobileMessagesLink active={isActivePrefix("/dashboard/chat")} onClick={() => setIsMobileMenuOpen(false)} />
                   </li>
                   <li>
                     <Link
@@ -595,6 +573,73 @@ export default function DashboardLayout({
         </main>
       </div>
       </div>
+      </UnreadMessagesProvider>
     </SocketProvider>
+  );
+}
+
+function SidebarMessagesLink({ active }: { active: boolean }) {
+  const { totalUnread } = useUnreadMessages();
+  const badgeText = totalUnread > 9 ? '9+' : totalUnread.toString();
+  const linkClassNames = `flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+    active
+      ? "bg-[#316cf4]/10 text-[#316cf4]"
+      : "text-gray-400 hover:bg-[#181a1d] hover:text-white"
+  }`;
+
+  return (
+    <Link
+      href="/dashboard/chat"
+      className={linkClassNames}
+      aria-label={`Mensagens${totalUnread > 0 ? `, ${totalUnread} não lidas` : ''}`}
+    >
+      <div className="flex items-center gap-3">
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+          />
+        </svg>
+        Mensagens
+      </div>
+      {totalUnread > 0 && (
+        <span className="bg-[#316cf4] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
+          {badgeText}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+function SidebarMobileMessagesLink({ active, onClick }: { active: boolean, onClick: () => void }) {
+  const { totalUnread } = useUnreadMessages();
+  const badgeText = totalUnread > 9 ? '9+' : totalUnread.toString();
+  const linkClassNames = `flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+    active
+      ? "bg-[#316cf4]/10 text-[#316cf4]"
+      : "text-gray-400 hover:bg-[#181a1d] hover:text-white"
+  }`;
+
+  return (
+    <Link
+      href="/dashboard/chat"
+      onClick={onClick}
+      className={linkClassNames}
+      aria-label={`Mensagens${totalUnread > 0 ? `, ${totalUnread} não lidas` : ''}`}
+    >
+      <span>Mensagens</span>
+      {totalUnread > 0 && (
+        <span className="bg-[#316cf4] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+          {badgeText}
+        </span>
+      )}
+    </Link>
   );
 }

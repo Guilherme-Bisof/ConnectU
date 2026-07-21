@@ -1,7 +1,144 @@
 import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
+import { ioInstance } from "./socketController.js";
+import { getUserRoom } from "../utils/socketRooms.js";
+
+export async function calculateTotalUnread(userId: string) {
+  const userRooms = await prisma.room.findMany({
+      where: { users: { some: { id: userId } } },
+      select: { 
+        id: true, 
+        // @ts-ignore (desativado até prisma generate rodar offline)
+        readStates: { where: { userId }, select: { lastReadAt: true } }
+      }
+    });
+
+    if (userRooms.length === 0) return { totalUnread: 0, byRoom: {} };
+
+    const orConditions = userRooms.map(room => {
+      const rs = room.readStates[0];
+      if (!rs || !rs.lastReadAt) {
+        return { roomId: room.id }; // Conta todas (já que o backfill lidou com o passado, sem read state = nova)
+      }
+      return {
+        roomId: room.id,
+        createdAt: { gt: rs.lastReadAt }
+      };
+    });
+
+    const unreadCounts = await prisma.message.groupBy({
+      by: ['roomId'],
+      where: {
+        senderId: { not: userId },
+        OR: orConditions
+      },
+      _count: { id: true }
+    });
+
+    let totalUnread = 0;
+    const byRoom: Record<string, number> = {};
+
+    for (const count of unreadCounts) {
+      byRoom[count.roomId] = count._count.id;
+      totalUnread += count._count.id;
+    }
+
+    return { totalUnread, byRoom };
+  }
 
 export class ChatController {
+
+  async getUnreadSummary(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) return res.status(401).json({ error: "Acesso negado." });
+      
+      const summary = await calculateTotalUnread(userId);
+      return res.json(summary);
+    } catch (error) {
+      console.error("Erro ao gerar resumo de não lidas:", error);
+      return res.status(500).json({ error: "Erro ao buscar resumo." });
+    }
+  }
+
+  async markRoomAsRead(req: Request, res: Response) {
+    try {
+      const roomId = req.params.roomId as string;
+      const userId = (req as any).user?.id;
+
+      if (!roomId) return res.status(400).json({ error: "RoomId obrigatório." });
+
+      const roomAccess = await prisma.room.findFirst({
+        where: { id: roomId, users: { some: { id: userId } } }
+      });
+
+      if (!roomAccess) {
+        return res.status(403).json({ error: "Acesso negado à sala." });
+      }
+
+      const lastMessage = await prisma.message.findFirst({
+        where: { roomId: roomId },
+        orderBy: { createdAt: "desc" }
+      });
+
+      if (!lastMessage) {
+        const summary = await calculateTotalUnread(userId);
+        return res.json({ roomId, unreadCount: 0, totalUnread: summary.totalUnread });
+      }
+
+      await prisma.$transaction(async (tx) => {
+        // @ts-ignore (desativado até prisma generate rodar offline)
+        await tx.roomReadState.upsert({
+          where: {
+            roomId_userId: { roomId, userId }
+          },
+          update: {
+            lastReadAt: lastMessage.createdAt,
+            lastReadMessageId: lastMessage.id
+          },
+          create: {
+            roomId,
+            userId,
+            lastReadAt: lastMessage.createdAt,
+            lastReadMessageId: lastMessage.id
+          }
+        });
+
+        await tx.notification.updateMany({
+          where: {
+            userId,
+            type: "MESSAGE",
+            read: false,
+            resourceUrl: `/dashboard/chat/${roomId}`
+          },
+          data: { read: true }
+        });
+      });
+
+      const updatedSummary = await calculateTotalUnread(userId);
+
+      if (ioInstance) {
+        const personalRoom = getUserRoom(userId);
+        const connectedSockets = await ioInstance.in(personalRoom).fetchSockets();
+
+        ioInstance.to(personalRoom).emit("chat:room-read", {
+          roomId,
+          unreadCount: 0,
+          totalUnread: updatedSummary.totalUnread
+        });
+        
+        ioInstance.to(personalRoom).emit("notifications:room-read", {
+          roomId,
+          resourceUrl: `/dashboard/chat/${roomId}`
+        });
+      }
+
+      return res.json({ roomId, unreadCount: 0, totalUnread: updatedSummary.totalUnread });
+    } catch (error) {
+      console.error("Erro ao marcar sala como lida:", error);
+      return res.status(500).json({ error: "Erro interno no servidor." });
+    }
+  }
   /**
    * Método interno para encontrar ou criar uma sala entre dois usuários.
    * REGRA DE OURO: Nunca pode existir mais de 1 sala entre 2 pessoas.
@@ -145,11 +282,19 @@ export class ChatController {
             orderBy: { createdAt: "desc" },
             take: 1,
           },
+          // @ts-ignore (desativado até prisma generate rodar offline)
+          readStates: { where: { userId } },
         },
         orderBy: { createdAt: "desc" },
       });
 
-      return res.json(rooms);
+      const summary = await calculateTotalUnread(userId);
+      const mappedRooms = rooms.map(r => ({
+        ...r,
+        unreadCount: summary.byRoom[r.id] || 0
+      }));
+
+      return res.json(mappedRooms);
     } catch (error) {
       console.error("Erro ao listar conversas:", error);
       return res.status(500).json({ error: "Erro ao buscar conversas." });
