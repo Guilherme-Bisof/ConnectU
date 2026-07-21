@@ -378,12 +378,12 @@ export default function ChatRoomPage() {
   return (
     <>
       {/* Column 2: Central Chat (600-650px) */}
-      <main className="flex-1 min-h-0 flex flex-col bg-surface relative border-r border-outline-variant min-w-125">
+      <main className="w-full lg:flex-1 lg:w-auto min-h-0 flex flex-col bg-surface relative border-r border-outline-variant min-w-0">
         
         {/* Header */}
         <header className="h-16 flex items-center justify-between px-md border-b border-outline-variant bg-surface/90 backdrop-blur-md z-10 shrink-0">
-          <div className="flex items-center gap-md">
-            <button onClick={() => router.push('/dashboard/chat')} className="md:hidden p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors">
+          <div className="flex items-center gap-md min-w-0">
+            <button onClick={() => router.push('/dashboard/chat')} className="lg:hidden shrink-0 p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors">
               <FiArrowLeft size={20} />
             </button>
             <div className="relative">
@@ -493,7 +493,7 @@ export default function ChatRoomPage() {
                           </div>
                         )}
                         {msg.content && (
-                          <p className="text-[14px] leading-relaxed wrap-break-word whitespace-pre-wrap">{msg.content}</p>
+                          <p className="text-[14px] leading-relaxed break-words whitespace-pre-wrap">{msg.content}</p>
                         )}
                       </div>
 
@@ -527,7 +527,7 @@ export default function ChatRoomPage() {
         </div>
 
         {/* Composer */}
-        <div className="p-md bg-surface border-t border-outline-variant shrink-0">
+        <div className="p-md pb-[max(12px,env(safe-area-inset-bottom))] bg-surface border-t border-outline-variant shrink-0 w-full">
           
           {editingMessageId && (
             <div className="flex items-center justify-between bg-surface-container p-2 rounded-lg mb-2 border border-primary/30">
