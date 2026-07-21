@@ -1,6 +1,7 @@
 import { Server, Socket } from "socket.io";
 import { prisma } from "../lib/prisma.js";
 import { serializeNotification } from "../utils/notificationUtils.js";
+import { calculateTotalUnread } from "./ChatController.js";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../middlewares/authMiddleware.js";
 
@@ -146,14 +147,26 @@ export const registerSocketEvents = (io: Server) => {
                 });
 
                 const payload = serializeNotification(notification);
-                const isActive = onlineUsers.get(user.id) ? true : false;
-                
-                if (isActive) {
-                  io.to(user.id).emit("notification:received", payload);
-                } else {
-                  console.warn("[Notification] destinatário sem socket online");
-                }
+                io.to(user.id).emit("notification:received", payload);
               }
+              
+              // Emite a atualização de contagem de Unread para o destinatário, mesmo que mudo para push (ele vê o badge atualizado)
+              const summary = await calculateTotalUnread(user.id);
+              
+              console.log("[Unread Emit]", {
+                recipientUserId: user.id,
+                roomId: roomId,
+                messageId: savedMessage.id,
+                unreadCount: summary.byRoom[roomId] || 0,
+                totalUnread: summary.totalUnread
+              });
+
+              io.to(user.id).emit("chat:unread-updated", {
+                roomId: roomId,
+                messageId: savedMessage.id,
+                unreadCount: summary.byRoom[roomId] || 0,
+                totalUnread: summary.totalUnread
+              });
             }
           }
         } catch (error) {

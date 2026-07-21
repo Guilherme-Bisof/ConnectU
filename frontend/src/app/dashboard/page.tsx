@@ -341,7 +341,7 @@ export default function DashboardFeed() {
   return (
     <>
       <div className="lg:mr-80 flex flex-col items-center">
-        <div className="max-w-[720px] w-full space-y-6">
+        <div className="max-w-180 w-full space-y-6">
           {/* Feed Creation Box */}
           <div
             className="rounded-xl border border-[#2a2d32] bg-[#181a1d] p-5"
