@@ -869,11 +869,11 @@ export default function ProfilePage() {
 
       <main className="flex-1 flex flex-col items-center">
         {/* Center Column Constraint */}
-        <div className="w-full max-w-[1024px] mx-auto">
+        <div className="w-full max-w-5xl mx-auto">
           {/* Premium Hero Area */}
           <div className="relative w-full">
             {/* Hero Banner */}
-            <div className="h-[320px] w-full overflow-hidden relative rounded-b-3xl">
+            <div className="h-80 w-full overflow-hidden relative rounded-b-3xl">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 className="w-full h-full object-cover brightness-[0.6]"
@@ -884,7 +884,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Profile Info Overlap */}
-            <div className="px-6 md:px-8 mt-[-80px] relative z-10 flex flex-col md:flex-row items-end gap-6">
+            <div className="px-6 md:px-8 -mt-20 relative z-10 flex flex-col md:flex-row items-end gap-6">
               {/* Large Overlapping Photo */}
               <div className="relative shrink-0">
                 <div className="w-44 h-44 rounded-full border-8 border-[#111317] p-1 bg-[#111317] shadow-xl overflow-hidden flex items-center justify-center">

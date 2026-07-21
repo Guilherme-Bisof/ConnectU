@@ -22,4 +22,11 @@ chatRoutes.post("/conversations/upload-image", authMiddleware, uploadChatImage.s
   chatController.uploadImage(req, res),
 );
 
+chatRoutes.get("/chat/unread-summary", authMiddleware, (req, res) =>
+  chatController.getUnreadSummary(req, res),
+);
+chatRoutes.put("/chat/rooms/:roomId/read", authMiddleware, (req, res) =>
+  chatController.markRoomAsRead(req, res),
+);
+
 export { chatRoutes }

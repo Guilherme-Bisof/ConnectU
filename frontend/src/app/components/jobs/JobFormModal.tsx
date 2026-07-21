@@ -35,7 +35,7 @@ export function JobFormModal({
 
   return (
     <div className="fixed inset-0 z-60 flex justify-end bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="w-full max-w-md h-full bg-zinc-950 border-l border-zinc-800 shadow-2xl flex flex-col animate-slideInRight">
+      <div className="w-full max-w-[420px] h-full bg-zinc-950 border-l border-zinc-800 shadow-2xl flex flex-col animate-slideInRight">
         {/* Header*/}
         <div className="px-6 py-5 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
           <h2 className="text-xl font-bold text-white">{title}</h2>

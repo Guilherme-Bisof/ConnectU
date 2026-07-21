@@ -157,3 +157,26 @@ body {
 .animate-fadeIn{
   animation: fadeIn 0.3s ease-in-out forwards;
 }
+
+@keyframes authContentIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-auth-content {
+  animation:
+    authContentIn 450ms ease-out 180ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-auth-content {
+    animation: none;
+  }
+}

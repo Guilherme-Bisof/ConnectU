@@ -8,7 +8,8 @@ import {
   FiHeart,
 } from "react-icons/fi";
 import { useRouter } from "next/navigation";
-import { socket } from "../../../lib/socket";
+import { useSocket } from "../providers/SocketProvider";
+import { API_URL } from "../../../lib/api";
 
 interface Notification {
   id: string;
@@ -37,6 +38,7 @@ export function NotificationBell({
   const [toastMsg, setToastMsg] = useState<{title: string; description: string} | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const { socket } = useSocket();
 
   useEffect(() => {
     if (toastMsg) {
@@ -70,14 +72,18 @@ export function NotificationBell({
 
       try {
         const res = await fetch(
-          "https://connectu-gd1z.onrender.com/notifications",
+          `${API_URL}/notifications`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
         );
         if (res.ok) {
           const data = await res.json();
-          setNotifications(data);
+          setNotifications((prev) => {
+            const fetchedIds = new Set(data.map((n: Notification) => n.id));
+            const newFromSocket = prev.filter(n => !fetchedIds.has(n.id));
+            return [...newFromSocket, ...data];
+          });
         }
       } catch (error) {
         console.error("Erro ao buscar notificações:", error);
@@ -87,10 +93,7 @@ export function NotificationBell({
   }, []);
 
   useEffect(() => {
-    if (!socket) {
-      console.error("[NotificationBell] socket indisponível");
-      return;
-    }
+    if (!socket) return;
 
     const handleNotification = (newNotification: Notification) => {
       setNotifications((current) => {
@@ -103,12 +106,33 @@ export function NotificationBell({
       });
     };
 
+    const handleRoomRead = (data: { roomId: string, resourceUrl?: string }) => {
+      console.log("[Notification Room Read]", data);
+      setNotifications((current) => 
+        current.map(n => 
+          (n.type === "MESSAGE" && !n.read && (n.metadata?.roomId === data.roomId || n.resourceUrl === `/dashboard/chat/${data.roomId}`))
+            ? { ...n, read: true }
+            : n
+        )
+      );
+    };
+
+    const handleAllRead = () => {
+      setNotifications((current) =>
+        current.map((notification) => ({ ...notification, read: true })),
+      );
+    };
+
     socket.on("notification:received", handleNotification);
+    socket.on("notifications:room-read", handleRoomRead);
+    socket.on("notifications:all-read", handleAllRead);
 
     return () => {
       socket.off("notification:received", handleNotification);
+      socket.off("notifications:room-read", handleRoomRead);
+      socket.off("notifications:all-read", handleAllRead);
     };
-  }, []);
+  }, [socket]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -145,7 +169,7 @@ export function NotificationBell({
       setNotifications((p) => p.map((n) => (n.id === notification.id ? { ...n, read: true } : n)));
 
       const token = localStorage.getItem("connectu_token");
-      fetch(`https://connectu-gd1z.onrender.com/notifications/${notification.id}/read`, {
+      fetch(`${API_URL}/notifications/${notification.id}/read`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` }
       }).then(res => {
@@ -249,23 +273,33 @@ export function NotificationBell({
     const token = localStorage.getItem("connectu_token");
     if (!token) return;
 
+    const previousNotifications = notifications;
+    setNotifications((current) =>
+      current.map((notification) => ({ ...notification, read: true })),
+    );
+
     try {
       const res = await fetch(
-        "https://connectu-gd1z.onrender.com/notifications/read-all",
+        `${API_URL}/notifications/read-all`,
         {
           method: "PUT",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
         },
       );
 
-      if (res.ok) {
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || `Falha ao marcar notificações (${res.status}).`);
       }
     } catch (error) {
       console.error("Erro ao marcar todas como lidas:", error);
+      setNotifications(previousNotifications);
+      setToastMsg({
+        title: "Erro",
+        description: "Não foi possível marcar todas como lidas.",
+      });
     }
   };
 
@@ -286,7 +320,7 @@ export function NotificationBell({
 
       {/* Dropdown de Notificações */}
       {isOpen && (
-        <div className="absolute right-0 mt-3 w-100 bg-surface-container-low border border-outline-variant/30 rounded-2xl shadow-2xl overflow-hidden z-50 flex flex-col max-h-[85vh] origin-top-right ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-200">
+        <div className={`absolute ${dropdownPosition} w-100 bg-surface-container-low border border-outline-variant/30 rounded-2xl shadow-2xl overflow-hidden z-50 flex flex-col max-h-[85vh] origin-top-right ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-200`}>
           {/* Header Fixo */}
           <div className="p-md flex items-center justify-between border-b border-outline-variant/30 bg-surface-container-low">
             <h2 className="font-headline-md text-headline-md text-on-surface">Notificações</h2>
@@ -311,7 +345,7 @@ export function NotificationBell({
               onClick={() => setActiveTab("UNREAD")}
               className={`flex-1 py-2 text-body-md font-semibold text-center flex items-center justify-center gap-sm relative transition-all ${
                 activeTab === "UNREAD" 
-                  ? "text-primary after:content-[''] after:absolute after:-bottom-2 after:left-1/2 after:-translate-x-1/2 after:w-[40px] after:h-[2px] after:bg-primary" 
+                  ? "text-primary after:content-[''] after:absolute after:-bottom-2 after:left-1/2 after:-translate-x-1/2 after:w-10 after:h-0.5 after:bg-primary" 
                   : "text-on-surface-variant hover:bg-surface-variant rounded-t-lg"
               }`}
             >

@@ -74,6 +74,7 @@ model User {
   comments      Comment[]
   notifications      Notification[]
   sentNotifications  Notification[] @relation("NotificationSender")
+  readStates         RoomReadState[]
 
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id])
@@ -147,6 +148,7 @@ model Room {
   createdAt DateTime    @default(now())
 
   users User[] @relation("UserRooms")
+  readStates RoomReadState[]
 }
 
 model Message {
@@ -161,6 +163,23 @@ model Message {
 
   senderId String
   sender   User   @relation(fields: [senderId], references: [id])
+}
+
+model RoomReadState {
+  id                String    @id @default(uuid())
+  roomId            String
+  userId            String
+  lastReadAt        DateTime?
+  lastReadMessageId String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([userId])
+  @@index([roomId])
 }
 
 model Application {
