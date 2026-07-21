@@ -107,7 +107,6 @@ export function NotificationBell({
     };
 
     const handleRoomRead = (data: { roomId: string, resourceUrl?: string }) => {
-      console.log("[Notification Room Read]", data);
       setNotifications((current) => 
         current.map(n => 
           (n.type === "MESSAGE" && !n.read && (n.metadata?.roomId === data.roomId || n.resourceUrl === `/dashboard/chat/${data.roomId}`))

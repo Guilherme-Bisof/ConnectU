@@ -26,6 +26,7 @@ import {
 } from "react-icons/fi";
 import type { Participant, Room } from "../layout";
 import { useUnreadMessages } from "../../../components/providers/UnreadMessagesProvider";
+import { MessageStatus, MessageDeliveryStatus } from "../../../components/chat/MessageStatus";
 import { useSocket } from "../../../components/providers/SocketProvider";
 import { API_URL } from "../../../../lib/api";
 
@@ -36,6 +37,9 @@ interface Message {
   isEdited?: boolean;
   senderId: string;
   createdAt: string;
+  deliveryStatus?: MessageDeliveryStatus;
+  deliveredAt?: string | null;
+  readAt?: string | null;
 }
 
 interface UserData {
@@ -137,6 +141,37 @@ export default function ChatRoomPage() {
       setMessages((prev) => [...prev, message]);
     };
 
+    const onMessageReceiptUpdated = (data: { messageId: string, deliveredAt: string, readAt: string | null }) => {
+      setMessages((prev) => prev.map(m => {
+        if (m.id === data.messageId) {
+          const newStatus = data.readAt ? "READ" : "DELIVERED";
+          return {
+            ...m,
+            deliveryStatus: newStatus,
+            deliveredAt: data.deliveredAt || m.deliveredAt,
+            readAt: data.readAt || m.readAt
+          };
+        }
+        return m;
+      }));
+    };
+
+    const onMessagesReadUpTo = (data: { roomId: string, readThroughAt: string }) => {
+      if (data.roomId !== roomId) return;
+      const readLimit = new Date(data.readThroughAt).getTime();
+      setMessages((prev) => prev.map(m => {
+        // Se a mensagem for anterior ou igual ao readThroughAt
+        if (new Date(m.createdAt).getTime() <= readLimit && m.senderId === user?.id) {
+          return {
+            ...m,
+            deliveryStatus: "READ",
+            readAt: data.readThroughAt
+          };
+        }
+        return m;
+      }));
+    };
+
     const onMessageEdited = (updatedMsg: Message) => {
       setMessages((prev) => prev.map((m) => (m.id === updatedMsg.id ? updatedMsg : m)));
     };
@@ -155,6 +190,8 @@ export default function ChatRoomPage() {
     socket.on("online_users_list", onOnlineUsersList);
     socket.on("user_status_change", onUserStatusChange);
     socket.on("receive_message", onReceiveMessage);
+    socket.on("message:receipt-updated", onMessageReceiptUpdated);
+    socket.on("messages:read-up-to", onMessagesReadUpTo);
     socket.on("message_edited", onMessageEdited);
     socket.on("message_deleted", onMessageDeleted);
     socket.on("room_deleted", onRoomDeleted);
@@ -163,6 +200,8 @@ export default function ChatRoomPage() {
       socket.off("online_users_list", onOnlineUsersList);
       socket.off("user_status_change", onUserStatusChange);
       socket.off("receive_message", onReceiveMessage);
+      socket.off("message:receipt-updated", onMessageReceiptUpdated);
+      socket.off("messages:read-up-to", onMessagesReadUpTo);
       socket.off("message_edited", onMessageEdited);
       socket.off("message_deleted", onMessageDeleted);
       socket.off("room_deleted", onRoomDeleted);
@@ -477,7 +516,7 @@ export default function ChatRoomPage() {
                       {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       {msg.isEdited && " (Editado)"}
                     </span>
-                    {isMine && <FiCheck size={14} className="text-primary" />}
+                    {isMine && <MessageStatus status={msg.deliveryStatus} deliveredAt={msg.deliveredAt} readAt={msg.readAt} />}
                   </div>
                 </div>
               );

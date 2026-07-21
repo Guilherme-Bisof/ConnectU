@@ -94,8 +94,6 @@ export function UnreadMessagesProvider({ children }: { children: React.ReactNode
     refreshUnread();
 
     const handleUnreadUpdated = (data: { roomId: string, messageId: string, unreadCount: number, totalUnread: number }) => {
-      console.log("[Unread Socket Event]", data);
-      
       const { roomId, messageId, unreadCount, totalUnread } = data;
       
       // Basic idempotency (If we already processed this message, ignore)
