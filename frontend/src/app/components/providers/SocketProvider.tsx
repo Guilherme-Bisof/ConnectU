@@ -27,29 +27,24 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
 
 
-    const handleConnect = () => {
-      console.log("[SocketProvider] Conectado:", instance.id);
-    };
-
-    const handleDisconnect = () => {
-      console.log("[SocketProvider] Desconectado");
-    };
 
     const handleConnectError = (error: Error) => {
       console.error("[SocketProvider] Erro de conexão:", error);
     };
 
-    instance.on("connect", handleConnect);
-    instance.on("disconnect", handleDisconnect);
+    const handleDeliveryRequest = (data: { messageId: string; roomId: string }) => {
+      instance.emit("message:delivered", data);
+    };
+
     instance.on("connect_error", handleConnectError);
+    instance.on("message:delivery-request", handleDeliveryRequest);
 
     // eslint-disable-next-line
     setSocket(instance);
 
     return () => {
-      instance.off("connect", handleConnect);
-      instance.off("disconnect", handleDisconnect);
       instance.off("connect_error", handleConnectError);
+      instance.off("message:delivery-request", handleDeliveryRequest);
       instance.disconnect();
       setSocket(null);
     };

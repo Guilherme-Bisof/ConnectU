@@ -86,20 +86,22 @@ export class ChatController {
         return res.json({ roomId, unreadCount: 0, totalUnread: summary.totalUnread });
       }
 
+      const readThroughAt = lastMessage.createdAt;
+      let affectedSenderIds: string[] = [];
+
       await prisma.$transaction(async (tx) => {
-        // @ts-ignore (desativado até prisma generate rodar offline)
         await tx.roomReadState.upsert({
           where: {
             roomId_userId: { roomId, userId }
           },
           update: {
-            lastReadAt: lastMessage.createdAt,
+            lastReadAt: readThroughAt,
             lastReadMessageId: lastMessage.id
           },
           create: {
             roomId,
             userId,
-            lastReadAt: lastMessage.createdAt,
+            lastReadAt: readThroughAt,
             lastReadMessageId: lastMessage.id
           }
         });
@@ -113,6 +115,42 @@ export class ChatController {
           },
           data: { read: true }
         });
+
+        // @ts-ignore
+        const receiptsToUpdate = await tx.messageReceipt.findMany({
+          where: {
+            userId,
+            readAt: null,
+            message: {
+              roomId,
+              createdAt: { lte: readThroughAt },
+              senderId: { not: userId }
+            }
+          },
+          include: { message: true }
+        });
+
+        if (receiptsToUpdate.length > 0) {
+          const now = new Date();
+          const receiptIds = receiptsToUpdate.map((r: any) => r.id);
+          
+          // @ts-ignore
+          await tx.messageReceipt.updateMany({
+            where: { id: { in: receiptIds } },
+            data: { readAt: now }
+          });
+
+          const undeliveredReceiptIds = receiptsToUpdate.filter((r: any) => !r.deliveredAt).map((r: any) => r.id);
+          if (undeliveredReceiptIds.length > 0) {
+            // @ts-ignore
+            await tx.messageReceipt.updateMany({
+              where: { id: { in: undeliveredReceiptIds } },
+              data: { deliveredAt: now }
+            });
+          }
+
+          affectedSenderIds = [...new Set(receiptsToUpdate.map((r: any) => r.message.senderId as string))];
+        }
       });
 
       const updatedSummary = await calculateTotalUnread(userId);
@@ -131,6 +169,14 @@ export class ChatController {
           roomId,
           resourceUrl: `/dashboard/chat/${roomId}`
         });
+
+        for (const senderId of affectedSenderIds) {
+          ioInstance.to(getUserRoom(senderId)).emit("messages:read-up-to", {
+            roomId,
+            readerId: userId,
+            readThroughAt
+          });
+        }
       }
 
       return res.json({ roomId, unreadCount: 0, totalUnread: updatedSummary.totalUnread });
@@ -327,9 +373,38 @@ export class ChatController {
       const messages = await prisma.message.findMany({
         where: { roomId: roomId },
         orderBy: { createdAt: "asc" },
+        // @ts-ignore
+        include: { receipts: true }
       });
 
-      return res.json(messages);
+      const formattedMessages = messages.map((m: any) => {
+        let deliveryStatus: "SENT" | "DELIVERED" | "READ" = "SENT";
+        let deliveredAt = null;
+        let readAt = null;
+
+        if (m.senderId === userId && m.receipts && m.receipts.length > 0) {
+          const allDelivered = m.receipts.every((r: any) => r.deliveredAt !== null);
+          const allRead = m.receipts.every((r: any) => r.readAt !== null);
+
+          if (allRead) deliveryStatus = "READ";
+          else if (allDelivered) deliveryStatus = "DELIVERED";
+
+          if (m.receipts.length === 1) {
+            deliveredAt = m.receipts[0].deliveredAt;
+            readAt = m.receipts[0].readAt;
+          }
+        }
+
+        const { receipts, ...messageData } = m;
+        return {
+          ...messageData,
+          deliveryStatus,
+          deliveredAt,
+          readAt
+        };
+      });
+
+      return res.json(formattedMessages);
     } catch (error) {
       console.error("Erro ao buscar histórico de mensagens:", error);
       return res.status(500).json({ error: "Erro ao buscar histórico." });
