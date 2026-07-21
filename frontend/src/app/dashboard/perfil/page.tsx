@@ -902,8 +902,8 @@ export default function ProfilePage() {
                   )}
                 </div>
                 {user.isPioneer && (
-                  <div className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-[#316cf4] border-4 border-[#111317] flex items-center justify-center shadow-lg" title="Membro Fundador">
-                    <MdVerified className="text-white text-lg" />
+                  <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 lg:bottom-3 lg:right-3 z-10 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#316cf4] border-4 border-[#111317] flex items-center justify-center shadow-lg" title="Membro Fundador">
+                    <MdVerified className="text-white text-base sm:text-lg" />
                   </div>
                 )}
               </div>
