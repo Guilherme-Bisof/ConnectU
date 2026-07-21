@@ -10,6 +10,7 @@ import {
   FiBookOpen,
   FiBriefcase,
 } from "react-icons/fi";
+import { useRef } from "react";
 
 interface SearchedUser {
   id: string;
@@ -25,14 +26,20 @@ interface SearchedUser {
 
 function ExplorarContent() {
   const searchParams = useSearchParams();
-  const query = searchParams.get("q") || "";
+  const urlQuery = searchParams.get("q") || "";
 
+  const [localQuery, setLocalQuery] = useState(urlQuery);
   const [results, setResults] = useState<SearchedUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    setLocalQuery(urlQuery);
+  }, [urlQuery]);
 
   async function handleSearch(searchTerm: string) {
-    if (!searchTerm.trim()) {
+    if (searchTerm.trim().length < 2) {
       setResults([]);
       setHasSearched(false);
       return;
@@ -41,6 +48,12 @@ function ExplorarContent() {
     setLoading(true);
     setHasSearched(true);
 
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
@@ -48,6 +61,7 @@ function ExplorarContent() {
         {
           method: "GET",
           headers: { Authorization: `Bearer ${token}` },
+          signal: abortController.signal
         },
       );
 
@@ -57,30 +71,60 @@ function ExplorarContent() {
       } else {
         console.error("Erro na busca");
       }
-    } catch (error) {
-      console.error("Erro de conexão ao buscar:", error);
+    } catch (error: any) {
+      if (error.name !== "AbortError") {
+        console.error("Erro de conexão ao buscar:", error);
+      }
     } finally {
-      setLoading(false);
+      if (abortControllerRef.current === abortController) {
+        setLoading(false);
+      }
     }
   }
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      handleSearch(query);
-    }, 500);
+      handleSearch(localQuery);
+    }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [query]);
+  }, [localQuery]);
 
   return (
     <div className="mx-auto max-w-4xl animate-fadeIn">
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white">Explorar Rede</h2>
-        <p className="text-zinc-400">
-          Busque por talentos, recrutadores, cursos ou palavras-chave de
-          competências.
+      <div className="mb-6 md:mb-8">
+        <h2 className="text-2xl font-bold text-white mb-2 md:mb-0">Explorar Rede</h2>
+        <p className="text-zinc-400 hidden md:block">
+          Busque por talentos, recrutadores, cursos ou palavras-chave de competências.
         </p>
+      </div>
+
+      {/* Mobile Search Input */}
+      <div className="mb-6 md:hidden">
+        <label className="sr-only" htmlFor="mobile-explore-search">
+          Pesquisar na rede
+        </label>
+        <div className="relative">
+          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+          <input
+            id="mobile-explore-search"
+            type="search"
+            placeholder="Pesquisar pessoas, cursos ou competências..."
+            className="h-[48px] w-full min-w-0 bg-zinc-900 border border-zinc-800 text-zinc-100 rounded-xl pl-10 pr-10 focus:outline-none focus:border-[#316cf4] focus:ring-1 focus:ring-[#316cf4]"
+            value={localQuery}
+            onChange={(e) => setLocalQuery(e.target.value)}
+          />
+          {localQuery.length > 0 && (
+            <button
+              onClick={() => setLocalQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+              aria-label="Limpar pesquisa"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Resultados ou Estados */}
@@ -94,7 +138,7 @@ function ExplorarContent() {
           {results.map((profile) => (
             <div
               key={profile.id}
-              className="group relative flex flex-col justify-between rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-5 transition-all hover:border-zinc-700 hover:bg-zinc-900 shadow-sm"
+              className="group relative flex flex-col justify-between rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-5 transition-all hover:border-zinc-700 hover:bg-zinc-900 shadow-sm w-full min-w-0 max-w-full overflow-hidden"
             >
               <div>
                 {/* Topo do Card: Avatar + Nome */}
@@ -161,7 +205,7 @@ function ExplorarContent() {
                     {profile.skills.slice(0, 4).map((skill, i) => (
                       <span
                         key={i}
-                        className="rounded bg-zinc-800/60 px-2 py-0.5 text-[11px] font-medium text-zinc-400 border border-zinc-800"
+                        className="rounded bg-zinc-800/60 px-2 py-0.5 text-[11px] font-medium text-zinc-400 border border-zinc-800 truncate max-w-full"
                       >
                         {skill}
                       </span>
@@ -201,7 +245,7 @@ function ExplorarContent() {
         <div className="bg-zinc-900/20 border border-zinc-800/40 rounded-2xl p-12 text-center text-zinc-500">
           <FiSearch className="mx-auto text-3xl text-zinc-700 mb-3" />
           <p className="text-sm">
-            Use a barra de pesquisa no topo da página para encontrar conexões na rede.
+            Pesquise por pessoas, cursos ou competências.
           </p>
         </div>
       )}
