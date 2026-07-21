@@ -1,5 +1,5 @@
 import express from "express";
-import cors from "cors";
+import cors, { type CorsOptions } from "cors";
 import helmet from "helmet";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -17,22 +17,40 @@ import { notificationRoutes } from "./routes/notification.routes.js";
 
 const app = express();
 
+const allowedOrigins = (process.env.FRONTEND_URLS ?? "http://localhost:3000")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const corsOptions: CorsOptions = {
+  origin(origin, callback) {
+    // Permite chamadas sem origin, como Postman, Render e outros serviços internos.
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    console.warn("[CORS] Origem bloqueada:", origin);
+
+    callback(new Error(`Origem não permitida pelo CORS: ${origin}`));
+  },
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+};
+
 app.use(helmet());
-
-app.use(
-  cors({
-    origin: ["http://localhost:3000", "https://connect-u-psi.vercel.app"],
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
-  }));
-
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.get("/ping", (req, res) => {
   res.json({ message: "ConnectU API online e organizada!" });
 });
-
 
 // Rotas Express
 app.use("/users", userRoutes);
@@ -51,7 +69,7 @@ const httpServer = createServer(app);
 // Acoplamento do socket.io ao http
 const io = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:3000", "https://connect-u-psi.vercel.app"],
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -64,4 +82,5 @@ const PORT = process.env.PORT || 3333;
 
 httpServer.listen(PORT, () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  console.log("[CORS] Origens permitidas:", allowedOrigins);
 });
