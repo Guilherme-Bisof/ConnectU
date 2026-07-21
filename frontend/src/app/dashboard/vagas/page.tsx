@@ -538,7 +538,7 @@ export default function VagasPage() {
             const data = await res.json();
             setMatchedJobs(data);
 
-            if (data.length > 0) {
+            if (data.length > 0 && window.innerWidth >= 1024) {
               setSelectedJobId(data[0].id);
             }
           }
