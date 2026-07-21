@@ -319,7 +319,7 @@ export function NotificationBell({
 
       {/* Dropdown de Notificações */}
       {isOpen && (
-        <div className={`absolute ${dropdownPosition} w-100 bg-surface-container-low border border-outline-variant/30 rounded-2xl shadow-2xl overflow-hidden z-50 flex flex-col max-h-[85vh] origin-top-right ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-200`}>
+        <div className={`absolute ${dropdownPosition} w-[calc(100vw-24px)] sm:w-[400px] max-w-[calc(100vw-24px)] bg-surface-container-low border border-outline-variant/30 rounded-2xl shadow-2xl overflow-hidden z-50 flex flex-col max-h-[85vh] origin-top-right ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-200`}>
           {/* Header Fixo */}
           <div className="p-md flex items-center justify-between border-b border-outline-variant/30 bg-surface-container-low">
             <h2 className="font-headline-md text-headline-md text-on-surface">Notificações</h2>
@@ -401,7 +401,7 @@ export function NotificationBell({
 
       {/* Toast Notification (Customizado ConnectU) */}
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 bg-surface-container-highest border border-outline-variant rounded-xl shadow-2xl p-4 min-w-75 z-300 animate-fadeIn flex flex-col gap-1">
+        <div className="fixed bottom-6 right-3 sm:right-6 w-[calc(100vw-24px)] sm:w-[320px] max-w-[calc(100vw-24px)] bg-surface-container-highest border border-outline-variant rounded-xl shadow-2xl p-4 z-300 animate-fadeIn flex flex-col gap-1">
           <div className="flex justify-between items-center gap-2">
              <h3 className="text-body-md font-bold text-on-surface">{toastMsg.title}</h3>
              <button onClick={() => setToastMsg(null)} className="text-on-surface-variant hover:text-on-surface transition-colors">

@@ -62,7 +62,7 @@ export default function DashboardLayout({
   return (
     <SocketProvider>
       <UnreadMessagesProvider>
-        <div className="min-h-screen bg-[#0d0f11] text-white font-sans">
+        <div className="min-h-dvh flex flex-col bg-[#0d0f11] text-white font-sans">
           {/* ===== HEADER GLOBAL FIXO ===== */}
       <header
         className="fixed top-0 left-0 right-0 h-16 bg-[#0d0f11] border-b border-[#2a2d32] z-50 flex items-center px-4 md:px-6 justify-between"
@@ -194,7 +194,7 @@ export default function DashboardLayout({
       </header>
 
       {/*  CONTEÚDO ABAIXO DO HEADER */}
-      <div className="pt-16 flex min-h-screen">
+      <div className="pt-16 flex flex-1 min-h-dvh min-w-0">
         {/*  SIDEBAR ESQUERDA (Desktop)  */}
         <aside
           className="w-64 fixed left-0 top-16 bottom-0 overflow-y-auto hidden lg:block border-r border-[#2a2d32] p-4 space-y-8"
@@ -475,7 +475,7 @@ export default function DashboardLayout({
 
         {/*  MENU MOBILE (overlay)  */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 top-16 z-40 bg-[#0d0f11]/95 backdrop-blur-sm overflow-y-auto">
+          <div className="lg:hidden fixed inset-0 top-16 z-40 bg-[#0d0f11]/95 backdrop-blur-sm overflow-y-auto pb-[max(16px,env(safe-area-inset-bottom))]">
             <div className="flex flex-col p-4 space-y-6">
               <nav>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
@@ -568,7 +568,7 @@ export default function DashboardLayout({
         )}
 
         {/*  ÁREA PRINCIPAL DE CONTEÚDO */}
-        <main className="flex-1 lg:ml-64 p-6">
+        <main className="flex-1 min-h-0 min-w-0 flex flex-col lg:ml-[256px] p-[12px] sm:p-[16px] lg:p-[24px]">
           {children}
         </main>
       </div>

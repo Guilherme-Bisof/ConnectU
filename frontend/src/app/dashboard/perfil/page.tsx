@@ -797,10 +797,10 @@ export default function ProfilePage() {
   const badgeCount = (hasBasicProfile ? 1 : 0) + (user.isPioneer ? 1 : 0) + ((user.skills && user.skills.length >= 5) ? 1 : 0) + (hasProjects ? 1 : 0);
 
   return (
-    <div className="-m-6 flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-0 flex-1">
       {/* Toast de Perfil Completo */}
       {user && getProfileCompletion(user) === 100 && showCompleteMsg && (
-        <div className="fixed top-20 right-8 z-50 rounded-lg border border-emerald-500/20 bg-[#1e2024] px-4 py-3 text-sm text-emerald-400 font-semibold shadow-2xl animate-fadeIn flex justify-between items-center gap-4">
+        <div className="fixed top-20 right-3 sm:right-8 z-50 rounded-lg border border-emerald-500/20 bg-[#1e2024] px-4 py-3 text-sm text-emerald-400 font-semibold shadow-2xl animate-fadeIn flex justify-between items-center gap-4 max-w-[calc(100vw-24px)]">
           <span>Perfil completo! Suas vagas foram liberadas. 🎉</span>
           <button
             onClick={() => {
@@ -820,7 +820,7 @@ export default function ProfilePage() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed top-20 right-6 w-80 bg-zinc-900/90 backdrop-blur-md border border-zinc-800 rounded-xl p-5 shadow-2xl z-50 animate-fadeIn"
+          className="fixed top-20 right-3 sm:right-6 w-[calc(100vw-24px)] sm:w-80 max-w-[calc(100vw-24px)] bg-zinc-900/90 backdrop-blur-md border border-zinc-800 rounded-xl p-5 shadow-2xl z-50 animate-fadeIn"
         >
           <div className="flex justify-between items-start mb-2">
             <h3 className="text-sm font-semibold text-zinc-100">{toastMsg.title}</h3>
