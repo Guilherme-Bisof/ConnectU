@@ -174,6 +174,7 @@ function JobDetailPanel({
   animatedScore,
   onOpenDetails,
   onOpenCourses,
+  onBack,
 }: {
   job: {
     id: string;
