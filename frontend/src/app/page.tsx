@@ -155,8 +155,8 @@ export default function AuthPage() {
       {/* Left Panel (Hero) */}
       <section
         className={`
-          absolute inset-y-0 left-0 hidden w-1/2 overflow-hidden
-          bg-[#0d0e12] p-[48px] md:flex flex-col justify-between
+          hidden md:flex absolute inset-y-0 left-0 w-1/2 overflow-hidden
+          bg-[#0d0e12] p-[48px] flex-col justify-between
           transition-transform duration-[700ms]
           ease-[cubic-bezier(0.22,1,0.36,1)]
           will-change-transform z-20
@@ -196,10 +196,10 @@ export default function AuthPage() {
       {/* Right Panel (Form) */}
       <section
         className={`
-          relative flex min-h-dvh w-full items-center justify-center
-          overflow-y-auto bg-[#121317] px-[20px] py-[32px]
+          relative flex flex-col items-center justify-center
+          w-full max-w-full min-h-dvh
+          overflow-y-auto bg-[#121317]
           md:absolute md:inset-y-0 md:right-0 md:w-1/2
-          md:px-[48px] md:py-[40px]
           transition-transform duration-[700ms]
           ease-[cubic-bezier(0.22,1,0.36,1)]
           will-change-transform z-10
@@ -212,7 +212,7 @@ export default function AuthPage() {
           <span className="font-sans text-2xl text-white font-bold">ConnectU</span>
         </div>
 
-        <div className="w-full max-w-[420px]">
+        <div className="w-full max-w-[420px] px-[20px] py-[32px]">
           <div key={isLogin ? "login" : "signup"} className="animate-auth-content space-y-6 md:space-y-8 w-full">
             {/* Header */}
             <div className="space-y-2 sm:space-y-3">
