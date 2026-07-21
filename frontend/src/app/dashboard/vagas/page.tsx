@@ -189,6 +189,7 @@ function JobDetailPanel({
   animatedScore: number;
   onOpenDetails: () => void;
   onOpenCourses: () => void;
+  onBack: () => void;
 }) {
 
 
@@ -204,9 +205,13 @@ function JobDetailPanel({
   ];
 
   return (
-    <div className="w-full max-w-[800px] mx-auto p-8 flex flex-col gap-8">
+    <div className="w-full max-w-[800px] mx-auto p-4 md:p-8 flex flex-col gap-6 md:gap-8">
+      <button onClick={onBack} className="lg:hidden flex items-center gap-2 text-gray-400 hover:text-white self-start">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+        Voltar para vagas
+      </button>
       {/* Header do detalhe */}
-      <div className="flex items-start justify-between bg-[#131313] border border-[#434655] rounded-2xl p-6 shadow-sm">
+      <div className="flex items-start justify-between bg-[#131313] border border-[#434655] rounded-2xl p-6 shadow-sm flex-col sm:flex-row gap-4">
         <div className="flex items-center gap-5 min-w-0">
           <div className="w-16 h-16 rounded-xl bg-[#316cf4] flex items-center justify-center text-white text-3xl font-bold shadow-inner shrink-0">
             {job.companyName.charAt(0)}
@@ -710,7 +715,7 @@ export default function VagasPage() {
       {/* Layout*/}
       <div className="flex-1 flex overflow-hidden">
         {/* Esquerda: Busca, Filtros e Lista */}
-        <div className="w-[40%] min-w-[360px] border-r border-[#434655] flex flex-col bg-[#0e0e0e]">
+        <div className={`${selectedJobId ? 'hidden lg:flex' : 'flex'} w-full lg:w-[40%] min-w-0 lg:min-w-[360px] border-r border-[#434655] flex-col bg-[#0e0e0e]`}>
           {/* Abas */}
           <div className="flex border-b border-[#434655] px-6 shrink-0">
             <button
@@ -821,7 +826,7 @@ export default function VagasPage() {
         </div>
 
         {/* DIREITA: Detalhes da Vaga */}
-        <div className="flex-1 bg-[#0d0f11] overflow-y-auto custom-scrollbar flex justify-center pb-12">
+        <div className={`${selectedJobId ? 'flex' : 'hidden lg:flex'} flex-1 min-w-0 w-full bg-[#0d0f11] overflow-y-auto custom-scrollbar justify-center pb-12`}>
           {selectedData ? (
             <JobDetailPanel
               job={selectedData.enrichedData}
@@ -829,6 +834,7 @@ export default function VagasPage() {
               animatedScore={animatedScore}
               onOpenDetails={() => setIsModalOpen(true)}
               onOpenCourses={() => setIsCoursesModalOpen(true)}
+              onBack={() => setSelectedJobId(null)}
             />
           ) : (
             <div className="flex items-center justify-center h-full text-center">
