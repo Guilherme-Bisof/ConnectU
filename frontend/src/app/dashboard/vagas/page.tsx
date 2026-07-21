@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { calculateMatch, MatchResult } from "@/utils/matchAlgorithm";
 import { StudentFullJobModal } from "@/app/components/jobs/StudentFullJobModal";
 import { CourseSuggestionsModal } from "@/app/components/jobs/CourseSuggestionsModal";
+import { apiEndpoint } from "@/lib/api";
 
 interface UserData {
   id: string;
@@ -529,7 +530,7 @@ export default function VagasPage() {
         try {
           const token = localStorage.getItem("connectu_token");
           const res = await fetch(
-            `https://connectu-gd1z.onrender.com/jobs/match/${user.id}`,
+            apiEndpoint(`/jobs/match/${user.id}`),
             {
               headers: { Authorization: `Bearer ${token}` },
             },
@@ -611,7 +612,7 @@ export default function VagasPage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const response = await fetch(
-        "https://connectu-gd1z.onrender.com/applications",
+        apiEndpoint("/applications"),
         {
           method: "POST",
           headers: {

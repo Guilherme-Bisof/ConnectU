@@ -9,7 +9,7 @@ import {
 } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { useSocket } from "../providers/SocketProvider";
-import { API_URL } from "../../../lib/api";
+import { apiEndpoint } from "@/lib/api";
 
 interface Notification {
   id: string;
@@ -72,7 +72,7 @@ export function NotificationBell({
 
       try {
         const res = await fetch(
-          `${API_URL}/notifications`,
+          apiEndpoint("/notifications"),
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -168,7 +168,7 @@ export function NotificationBell({
       setNotifications((p) => p.map((n) => (n.id === notification.id ? { ...n, read: true } : n)));
 
       const token = localStorage.getItem("connectu_token");
-      fetch(`${API_URL}/notifications/${notification.id}/read`, {
+      fetch(apiEndpoint(`/notifications/${notification.id}/read`), {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` }
       }).then(res => {
@@ -279,7 +279,7 @@ export function NotificationBell({
 
     try {
       const res = await fetch(
-        `${API_URL}/notifications/read-all`,
+        apiEndpoint("/notifications/read-all"),
         {
           method: "PUT",
           headers: {

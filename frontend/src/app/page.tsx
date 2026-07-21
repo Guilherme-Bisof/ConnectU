@@ -10,7 +10,7 @@ import {
   FiArrowRight,
   FiLayers
 } from "react-icons/fi";
-import { API_URL } from "@/lib/api";
+import { apiEndpoint } from "@/lib/api";
 
 function subscribeToAuth(callback: () => void) {
   window.addEventListener("storage", callback);
@@ -93,7 +93,7 @@ export default function AuthPage() {
     setIsLoading(true);
 
     const endpoint = isLogin ? "/login" : "/users";
-    const url = `${API_URL}${endpoint}`;
+    const url = apiEndpoint(endpoint);
 
     try {
       const response = await fetch(url, {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { apiEndpoint } from "@/lib/api";
 import {
   FiPlus,
   FiTarget,
@@ -213,7 +214,7 @@ export default function ProfilePage() {
 
         try {
           const res = await fetch(
-            `https://connectu-gd1z.onrender.com/users/${parsedUser.id}`,
+            apiEndpoint(`/users/${parsedUser.id}`),
           );
           if (res.ok) {
             const freshUser = await res.json();
@@ -258,7 +259,7 @@ export default function ProfilePage() {
         try {
           const token = localStorage.getItem("connectu_token");
           const res = await fetch(
-            `https://connectu-gd1z.onrender.com/jobs/company/${user.companyId}`,
+            apiEndpoint(`/jobs/company/${user.companyId}`),
             {
               method: "GET",
               headers: { Authorization: `Bearer ${token}` },
@@ -276,7 +277,7 @@ export default function ProfilePage() {
         try {
           const token = localStorage.getItem("connectu_token");
           const res = await fetch(
-            `https://connectu-gd1z.onrender.com/jobs/match/${user.id}`,
+            apiEndpoint(`/jobs/match/${user.id}`),
             {
               method: "GET",
               headers: { Authorization: `Bearer ${token}` },
@@ -320,7 +321,7 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        apiEndpoint(`/users/${user.id}`),
         {
           method: "PUT",
           headers: {
@@ -361,7 +362,7 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        apiEndpoint(`/users/${user.id}`),
         {
           method: "PUT",
           headers: {
@@ -417,7 +418,7 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        apiEndpoint(`/users/${user.id}`),
         {
           method: "PUT",
           headers: {
@@ -480,7 +481,7 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        apiEndpoint(`/users/${user.id}`),
         {
           method: "PUT",
           headers: {
@@ -520,8 +521,8 @@ export default function ProfilePage() {
     try {
       const isEditing = editingJobId !== null;
       const url = isEditing
-        ? `https://connectu-gd1z.onrender.com/jobs/${editingJobId}`
-        : "https://connectu-gd1z.onrender.com/jobs";
+        ? apiEndpoint(`/jobs/${editingJobId}`)
+        : apiEndpoint("/jobs");
       const method = isEditing ? "PUT" : "POST";
 
       const token = localStorage.getItem("connectu_token");
@@ -583,7 +584,7 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const response = await fetch(
-        `https://connectu-gd1z.onrender.com/jobs/${jobId}`,
+        apiEndpoint(`/jobs/${jobId}`),
         {
           method: "DELETE",
           headers: {
@@ -614,7 +615,7 @@ export default function ProfilePage() {
       try {
         const token = localStorage.getItem("connectu_token");
         const response = await fetch(
-          `https://connectu-gd1z.onrender.com/jobs/${jobId}/status`,
+          apiEndpoint(`/jobs/${jobId}/status`),
           {
             method: "PATCH",
             headers: {
@@ -691,7 +692,7 @@ export default function ProfilePage() {
         formData.append("file", avatarFile);
         try {
           await fetch(
-            `https://connectu-gd1z.onrender.com/users/${user.id}/avatar`,
+            apiEndpoint(`/users/${user.id}/avatar`),
             {
               method: "POST",
               headers: {
@@ -712,7 +713,7 @@ export default function ProfilePage() {
         const resumeData = new FormData();
         resumeData.append("file", resumeFile);
         const uploadRes = await fetch(
-          `https://connectu-gd1z.onrender.com/users/${user.id}/resume`,
+          apiEndpoint(`/users/${user.id}/resume`),
           {
             method: "POST",
             headers: { Authorization: `Bearer ${token}` },
@@ -728,7 +729,7 @@ export default function ProfilePage() {
         bannerData.append("file", bannerFile);
         try {
           await fetch(
-            `https://connectu-gd1z.onrender.com/users/${user.id}/banner`,
+            apiEndpoint(`/users/${user.id}/banner`),
             {
               method: "POST",
               headers: { Authorization: `Bearer ${token}` },
@@ -741,7 +742,7 @@ export default function ProfilePage() {
       }
 
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        apiEndpoint(`/users/${user.id}`),
         {
           method: "PUT",
           headers: {

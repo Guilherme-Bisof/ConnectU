@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { apiEndpoint } from "@/lib/api";
 import {
   FiSearch,
   FiAward,
@@ -58,7 +59,7 @@ function ExplorarContent() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/users/search?q=${encodeURIComponent(searchTerm)}`,
+        apiEndpoint(`/users/search?q=${encodeURIComponent(searchTerm)}`),
         {
           method: "GET",
           headers: { Authorization: `Bearer ${token}` },

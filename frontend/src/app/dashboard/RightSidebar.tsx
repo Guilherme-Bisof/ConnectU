@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { apiEndpoint } from "@/lib/api";
 
 interface UserProject {
   id?: string;
@@ -134,7 +135,7 @@ export default function RightSidebar() {
       queueMicrotask(() => setUser(parsedUser));
 
       // Busca os dados fresquinhos da API do usuário (projetos, links, etc)
-      fetch(`https://connectu-gd1z.onrender.com/users/${parsedUser.id}`)
+      fetch(apiEndpoint(`/users/${parsedUser.id}`))
         .then((res) => {
           if (res.ok) return res.json();
           throw new Error("Falha ao buscar usuário");
@@ -150,7 +151,7 @@ export default function RightSidebar() {
       // Busca as vagas
       if (parsedUser.role === "STUDENT") {
         const token = localStorage.getItem("connectu_token");
-        fetch(`https://connectu-gd1z.onrender.com/jobs/match/${parsedUser.id}`, {
+        fetch(apiEndpoint(`/jobs/match/${parsedUser.id}`), {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((res) => {

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { FiTrash2, FiAward } from "react-icons/fi";
 import Link from "next/link";
 import RightSidebar from "./RightSidebar";
+import { apiEndpoint } from "@/lib/api";
 
 interface UserData {
   id: string;
@@ -90,7 +91,7 @@ export default function DashboardFeed() {
         const currentPage = reset ? 1 : page;
 
         const res = await fetch(
-          `https://connectu-gd1z.onrender.com/posts?page=${currentPage}`,
+          apiEndpoint(`/posts?page=${currentPage}`),
           {
             method: "GET",
             headers: { Authorization: `Bearer ${token}` },
@@ -182,7 +183,7 @@ export default function DashboardFeed() {
         formData.append("file", postFile);
       }
 
-      const res = await fetch("https://connectu-gd1z.onrender.com/posts", {
+      const res = await fetch(apiEndpoint("/posts"), {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -220,7 +221,7 @@ export default function DashboardFeed() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/posts/${postId}`,
+        apiEndpoint(`/posts/${postId}`),
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
@@ -239,7 +240,7 @@ export default function DashboardFeed() {
     const token = localStorage.getItem("connectu_token");
     try {
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/posts/${postId}/comment`,
+        apiEndpoint(`/posts/${postId}/comment`),
         {
           method: "POST",
           headers: {
@@ -267,7 +268,7 @@ export default function DashboardFeed() {
 
     try {
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/posts/${postId}/like`,
+        apiEndpoint(`/posts/${postId}/like`),
         {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
@@ -301,7 +302,7 @@ export default function DashboardFeed() {
     const token = localStorage.getItem("connectu_token");
     try {
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/posts/comment/${commentId}`,
+        apiEndpoint(`/posts/comment/${commentId}`),
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },

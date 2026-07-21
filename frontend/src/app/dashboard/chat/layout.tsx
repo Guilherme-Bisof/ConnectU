@@ -6,7 +6,7 @@ import Image from "next/image";
 import { FiMessageSquare, FiSearch, FiEdit3 } from "react-icons/fi";
 import { useUnreadMessages } from "../../components/providers/UnreadMessagesProvider";
 import { useSocket } from "../../components/providers/SocketProvider";
-import { API_URL } from "../../../lib/api";
+import { apiEndpoint } from "@/lib/api";
 
 export interface Participant {
   id: string;
@@ -76,7 +76,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
     async function fetchConversations() {
       try {
         const token = localStorage.getItem("connectu_token");
-        const res = await fetch(`${API_URL}/conversations`, {
+        const res = await fetch(apiEndpoint("/conversations"), {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,

@@ -28,7 +28,7 @@ import type { Participant, Room } from "../layout";
 import { useUnreadMessages } from "../../../components/providers/UnreadMessagesProvider";
 import { MessageStatus, MessageDeliveryStatus } from "../../../components/chat/MessageStatus";
 import { useSocket } from "../../../components/providers/SocketProvider";
-import { API_URL } from "../../../../lib/api";
+import { apiEndpoint } from "@/lib/api";
 
 interface Message {
   id: string;
@@ -92,7 +92,7 @@ export default function ChatRoomPage() {
       if (activeChatUser) return;
       try {
         const tokenStr = localStorage.getItem("connectu_token");
-        const res = await fetch(`${API_URL}/conversations`, {
+        const res = await fetch(apiEndpoint("/conversations"), {
           method: "GET",
           headers: { Authorization: `Bearer ${tokenStr}` },
         });
@@ -225,7 +225,7 @@ export default function ChatRoomPage() {
       try {
         const tokenStr = localStorage.getItem("connectu_token");
         const res = await fetch(
-          `${API_URL}/conversations/${roomId}/messages`,
+          apiEndpoint(`/conversations/${roomId}/messages`),
           {
             headers: { Authorization: `Bearer ${tokenStr}` },
           }
@@ -297,7 +297,7 @@ export default function ChatRoomPage() {
 
       try {
         const tokenStr = localStorage.getItem("connectu_token");
-        const res = await fetch(`${API_URL}/conversations/upload-image`, {
+        const res = await fetch(apiEndpoint("/conversations/upload-image"), {
           method: "POST",
           headers: {
             Authorization: `Bearer ${tokenStr}`,
