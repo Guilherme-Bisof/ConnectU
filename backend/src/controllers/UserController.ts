@@ -243,14 +243,6 @@ export class UserController {
       const searchFilter = String(q).trim();
 
       const users = await prisma.user.findMany({
-        where: {
-          OR: [
-            { name: { contains: searchFilter, mode: "insensitive" } },
-            { course: { contains: searchFilter, mode: "insensitive" } },
-            { institution: { contains: searchFilter, mode: "insensitive" } },
-            { skills: { has: searchFilter } },
-          ],
-        },
         select: {
           id: true,
           name: true,
@@ -264,7 +256,35 @@ export class UserController {
         },
       });
 
-      res.json(users);
+      const normalize = (str: string) => {
+        if (!str) return "";
+        return str
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase();
+      };
+
+      const normalizedQuery = normalize(searchFilter);
+
+      const filteredUsers = users.filter((user) => {
+        if (normalize(user.name).includes(normalizedQuery)) return true;
+        if (user.course && normalize(user.course).includes(normalizedQuery)) return true;
+        if (user.institution && normalize(user.institution).includes(normalizedQuery)) return true;
+
+        const roleTrans = user.role === "RECRUITER" ? "recrutador corporativo" : "aluno";
+        if (roleTrans.includes(normalizedQuery)) return true;
+
+        if (
+          user.skills &&
+          user.skills.some((skill) => normalize(skill).includes(normalizedQuery))
+        ) {
+          return true;
+        }
+
+        return false;
+      });
+
+      res.json(filteredUsers);
     } catch (error) {
       console.error("Erro ao buscar usuários:", error);
       res.status(500).json({ error: "Erro interno ao processar a buscar." });

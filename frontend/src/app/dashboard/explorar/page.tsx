@@ -35,6 +35,7 @@ function ExplorarContent() {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalQuery(urlQuery);
   }, [urlQuery]);
 
@@ -71,8 +72,8 @@ function ExplorarContent() {
       } else {
         console.error("Erro na busca");
       }
-    } catch (error: any) {
-      if (error.name !== "AbortError") {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name !== "AbortError") {
         console.error("Erro de conexão ao buscar:", error);
       }
     } finally {
@@ -109,7 +110,7 @@ function ExplorarContent() {
           <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
           <input
             id="mobile-explore-search"
-            type="search"
+            type="text"
             placeholder="Pesquisar pessoas, cursos ou competências..."
             className="h-[48px] w-full min-w-0 bg-zinc-900 border border-zinc-800 text-zinc-100 rounded-xl pl-10 pr-10 focus:outline-none focus:border-[#316cf4] focus:ring-1 focus:ring-[#316cf4]"
             value={localQuery}
@@ -119,7 +120,7 @@ function ExplorarContent() {
             <button
               onClick={() => setLocalQuery("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
-              aria-label="Limpar pesquisa"
+              aria-label="Limpar busca"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
