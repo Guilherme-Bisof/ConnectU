@@ -33,6 +33,7 @@ export function NotificationBell({
   placement?: "top" | "bottom";
 }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [globalUnreadCount, setGlobalUnreadCount] = useState(0);
   const [activeTab, setActiveTab] = useState<"ALL" | "UNREAD">("ALL");
   const [isOpen, setIsOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<{title: string; description: string} | null>(null);
@@ -80,10 +81,11 @@ export function NotificationBell({
         if (res.ok) {
           const data = await res.json();
           setNotifications((prev) => {
-            const fetchedIds = new Set(data.map((n: Notification) => n.id));
+            const fetchedIds = new Set(data.items.map((n: Notification) => n.id));
             const newFromSocket = prev.filter(n => !fetchedIds.has(n.id));
-            return [...newFromSocket, ...data];
+            return [...newFromSocket, ...data.items];
           });
+          setGlobalUnreadCount(data.unreadCount || 0);
         }
       } catch (error) {
         console.error("Erro ao buscar notificações:", error);
@@ -102,38 +104,61 @@ export function NotificationBell({
         if (duplicated) {
           return current;
         }
+        setGlobalUnreadCount(prev => prev + 1);
         return [newNotification, ...current];
       });
     };
 
     const handleRoomRead = (data: { roomId: string, resourceUrl?: string }) => {
-      setNotifications((current) => 
-        current.map(n => 
-          (n.type === "MESSAGE" && !n.read && (n.metadata?.roomId === data.roomId || n.resourceUrl === `/dashboard/chat/${data.roomId}`))
-            ? { ...n, read: true }
-            : n
-        )
-      );
+      setNotifications((current) => {
+        let changed = false;
+        const mapped = current.map(n => {
+          if (n.type === "MESSAGE" && !n.read && (n.metadata?.roomId === data.roomId || n.resourceUrl === `/dashboard/chat/${data.roomId}`)) {
+            changed = true;
+            return { ...n, read: true };
+          }
+          return n;
+        });
+        if (changed) {
+          setGlobalUnreadCount(prev => Math.max(0, prev - current.filter(n => n.type === "MESSAGE" && !n.read && (n.metadata?.roomId === data.roomId || n.resourceUrl === `/dashboard/chat/${data.roomId}`)).length));
+        }
+        return mapped;
+      });
     };
 
     const handleAllRead = () => {
       setNotifications((current) =>
         current.map((notification) => ({ ...notification, read: true })),
       );
+      setGlobalUnreadCount(0);
+    };
+
+    const handleSingleRead = (data: { notificationId: string }) => {
+      setNotifications((current) => {
+        const index = current.findIndex(n => n.id === data.notificationId);
+        if (index === -1) return current;
+        if (current[index].read) return current;
+        setGlobalUnreadCount(prev => Math.max(0, prev - 1));
+        const newArr = [...current];
+        newArr[index] = { ...newArr[index], read: true };
+        return newArr;
+      });
     };
 
     socket.on("notification:received", handleNotification);
     socket.on("notifications:room-read", handleRoomRead);
     socket.on("notifications:all-read", handleAllRead);
+    socket.on("notification:read", handleSingleRead);
 
     return () => {
       socket.off("notification:received", handleNotification);
       socket.off("notifications:room-read", handleRoomRead);
       socket.off("notifications:all-read", handleAllRead);
+      socket.off("notification:read", handleSingleRead);
     };
   }, [socket]);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -164,8 +189,8 @@ export function NotificationBell({
 
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.read) {
-      const prev = [...notifications];
       setNotifications((p) => p.map((n) => (n.id === notification.id ? { ...n, read: true } : n)));
+      setGlobalUnreadCount((prev) => Math.max(0, prev - 1));
 
       const token = localStorage.getItem("connectu_token");
       fetch(apiEndpoint(`/notifications/${notification.id}/read`), {
@@ -175,7 +200,6 @@ export function NotificationBell({
          if (!res.ok) throw new Error("Falha na API");
       }).catch(error => {
         console.error("Erro ao marcar como lida:", error);
-        setNotifications(prev);
         setToastMsg({ title: "Erro", description: "Não foi possível marcar como lida." });
       });
     }
@@ -272,10 +296,10 @@ export function NotificationBell({
     const token = localStorage.getItem("connectu_token");
     if (!token) return;
 
-    const previousNotifications = notifications;
     setNotifications((current) =>
       current.map((notification) => ({ ...notification, read: true })),
     );
+    setGlobalUnreadCount(0);
 
     try {
       const res = await fetch(
@@ -294,7 +318,6 @@ export function NotificationBell({
       }
     } catch (error) {
       console.error("Erro ao marcar todas como lidas:", error);
-      setNotifications(previousNotifications);
       setToastMsg({
         title: "Erro",
         description: "Não foi possível marcar todas como lidas.",
@@ -310,9 +333,9 @@ export function NotificationBell({
         className="relative p-2 text-zinc-400 hover:text-white transition-colors rounded-full hover:bg-zinc-800"
       >
         <FiBell className="text-xl" />
-        {unreadCount > 0 && (
+        {globalUnreadCount > 0 && (
           <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white border-2 border-zinc-950">
-            {unreadCount > 9 ? "9+" : unreadCount}
+            {globalUnreadCount > 9 ? "9+" : globalUnreadCount}
           </span>
         )}
       </button>
@@ -325,7 +348,7 @@ export function NotificationBell({
             <h2 className="font-headline-md text-headline-md text-on-surface">Notificações</h2>
             <button 
               onClick={handleMarkAllAsRead}
-              disabled={unreadCount === 0}
+              disabled={globalUnreadCount === 0}
               className="text-primary hover:text-primary-container transition-colors text-body-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Marcar todas como lidas
@@ -349,8 +372,8 @@ export function NotificationBell({
               }`}
             >
               Não lidas
-              {unreadCount > 0 && (
-                 <span className="bg-primary/20 text-primary text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold">{unreadCount}</span>
+              {globalUnreadCount > 0 && (
+                 <span className="bg-primary/20 text-primary text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold">{globalUnreadCount}</span>
               )}
             </button>
           </div>
@@ -394,7 +417,10 @@ export function NotificationBell({
 
           {/* Rodapé Fixo */}
           <div className="p-md bg-surface-container-low border-t border-outline-variant/30 text-center">
-            <button onClick={() => setToastMsg({title: "Em breve", description: "A página de notificações completas está em desenvolvimento."})} className="text-primary font-bold text-body-md hover:underline transition-all">Ver todas as notificações</button>
+            <button onClick={() => {
+              setIsOpen(false);
+              router.push("/dashboard/notificacoes");
+            }} className="text-primary font-bold text-body-md hover:underline transition-all">Ver todas as notificações</button>
           </div>
         </div>
       )}
