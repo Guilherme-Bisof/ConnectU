@@ -584,12 +584,12 @@ export default function DashboardFeed() {
 
                     {/* Imagem do Post */}
                     {post.imageUrl && (
-                      <div className="mb-4 overflow-hidden rounded-xl border border-[#2a2d32] bg-[#0d0f11] w-full max-w-full">
+                      <div className="mb-4 overflow-hidden rounded-xl border border-[#2a2d32] bg-[#0d0f11] w-full max-w-full flex items-center justify-center">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={post.imageUrl}
                           alt="Imagem da publicação"
-                          className="w-full max-w-full h-auto max-h-125 object-cover"
+                          className="h-auto max-h-[420px] w-full max-w-full object-contain"
                         />
                       </div>
                     )}
