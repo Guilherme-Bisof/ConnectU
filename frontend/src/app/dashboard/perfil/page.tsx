@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { apiEndpoint } from "@/lib/api";
 import {
   FiPlus,
   FiTarget,
@@ -213,7 +214,7 @@ export default function ProfilePage() {
 
         try {
           const res = await fetch(
-            `https://connectu-gd1z.onrender.com/users/${parsedUser.id}`,
+            apiEndpoint(`/users/${parsedUser.id}`),
           );
           if (res.ok) {
             const freshUser = await res.json();
@@ -258,7 +259,7 @@ export default function ProfilePage() {
         try {
           const token = localStorage.getItem("connectu_token");
           const res = await fetch(
-            `https://connectu-gd1z.onrender.com/jobs/company/${user.companyId}`,
+            apiEndpoint(`/jobs/company/${user.companyId}`),
             {
               method: "GET",
               headers: { Authorization: `Bearer ${token}` },
@@ -276,7 +277,7 @@ export default function ProfilePage() {
         try {
           const token = localStorage.getItem("connectu_token");
           const res = await fetch(
-            `https://connectu-gd1z.onrender.com/jobs/match/${user.id}`,
+            apiEndpoint(`/jobs/match/${user.id}`),
             {
               method: "GET",
               headers: { Authorization: `Bearer ${token}` },
@@ -320,7 +321,7 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        apiEndpoint(`/users/${user.id}`),
         {
           method: "PUT",
           headers: {
@@ -361,7 +362,7 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        apiEndpoint(`/users/${user.id}`),
         {
           method: "PUT",
           headers: {
@@ -417,7 +418,7 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        apiEndpoint(`/users/${user.id}`),
         {
           method: "PUT",
           headers: {
@@ -480,7 +481,7 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        apiEndpoint(`/users/${user.id}`),
         {
           method: "PUT",
           headers: {
@@ -520,8 +521,8 @@ export default function ProfilePage() {
     try {
       const isEditing = editingJobId !== null;
       const url = isEditing
-        ? `https://connectu-gd1z.onrender.com/jobs/${editingJobId}`
-        : "https://connectu-gd1z.onrender.com/jobs";
+        ? apiEndpoint(`/jobs/${editingJobId}`)
+        : apiEndpoint("/jobs");
       const method = isEditing ? "PUT" : "POST";
 
       const token = localStorage.getItem("connectu_token");
@@ -583,7 +584,7 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const response = await fetch(
-        `https://connectu-gd1z.onrender.com/jobs/${jobId}`,
+        apiEndpoint(`/jobs/${jobId}`),
         {
           method: "DELETE",
           headers: {
@@ -614,7 +615,7 @@ export default function ProfilePage() {
       try {
         const token = localStorage.getItem("connectu_token");
         const response = await fetch(
-          `https://connectu-gd1z.onrender.com/jobs/${jobId}/status`,
+          apiEndpoint(`/jobs/${jobId}/status`),
           {
             method: "PATCH",
             headers: {
@@ -691,7 +692,7 @@ export default function ProfilePage() {
         formData.append("file", avatarFile);
         try {
           await fetch(
-            `https://connectu-gd1z.onrender.com/users/${user.id}/avatar`,
+            apiEndpoint(`/users/${user.id}/avatar`),
             {
               method: "POST",
               headers: {
@@ -712,7 +713,7 @@ export default function ProfilePage() {
         const resumeData = new FormData();
         resumeData.append("file", resumeFile);
         const uploadRes = await fetch(
-          `https://connectu-gd1z.onrender.com/users/${user.id}/resume`,
+          apiEndpoint(`/users/${user.id}/resume`),
           {
             method: "POST",
             headers: { Authorization: `Bearer ${token}` },
@@ -728,7 +729,7 @@ export default function ProfilePage() {
         bannerData.append("file", bannerFile);
         try {
           await fetch(
-            `https://connectu-gd1z.onrender.com/users/${user.id}/banner`,
+            apiEndpoint(`/users/${user.id}/banner`),
             {
               method: "POST",
               headers: { Authorization: `Bearer ${token}` },
@@ -741,7 +742,7 @@ export default function ProfilePage() {
       }
 
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/users/${user.id}`,
+        apiEndpoint(`/users/${user.id}`),
         {
           method: "PUT",
           headers: {
@@ -797,10 +798,10 @@ export default function ProfilePage() {
   const badgeCount = (hasBasicProfile ? 1 : 0) + (user.isPioneer ? 1 : 0) + ((user.skills && user.skills.length >= 5) ? 1 : 0) + (hasProjects ? 1 : 0);
 
   return (
-    <div className="-m-6 flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-0 flex-1">
       {/* Toast de Perfil Completo */}
       {user && getProfileCompletion(user) === 100 && showCompleteMsg && (
-        <div className="fixed top-20 right-8 z-50 rounded-lg border border-emerald-500/20 bg-[#1e2024] px-4 py-3 text-sm text-emerald-400 font-semibold shadow-2xl animate-fadeIn flex justify-between items-center gap-4">
+        <div className="fixed top-20 right-3 sm:right-8 z-50 rounded-lg border border-emerald-500/20 bg-[#1e2024] px-4 py-3 text-sm text-emerald-400 font-semibold shadow-2xl animate-fadeIn flex justify-between items-center gap-4 w-[calc(100vw-24px)] max-w-[calc(100vw-24px)] sm:w-auto">
           <span>Perfil completo! Suas vagas foram liberadas. 🎉</span>
           <button
             onClick={() => {
@@ -820,7 +821,7 @@ export default function ProfilePage() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed top-20 right-6 w-80 bg-zinc-900/90 backdrop-blur-md border border-zinc-800 rounded-xl p-5 shadow-2xl z-50 animate-fadeIn"
+          className="fixed top-20 right-3 sm:right-6 w-[calc(100vw-24px)] sm:w-80 max-w-[calc(100vw-24px)] bg-zinc-900/90 backdrop-blur-md border border-zinc-800 rounded-xl p-5 shadow-2xl z-50 animate-fadeIn"
         >
           <div className="flex justify-between items-start mb-2">
             <h3 className="text-sm font-semibold text-zinc-100">{toastMsg.title}</h3>
@@ -873,7 +874,7 @@ export default function ProfilePage() {
           {/* Premium Hero Area */}
           <div className="relative w-full">
             {/* Hero Banner */}
-            <div className="h-80 w-full overflow-hidden relative rounded-b-3xl">
+            <div className="h-[160px] sm:h-[220px] lg:h-[320px] w-full overflow-hidden relative rounded-b-3xl">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 className="w-full h-full object-cover brightness-[0.6]"
@@ -884,10 +885,10 @@ export default function ProfilePage() {
             </div>
 
             {/* Profile Info Overlap */}
-            <div className="px-6 md:px-8 -mt-20 relative z-10 flex flex-col md:flex-row items-end gap-6">
+            <div className="px-4 sm:px-6 md:px-8 -mt-12 sm:-mt-16 lg:-mt-20 relative z-10 flex flex-col md:flex-row items-start md:items-end gap-4 md:gap-6">
               {/* Large Overlapping Photo */}
               <div className="relative shrink-0">
-                <div className="w-44 h-44 rounded-full border-8 border-[#111317] p-1 bg-[#111317] shadow-xl overflow-hidden flex items-center justify-center">
+                <div className="w-24 h-24 sm:w-32 sm:h-32 lg:w-44 lg:h-44 rounded-full border-4 sm:border-8 border-[#111317] p-1 bg-[#111317] shadow-xl overflow-hidden flex items-center justify-center">
                   {user.avatarUrl ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
@@ -902,8 +903,8 @@ export default function ProfilePage() {
                   )}
                 </div>
                 {user.isPioneer && (
-                  <div className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-[#316cf4] border-4 border-[#111317] flex items-center justify-center shadow-lg" title="Membro Fundador">
-                    <MdVerified className="text-white text-lg" />
+                  <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 lg:bottom-3 lg:right-3 z-10 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#316cf4] border-4 border-[#111317] flex items-center justify-center shadow-lg" title="Membro Fundador">
+                    <MdVerified className="text-white text-base sm:text-lg" />
                   </div>
                 )}
               </div>
@@ -911,7 +912,7 @@ export default function ProfilePage() {
               {/* Text Header Content */}
               <div className="flex-1 pb-4 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight wrap-break-word">
+                  <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight break-words">
                     {user.name}
                   </h2>
                   {user.isPioneer && (
@@ -958,13 +959,13 @@ export default function ProfilePage() {
           </div>
 
           {/* Two Column Grid Layout */}
-          <div className="grid grid-cols-12 gap-6 px-6 md:px-8 mt-8 pb-12">
+          <div className="grid grid-cols-12 gap-4 sm:gap-6 px-4 sm:px-6 md:px-8 mt-8 pb-12 w-full min-w-0">
             {/* Left Column (Support Modules) */}
             <aside className="col-span-12 md:col-span-4 space-y-6">
               {/* Profile Completion (Professional Focused) */}
               {user.role === "STUDENT" && (
                 completionPercent < 100 ? (
-                  <section className="bg-[#1e2024] p-6 rounded-xl border border-[#2a2d32] shadow-sm">
+                  <section className="bg-[#1e2024] p-4 sm:p-6 rounded-xl border border-[#2a2d32] shadow-sm">
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="font-bold text-lg text-white">Completar Perfil</h3>
                       <span className="text-[#316cf4] font-bold text-lg">{completionPercent}%</span>
@@ -1018,7 +1019,7 @@ export default function ProfilePage() {
                     </button>
                   </section>
                 ) : (
-                  <section className="bg-[#1e2024] p-6 rounded-xl border border-[#2a2d32] shadow-sm">
+                  <section className="bg-[#1e2024] p-4 sm:p-6 rounded-xl border border-[#2a2d32] shadow-sm">
                     <h3 className="font-bold text-lg text-white mb-2">Próximos passos</h3>
                     <p className="text-sm text-gray-400 mb-6">Seu perfil está pronto. Explore vagas compatíveis com suas competências.</p>
                     <Link
@@ -1074,7 +1075,7 @@ export default function ProfilePage() {
               )}
 
               {/* Conquistas (Badges Module) */}
-              <section className="bg-[#1e2024] p-6 rounded-xl border border-[#2a2d32] shadow-sm">
+              <section className="bg-[#1e2024] p-4 sm:p-6 rounded-xl border border-[#2a2d32] shadow-sm">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-bold text-lg text-white">Conquistas</h3>
                   <span className="text-xs font-semibold text-gray-500">{badgeCount} / 12</span>
@@ -1111,7 +1112,7 @@ export default function ProfilePage() {
                     },
                   ];
                   return (
-                    <div className="grid grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {achievements.map((achievement) => {
                         const Icon = achievement.unlocked
                           ? achievement.icon
@@ -1157,7 +1158,7 @@ export default function ProfilePage() {
               </section>
 
               {/* Official Links */}
-              <section className="bg-[#1e2024] p-6 rounded-xl border border-[#2a2d32] shadow-sm">
+              <section className="bg-[#1e2024] p-4 sm:p-6 rounded-xl border border-[#2a2d32] shadow-sm">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-bold text-lg text-white">Links Profissionais</h3>
                   <button

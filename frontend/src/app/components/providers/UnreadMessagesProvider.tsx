@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { useSocket } from "./SocketProvider";
-import { API_URL } from "../../../lib/api";
+import { apiEndpoint } from "@/lib/api";
 
 export type UnreadMessagesContextValue = {
   totalUnread: number;
@@ -26,7 +26,7 @@ export function UnreadMessagesProvider({ children }: { children: React.ReactNode
       const token = localStorage.getItem("connectu_token");
       if (!token) return;
 
-      const res = await fetch(`${API_URL}/chat/unread-summary`, {
+      const res = await fetch(apiEndpoint("/chat/unread-summary"), {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -56,7 +56,7 @@ export function UnreadMessagesProvider({ children }: { children: React.ReactNode
       const token = localStorage.getItem("connectu_token");
       if (!token) return;
 
-      const res = await fetch(`${API_URL}/chat/rooms/${roomId}/read`, {
+      const res = await fetch(apiEndpoint(`/chat/rooms/${roomId}/read`), {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`

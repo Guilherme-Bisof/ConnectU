@@ -10,7 +10,7 @@ import {
   FiArrowRight,
   FiLayers
 } from "react-icons/fi";
-import { API_URL } from "@/lib/api";
+import { apiEndpoint } from "@/lib/api";
 
 function subscribeToAuth(callback: () => void) {
   window.addEventListener("storage", callback);
@@ -93,7 +93,7 @@ export default function AuthPage() {
     setIsLoading(true);
 
     const endpoint = isLogin ? "/login" : "/users";
-    const url = `${API_URL}${endpoint}`;
+    const url = apiEndpoint(endpoint);
 
     try {
       const response = await fetch(url, {
@@ -151,12 +151,12 @@ export default function AuthPage() {
     : "md:translate-x-[calc(50vw-96px-100%)]";
 
   return (
-    <main className="relative min-h-screen w-full overflow-hidden bg-[#121317]">
+    <main className="relative min-h-dvh w-full overflow-x-hidden bg-[#121317]">
       {/* Left Panel (Hero) */}
       <section
         className={`
-          absolute inset-y-0 left-0 hidden w-1/2 overflow-hidden
-          bg-[#0d0e12] p-[48px] md:flex flex-col justify-between
+          hidden md:flex absolute inset-y-0 left-0 w-1/2 overflow-hidden
+          bg-[#0d0e12] p-[48px] flex-col justify-between
           transition-transform duration-[700ms]
           ease-[cubic-bezier(0.22,1,0.36,1)]
           will-change-transform z-20
@@ -196,10 +196,10 @@ export default function AuthPage() {
       {/* Right Panel (Form) */}
       <section
         className={`
-          relative flex min-h-screen w-full items-center justify-center
-          overflow-y-auto bg-[#121317] px-[24px] py-[40px]
+          relative flex flex-col items-center justify-center
+          w-full max-w-full min-h-dvh
+          overflow-y-auto bg-[#121317]
           md:absolute md:inset-y-0 md:right-0 md:w-1/2
-          md:px-[48px] md:py-[40px]
           transition-transform duration-[700ms]
           ease-[cubic-bezier(0.22,1,0.36,1)]
           will-change-transform z-10
@@ -207,16 +207,16 @@ export default function AuthPage() {
         `}
       >
         {/* Mobile Brand (Visible only on small screens) */}
-        <div className="md:hidden flex items-center gap-3 w-full max-w-[420px] mb-12 justify-center">
-          <img src="/logo.png" alt="ConnectU Logo" className="w-7 h-7 object-contain" />
+        <div className="md:hidden flex items-center gap-3 w-full max-w-[420px] mb-6 justify-center shrink-0">
+          <img src="/logo.png" alt="ConnectU Logo" className="w-8 h-8 object-contain" />
           <span className="font-sans text-2xl text-white font-bold">ConnectU</span>
         </div>
 
-        <div className="w-full max-w-[420px]">
-          <div key={isLogin ? "login" : "signup"} className="animate-auth-content space-y-8 w-full">
+        <div className="w-full max-w-[420px] px-[20px] py-[32px]">
+          <div key={isLogin ? "login" : "signup"} className="animate-auth-content space-y-6 md:space-y-8 w-full">
             {/* Header */}
-            <div className="space-y-3">
-            <h2 className="font-sans text-[32px] font-bold text-white tracking-tight">
+            <div className="space-y-2 sm:space-y-3">
+            <h2 className="font-sans text-[32px] leading-[1.15] md:text-[36px] font-bold text-white tracking-tight">
               {isLogin ? "Bem-vindo de volta" : "Crie sua conta"}
             </h2>
             <p className="font-sans text-sm text-[#bacac7]">
@@ -260,8 +260,8 @@ export default function AuthPage() {
           )}
 
           {/* Form */}
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-5">
+          <form className="space-y-4 md:space-y-6" onSubmit={handleSubmit}>
+            <div className="space-y-4 md:space-y-5">
               {/* Nome Input (Apenas no Cadastro) */}
               {!isLogin && (
                 <div>
@@ -397,22 +397,22 @@ export default function AuthPage() {
 
             {/* Remember Me & Forgot Password (Apenas no Login) */}
             {isLogin && (
-              <div className="flex items-center justify-between pt-1">
+              <div className="flex flex-wrap items-center justify-between gap-y-2 gap-x-[12px] pt-1">
                 <div className="flex items-center">
                   <input
-                    className="h-4 w-4 rounded border-[#3c4948] bg-[#1f1f24] text-[#62f9ee] focus:ring-[#62f9ee] focus:ring-offset-[#1a1b20]"
+                    className="h-4 w-4 shrink-0 rounded border-[#3c4948] bg-[#1f1f24] text-[#62f9ee] focus:ring-[#62f9ee] focus:ring-offset-[#1a1b20]"
                     id="remember-me"
                     name="remember-me"
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
                   />
-                  <label className="ml-2 block text-sm text-[#bacac7]" htmlFor="remember-me">
+                  <label className="ml-2 block text-sm text-[#bacac7] whitespace-nowrap" htmlFor="remember-me">
                     Lembrar de mim
                   </label>
                 </div>
-                <div className="text-sm">
-                  <a className="text-xs text-[#62f9ee] hover:text-[#3cdcd1] transition-colors font-medium hover:underline" href="#">
+                <div className="text-sm shrink-0">
+                  <a className="text-xs text-[#62f9ee] hover:text-[#3cdcd1] transition-colors font-medium hover:underline whitespace-nowrap" href="#">
                     Esqueceu sua senha?
                   </a>
                 </div>

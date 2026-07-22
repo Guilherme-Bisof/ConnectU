@@ -11,6 +11,7 @@ import { StudentProfileModal } from "@/app/components/jobs/StudentProfileModal";
 import { JobFormModal } from "@/app/components/jobs/JobFormModal";
 import { JobCard } from "@/app/components/jobs/JobCard";
 import { JobDetailsPanel } from "@/app/components/jobs/JobDetailsPanel";
+import { apiEndpoint } from "@/lib/api";
 
 interface UserData {
   id: string;
@@ -92,7 +93,7 @@ export default function MinhasVagasPage() {
       const token = localStorage.getItem("connectu_token");
 
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/jobs/company/${companyId}`,
+        apiEndpoint(`/jobs/company/${companyId}`),
         {
           headers: {
             "Content-Type": "application/json",
@@ -138,7 +139,7 @@ export default function MinhasVagasPage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/jobs/${jobId}`,
+        apiEndpoint(`/jobs/${jobId}`),
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
@@ -168,7 +169,7 @@ export default function MinhasVagasPage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/jobs/${jobId}/applicants/${userId}`,
+        apiEndpoint(`/jobs/${jobId}/applicants/${userId}`),
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
@@ -202,7 +203,7 @@ export default function MinhasVagasPage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/jobs/${jobId}/status`,
+        apiEndpoint(`/jobs/${jobId}/status`),
         {
           method: "PATCH",
           headers: {
@@ -231,7 +232,7 @@ export default function MinhasVagasPage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/jobs/${jobId}/applicants/${userId}/status`,
+        apiEndpoint(`/jobs/${jobId}/applicants/${userId}/status`),
         {
           method: "PATCH",
           headers: {
@@ -268,7 +269,7 @@ export default function MinhasVagasPage() {
   const handleStartChat = async (jobId: string, userId: string) => {
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch("https://connectu-gd1z.onrender.com/rooms/professional", {
+      const res = await fetch(apiEndpoint("/rooms/professional"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -299,7 +300,7 @@ export default function MinhasVagasPage() {
 
     try {
       const token = localStorage.getItem("connectu_token");
-      const res = await fetch("https://connectu-gd1z.onrender.com/jobs", {
+      const res = await fetch(apiEndpoint("/jobs"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -365,7 +366,7 @@ export default function MinhasVagasPage() {
     try {
       const token = localStorage.getItem("connectu_token");
       const res = await fetch(
-        `https://connectu-gd1z.onrender.com/jobs/${editingJobId}`,
+        apiEndpoint(`/jobs/${editingJobId}`),
         {
           method: "PUT",
           headers: {
