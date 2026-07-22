@@ -70,6 +70,7 @@ export default function DashboardFeed() {
     null,
   );
   const [commentContent, setCommentContent] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
@@ -237,6 +238,9 @@ export default function DashboardFeed() {
   }
 
   async function handleComment(postId: string) {
+    if (isSubmittingComment || !commentContent.trim()) return;
+
+    setIsSubmittingComment(true);
     const token = localStorage.getItem("connectu_token");
     try {
       const res = await fetch(
@@ -259,6 +263,8 @@ export default function DashboardFeed() {
       }
     } catch (error) {
       console.error("Erro ao comentar:", error);
+    } finally {
+      setIsSubmittingComment(false);
     }
   }
 
@@ -683,20 +689,26 @@ export default function DashboardFeed() {
                         <input
                           value={commentContent}
                           onChange={(e) => setCommentContent(e.target.value)}
-                          className="min-w-0 flex-1 bg-[#1c1e22] border border-[#2a2d32] rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#316cf4]"
+                          disabled={isSubmittingComment}
+                          className="min-w-0 flex-1 bg-[#1c1e22] border border-[#2a2d32] rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#316cf4] disabled:opacity-50"
                           placeholder="Escreva um comentário..."
                           onKeyDown={(e) => {
                             if (e.key === "Enter" && !e.shiftKey) {
                               e.preventDefault();
-                              handleComment(post.id);
+                              if (!isSubmittingComment) handleComment(post.id);
                             }
                           }}
                         />
                         <button
                           onClick={() => handleComment(post.id)}
-                          className="shrink-0 bg-[#316cf4] hover:bg-blue-600 px-4 py-2 rounded-lg text-white text-sm font-semibold transition-colors"
+                          disabled={isSubmittingComment || !commentContent.trim()}
+                          className="shrink-0 bg-[#316cf4] hover:bg-blue-600 px-4 py-2 rounded-lg text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[76px]"
                         >
-                          Enviar
+                          {isSubmittingComment ? (
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          ) : (
+                            "Enviar"
+                          )}
                         </button>
                       </div>
                     )}
