@@ -28,7 +28,7 @@ import type { Participant, Room } from "../layout";
 import { useUnreadMessages } from "../../../components/providers/UnreadMessagesProvider";
 import { MessageStatus, MessageDeliveryStatus } from "../../../components/chat/MessageStatus";
 import { useSocket } from "../../../components/providers/SocketProvider";
-import { API_URL } from "../../../../lib/api";
+import { apiEndpoint } from "@/lib/api";
 
 interface Message {
   id: string;
@@ -92,7 +92,7 @@ export default function ChatRoomPage() {
       if (activeChatUser) return;
       try {
         const tokenStr = localStorage.getItem("connectu_token");
-        const res = await fetch(`${API_URL}/conversations`, {
+        const res = await fetch(apiEndpoint("/conversations"), {
           method: "GET",
           headers: { Authorization: `Bearer ${tokenStr}` },
         });
@@ -225,7 +225,7 @@ export default function ChatRoomPage() {
       try {
         const tokenStr = localStorage.getItem("connectu_token");
         const res = await fetch(
-          `${API_URL}/conversations/${roomId}/messages`,
+          apiEndpoint(`/conversations/${roomId}/messages`),
           {
             headers: { Authorization: `Bearer ${tokenStr}` },
           }
@@ -297,7 +297,7 @@ export default function ChatRoomPage() {
 
       try {
         const tokenStr = localStorage.getItem("connectu_token");
-        const res = await fetch(`${API_URL}/conversations/upload-image`, {
+        const res = await fetch(apiEndpoint("/conversations/upload-image"), {
           method: "POST",
           headers: {
             Authorization: `Bearer ${tokenStr}`,
@@ -378,12 +378,12 @@ export default function ChatRoomPage() {
   return (
     <>
       {/* Column 2: Central Chat (600-650px) */}
-      <main className="flex-1 min-h-0 flex flex-col bg-surface relative border-r border-outline-variant min-w-125">
+      <main className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden bg-surface relative border-r border-outline-variant">
         
         {/* Header */}
         <header className="h-16 flex items-center justify-between px-md border-b border-outline-variant bg-surface/90 backdrop-blur-md z-10 shrink-0">
-          <div className="flex items-center gap-md">
-            <button onClick={() => router.push('/dashboard/chat')} className="md:hidden p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors">
+          <div className="flex items-center gap-md min-w-0">
+            <button onClick={() => router.push('/dashboard/chat')} className="lg:hidden shrink-0 p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors">
               <FiArrowLeft size={20} />
             </button>
             <div className="relative">
@@ -439,7 +439,7 @@ export default function ChatRoomPage() {
         </header>
 
         {/* Message List */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-lg space-y-md custom-scrollbar">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-lg space-y-md custom-scrollbar">
           
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-70">
@@ -493,7 +493,7 @@ export default function ChatRoomPage() {
                           </div>
                         )}
                         {msg.content && (
-                          <p className="text-[14px] leading-relaxed wrap-break-word whitespace-pre-wrap">{msg.content}</p>
+                          <p className="text-[14px] leading-relaxed break-words whitespace-pre-wrap">{msg.content}</p>
                         )}
                       </div>
 
@@ -527,7 +527,7 @@ export default function ChatRoomPage() {
         </div>
 
         {/* Composer */}
-        <div className="p-md bg-surface border-t border-outline-variant shrink-0">
+        <div className="p-md pb-[max(12px,env(safe-area-inset-bottom))] bg-surface border-t border-outline-variant shrink-0 w-full">
           
           {editingMessageId && (
             <div className="flex items-center justify-between bg-surface-container p-2 rounded-lg mb-2 border border-primary/30">

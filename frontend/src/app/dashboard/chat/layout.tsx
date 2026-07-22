@@ -6,7 +6,7 @@ import Image from "next/image";
 import { FiMessageSquare, FiSearch, FiEdit3 } from "react-icons/fi";
 import { useUnreadMessages } from "../../components/providers/UnreadMessagesProvider";
 import { useSocket } from "../../components/providers/SocketProvider";
-import { API_URL } from "../../../lib/api";
+import { apiEndpoint } from "@/lib/api";
 
 export interface Participant {
   id: string;
@@ -76,7 +76,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
     async function fetchConversations() {
       try {
         const token = localStorage.getItem("connectu_token");
-        const res = await fetch(`${API_URL}/conversations`, {
+        const res = await fetch(apiEndpoint("/conversations"), {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -111,11 +111,13 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
     return matchRole && matchSearch;
   });
 
+  const isRoomActive = !!activeRoomId;
+
   return (
-    <div className="flex h-[calc(100dvh-112px)] min-h-0 w-full overflow-hidden bg-background text-on-surface">
+    <div className="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden bg-background text-on-surface">
       
       {/* Column 1: Conversation List (280-300px) */}
-      <section className="w-[290px] flex min-h-0 flex-col bg-surface-container border-r border-outline-variant shrink-0">
+      <section className={`${isRoomActive ? 'hidden lg:flex' : 'flex w-full'} lg:w-[290px] min-h-0 flex-col bg-surface-container border-r border-outline-variant shrink-0`}>
         <div className="p-md space-y-md shrink-0">
           <div className="flex items-center justify-between">
             <h2 className="text-headline-sm font-headline-sm text-on-surface">Mensagens</h2>
@@ -249,7 +251,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
       </section>
 
       {/* Column 2 & 3: Chat and Context area (Children) */}
-      <section className="flex-1 flex overflow-hidden">
+      <section className={`flex-1 min-w-0 min-h-0 overflow-hidden ${isRoomActive ? 'flex' : 'hidden lg:flex'}`}>
         {children}
       </section>
 

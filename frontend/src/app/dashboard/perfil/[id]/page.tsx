@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { apiEndpoint } from "@/lib/api";
 import {
   FiArrowLeft,
   FiBookOpen,
@@ -76,7 +77,7 @@ export default function PublicProfilePage() {
 
       try {
         const res = await fetch(
-          `https://connectu-gd1z.onrender.com/users/${id}`,
+          apiEndpoint(`/users/${id}`),
         );
         if (res.ok) {
           const data = await res.json();
@@ -102,7 +103,7 @@ export default function PublicProfilePage() {
       const token = localStorage.getItem("connectu_token");
 
       const res = await fetch(
-        "https://connectu-gd1z.onrender.com/conversations",
+        apiEndpoint("/conversations"),
         {
           method: "POST",
           headers: {

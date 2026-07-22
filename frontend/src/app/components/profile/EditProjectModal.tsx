@@ -1,4 +1,5 @@
 import { FiX } from "react-icons/fi";
+import { createPortal } from "react-dom";
 import { UserProject } from "./ProfileProjects";
 
 interface EditProjectModalProps {
@@ -33,11 +34,20 @@ export function EditProjectModal({
   isSaving,
 }: EditProjectModalProps) {
   if (!isOpen) return null;
+  if (typeof document === "undefined") return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-[512px] rounded-xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl max-h-[90vh] overflow-auto">
-        <div className="mb-6 flex items-center justify-between">
+  return createPortal(
+    <>
+      <div 
+        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm" 
+        onClick={onClose}
+      />
+      <div className="
+        fixed inset-x-[12px] bottom-[max(12px,env(safe-area-inset-bottom))] top-[76px] z-[101]
+        flex flex-col overflow-hidden rounded-[16px] border border-zinc-800 bg-[#17191d] shadow-xl
+        sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90dvh] sm:w-full sm:max-w-[512px] sm:-translate-x-1/2 sm:-translate-y-1/2
+      ">
+        <header className="shrink-0 p-6 flex items-center justify-between border-b border-zinc-800/50">
           <h2 className="text-xl font-bold text-white">Editar Projetos</h2>
           <button
             onClick={onClose}
@@ -45,7 +55,9 @@ export function EditProjectModal({
           >
             <FiX className="text-xl" />
           </button>
-        </div>
+        </header>
+
+        <div className="min-h-0 flex-1 overflow-y-auto p-6 profile-modal-content">
         <form
           onSubmit={onAddProject}
           className="mb-8 flex flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-950 p-4"
@@ -112,22 +124,24 @@ export function EditProjectModal({
             ))
           )}
         </div>
-        <div className="flex justify-end gap-3 border-t border-zinc-800 pt-4">
+        </div>
+        <footer className="shrink-0 flex justify-end gap-3 border-t border-zinc-800 p-6 pb-[max(24px,env(safe-area-inset-bottom))]">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-zinc-400 hover:text-white"
+            className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={onSave}
             disabled={isSaving}
-            className="rounded-md bg-blue-600 px-6 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-md bg-blue-600 px-6 py-2 text-sm text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
             {isSaving ? "Salvando..." : "Salvar Alterações"}
           </button>
-        </div>
+        </footer>
       </div>
-    </div>
+    </>,
+    document.body
   );
 }

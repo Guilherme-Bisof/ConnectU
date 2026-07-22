@@ -9,7 +9,7 @@ import {
 } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { useSocket } from "../providers/SocketProvider";
-import { API_URL } from "../../../lib/api";
+import { apiEndpoint } from "@/lib/api";
 
 interface Notification {
   id: string;
@@ -49,8 +49,8 @@ export function NotificationBell({
 
   const dropdownPosition =
     placement === "bottom"
-      ? "top-full right-0 mt-3"
-      : "top-full right-0 mt-3";
+      ? "fixed top-[76px] right-4 left-4 sm:left-auto sm:absolute sm:top-full sm:right-0 sm:mt-3"
+      : "fixed top-[76px] right-4 left-4 sm:left-auto sm:absolute sm:top-full sm:right-0 sm:mt-3";
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -72,7 +72,7 @@ export function NotificationBell({
 
       try {
         const res = await fetch(
-          `${API_URL}/notifications`,
+          apiEndpoint("/notifications"),
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -168,7 +168,7 @@ export function NotificationBell({
       setNotifications((p) => p.map((n) => (n.id === notification.id ? { ...n, read: true } : n)));
 
       const token = localStorage.getItem("connectu_token");
-      fetch(`${API_URL}/notifications/${notification.id}/read`, {
+      fetch(apiEndpoint(`/notifications/${notification.id}/read`), {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` }
       }).then(res => {
@@ -279,7 +279,7 @@ export function NotificationBell({
 
     try {
       const res = await fetch(
-        `${API_URL}/notifications/read-all`,
+        apiEndpoint("/notifications/read-all"),
         {
           method: "PUT",
           headers: {
@@ -319,7 +319,7 @@ export function NotificationBell({
 
       {/* Dropdown de Notificações */}
       {isOpen && (
-        <div className={`absolute ${dropdownPosition} w-100 bg-surface-container-low border border-outline-variant/30 rounded-2xl shadow-2xl overflow-hidden z-50 flex flex-col max-h-[85vh] origin-top-right ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-200`}>
+        <div className={`${dropdownPosition} w-auto sm:w-[400px] bg-surface-container-low border border-outline-variant/30 rounded-2xl shadow-2xl overflow-hidden z-[100] flex flex-col max-h-[85vh] origin-top-right ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-200`}>
           {/* Header Fixo */}
           <div className="p-md flex items-center justify-between border-b border-outline-variant/30 bg-surface-container-low">
             <h2 className="font-headline-md text-headline-md text-on-surface">Notificações</h2>
@@ -401,7 +401,7 @@ export function NotificationBell({
 
       {/* Toast Notification (Customizado ConnectU) */}
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 bg-surface-container-highest border border-outline-variant rounded-xl shadow-2xl p-4 min-w-75 z-300 animate-fadeIn flex flex-col gap-1">
+        <div className="fixed bottom-6 right-4 sm:right-6 w-[calc(100vw-32px)] sm:w-[320px] max-w-[calc(100vw-32px)] bg-surface-container-highest border border-outline-variant rounded-xl shadow-2xl p-4 z-[300] animate-fadeIn flex flex-col gap-1">
           <div className="flex justify-between items-center gap-2">
              <h3 className="text-body-md font-bold text-on-surface">{toastMsg.title}</h3>
              <button onClick={() => setToastMsg(null)} className="text-on-surface-variant hover:text-on-surface transition-colors">

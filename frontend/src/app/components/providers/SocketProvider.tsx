@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
-import { API_URL } from "../../../lib/api";
+import { SOCKET_URL } from "@/lib/api";
 
 interface SocketContextValue {
   socket: Socket | null;
@@ -18,7 +18,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     if (!token) return;
 
     // Conecta na API local em ambiente de desenvolvimento
-    const instance = io(API_URL, {
+    const instance = io(SOCKET_URL, {
       auth: { token },
       autoConnect: true,
       transports: ["websocket"],
