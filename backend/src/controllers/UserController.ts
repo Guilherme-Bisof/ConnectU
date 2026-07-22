@@ -216,6 +216,7 @@ export class UserController {
           skills: true,
           links: true,
           projects: true,
+          location: true,
         },
       });
 

@@ -12,6 +12,7 @@ import {
   FiInfo,
   FiCheckCircle,
 } from "react-icons/fi";
+import { createPortal } from "react-dom";
 
 interface EditBasicProfileModalProps {
   isOpen: boolean;
@@ -168,6 +169,7 @@ export function EditBasicProfileModal({
   }, []);
 
   if (!isOpen) return null;
+  if (typeof document === "undefined") return null;
 
   // Conversores de datas (MM/YYYY <=> YYYY-MM)
   const formatToInputMonth = (val: string) => {
@@ -266,8 +268,12 @@ export function EditBasicProfileModal({
     setShowSuggestions(false);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
+  return createPortal(
+    <>
+      <div 
+        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm animate-fadeIn"
+        onClick={onClose}
+      />
       <style>{`
         .profile-modal-content {
           scrollbar-width: thin;
@@ -286,8 +292,12 @@ export function EditBasicProfileModal({
       `}</style>
 
       {/* Modal Container */}
-      <div className="bg-[#1e2024] w-full max-h-[85vh] rounded-xl border border-[#424656] flex flex-col shadow-2xl relative overflow-hidden max-w-[640px]">
-        <header className="sticky top-0 z-50 bg-[#1e2024]/90 backdrop-blur-md px-8 py-6 border-b border-[#424656] flex justify-between items-start shrink-0">
+      <div className="
+        fixed inset-x-[12px] bottom-[max(12px,env(safe-area-inset-bottom))] top-[76px] z-[101]
+        flex flex-col overflow-hidden rounded-[16px] border border-[#424656] bg-[#1e2024] shadow-2xl
+        sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[85vh] sm:w-full sm:max-w-[640px] sm:-translate-x-1/2 sm:-translate-y-1/2
+      ">
+        <header className="shrink-0 bg-[#1e2024]/90 backdrop-blur-md px-8 py-6 border-b border-[#424656] flex justify-between items-start">
           <div className="flex flex-col gap-1">
             <h1 className="text-xl font-bold text-white">Editar perfil</h1>
             <p className="text-sm text-gray-400">
@@ -305,7 +315,7 @@ export function EditBasicProfileModal({
 
         <form
           onSubmit={handleFormSubmit}
-          className="profile-modal-content flex-1 overflow-y-auto px-8 pt-8 pb-28 space-y-8"
+          className="profile-modal-content flex-1 overflow-y-auto px-8 pt-8 pb-8 space-y-8 min-h-0"
         >
           <input
             type="file"
@@ -663,7 +673,7 @@ export function EditBasicProfileModal({
         </form>
 
         {/* FOOTER */}
-        <footer className="sticky bottom-0 z-50 bg-[#1e2024] px-8 py-6 border-t border-[#424656] flex items-center justify-end gap-4 shrink-0 shadow-[0_-10px_20px_rgba(0,0,0,0.2)]">
+        <footer className="shrink-0 bg-[#1e2024] px-8 py-6 pb-[max(24px,env(safe-area-inset-bottom))] border-t border-[#424656] flex items-center justify-end gap-4 shadow-[0_-10px_20px_rgba(0,0,0,0.2)]">
           <button
             onClick={onClose}
             className="px-6 py-3 border border-[#424656] rounded-lg text-sm text-white hover:bg-[#282a2e] transition-all active:scale-95 font-semibold"
@@ -675,7 +685,7 @@ export function EditBasicProfileModal({
             onClick={handleFormSubmit}
             disabled={(!hasChanges && !isSaving && !saveSuccess) || isSaving}
             className="px-8 py-3 bg-[#0066ff] text-white rounded-lg text-sm font-semibold hover:bg-blue-600 transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-            type="submit"
+            type="button"
           >
             {isSaving ? (
               <>
@@ -712,6 +722,7 @@ export function EditBasicProfileModal({
           </button>
         </footer>
       </div>
-    </div>
+    </>,
+    document.body
   );
 }
