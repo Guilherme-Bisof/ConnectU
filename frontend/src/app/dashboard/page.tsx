@@ -312,7 +312,7 @@ export default function DashboardFeed() {
         setPage(1);
         fetchPosts(true, true);
       }
-    } catch (error) {
+} catch (error) {
       console.error("Erro ao deletar comentário:", error);
     }
   }
@@ -341,26 +341,26 @@ export default function DashboardFeed() {
 
   return (
     <>
-      <div className="lg:mr-80 flex flex-col items-center">
-        <div className="max-w-180 w-full space-y-6">
+      <div className="lg:mr-80 flex flex-col items-center w-full min-w-0 max-w-full">
+        <div className="mx-auto w-full min-w-0 max-w-[650px] space-y-[16px] sm:space-y-[20px]">
           {/* Feed Creation Box */}
           <div
-            className="rounded-xl border border-[#2a2d32] bg-[#181a1d] p-5"
+            className="rounded-xl border border-[#2a2d32] bg-[#181a1d] p-[16px] sm:p-[20px] w-full min-w-0 max-w-full overflow-hidden"
             data-purpose="creation-box"
           >
-            <div className="flex gap-4 mb-4">
+            <div className="flex gap-3 sm:gap-4 mb-4 min-w-0">
               {/* Avatar do usuário */}
               {user.avatarUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={user.avatarUrl}
                   alt={user.name}
-                  className="w-12 h-12 rounded-full object-cover border-2 border-transparent shrink-0"
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-transparent shrink-0"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-full bg-gray-600 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-600 flex items-center justify-center shrink-0">
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 sm:w-6 sm:h-6 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -375,11 +375,11 @@ export default function DashboardFeed() {
                 </div>
               )}
 
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <textarea
                   value={newPostText}
                   onChange={(e) => setNewPostText(e.target.value)}
-                  className="w-full bg-[#1c1e22] border-none rounded-xl text-gray-300 p-4 resize-none h-28 focus:ring-1 focus:ring-[#316cf4] focus:outline-none"
+                  className="w-full min-w-0 bg-[#1c1e22] border-none rounded-xl text-gray-300 p-3 sm:p-4 resize-none h-28 focus:ring-1 focus:ring-[#316cf4] focus:outline-none text-sm"
                   placeholder="No que você está trabalhando?"
                 />
               </div>
@@ -396,25 +396,25 @@ export default function DashboardFeed() {
 
             {/* Pré-visualização do arquivo selecionado */}
             {postFile && (
-              <div className="mb-3 flex items-center gap-2 px-1">
-                <span className="text-xs text-gray-400">
+              <div className="mb-3 flex items-center gap-2 px-1 min-w-0">
+                <span className="text-xs text-gray-400 truncate">
                   📸 {postFile.name}
                 </span>
                 <button
                   onClick={() => setPostFile(null)}
-                  className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                  className="text-xs text-red-400 hover:text-red-300 transition-colors shrink-0"
                 >
                   Remover
                 </button>
               </div>
             )}
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-[16px] sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 flex-1 items-center justify-between gap-[12px]">
                 {/* Botão de adicionar imagem */}
-                <label className="cursor-pointer flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-white rounded-lg transition-colors text-sm">
+                <label className="cursor-pointer flex items-center gap-2 text-gray-400 hover:text-white rounded-lg transition-colors text-xs sm:text-sm shrink-0">
                   <svg
-                    className="w-5 h-5"
+                    className="w-5 h-5 shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -426,7 +426,7 @@ export default function DashboardFeed() {
                       strokeWidth="2"
                     />
                   </svg>
-                  <span>{postFile ? "Imagem adicionada" : "Adicionar Imagem"}</span>
+                  <span className="truncate">{postFile ? "Imagem adicionada" : "Adicionar Imagem"}</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -439,7 +439,7 @@ export default function DashboardFeed() {
                   />
                 </label>
 
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-500 truncate min-w-0">
                   Postando como:{" "}
                   <strong className="text-gray-300">
                     {user.role === "STUDENT" ? "Talento" : "Empresa"}
@@ -447,29 +447,27 @@ export default function DashboardFeed() {
                 </span>
               </div>
 
-              <div className="flex gap-3">
-                <button
-                  onClick={handleCreatePost}
-                  disabled={loading || !newPostText.trim()}
-                  className="px-6 py-2 bg-[#316cf4] text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? "Publicando..." : "Publicar projeto"}
-                </button>
-              </div>
+              <button
+                onClick={handleCreatePost}
+                disabled={loading || !newPostText.trim()}
+                className="min-h-[48px] w-full whitespace-nowrap sm:w-auto sm:min-w-[134px] px-6 py-2 bg-[#316cf4] text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0 flex items-center justify-center"
+              >
+                {loading ? "Publicando..." : "Publicar projeto"}
+              </button>
             </div>
           </div>
 
-          {/*  Section Feed de Posts  */}
-          <div className="space-y-6" data-purpose="feed-stream">
+          {/* Section Feed de Posts */}
+          <div className="space-y-[16px] sm:space-y-[20px] w-full min-w-0 max-w-full" data-purpose="feed-stream">
             {isFetching ? (
               [1, 2, 3].map((n) => (
                 <div
                   key={n}
-                  className="rounded-xl border border-[#2a2d32] bg-[#181a1d] p-5 animate-pulse"
+                  className="rounded-xl border border-[#2a2d32] bg-[#181a1d] p-[16px] sm:p-[20px] animate-pulse w-full min-w-0 max-w-full"
                 >
                   <div className="flex gap-3 mb-4">
-                    <div className="h-12 w-12 rounded-full bg-[#2a2d32]" />
-                    <div className="flex-1 space-y-2 py-1">
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-[#2a2d32] shrink-0" />
+                    <div className="flex-1 space-y-2 py-1 min-w-0">
                       <div className="h-4 bg-[#2a2d32] rounded w-1/4" />
                       <div className="h-3 bg-[#2a2d32] rounded w-1/3" />
                     </div>
@@ -481,7 +479,7 @@ export default function DashboardFeed() {
                 </div>
               ))
             ) : posts.length === 0 ? (
-              <div className="rounded-xl border border-[#2a2d32] bg-[#181a1d] p-12 text-center">
+              <div className="rounded-xl border border-[#2a2d32] bg-[#181a1d] p-8 sm:p-12 text-center w-full min-w-0 max-w-full">
                 <svg
                   className="w-12 h-12 text-gray-600 mx-auto mb-4"
                   fill="none"
@@ -503,14 +501,14 @@ export default function DashboardFeed() {
               posts.map((post) => (
                 <article
                   key={post.id}
-                  className="group/post rounded-xl border border-[#2a2d32] bg-[#181a1d] overflow-hidden transition-colors hover:border-[#3a3d42]"
+                  className="group/post rounded-xl border border-[#2a2d32] bg-[#181a1d] overflow-hidden transition-colors hover:border-[#3a3d42] w-full min-w-0 max-w-full"
                 >
-                  <div className="p-5">
+                  <div className="p-[16px] sm:p-[20px]">
                     {/* Header do Post */}
-                    <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-start justify-between gap-3 mb-4 min-w-0">
                       <Link
                         href={`/dashboard/perfil/${post.authorId}`}
-                        className="flex gap-3 group cursor-pointer min-w-0"
+                        className="flex min-w-0 flex-1 items-start gap-3 group cursor-pointer"
                       >
                         {/* Avatar do autor */}
                         {post.author.avatarUrl ? (
@@ -518,12 +516,12 @@ export default function DashboardFeed() {
                           <img
                             src={post.author.avatarUrl}
                             alt={post.author.name}
-                            className="w-12 h-12 rounded-full object-cover shrink-0 border border-[#2a2d32] group-hover:ring-2 ring-[#316cf4] transition-all"
+                            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover shrink-0 border border-[#2a2d32] group-hover:ring-2 ring-[#316cf4] transition-all"
                           />
                         ) : (
-                          <div className="w-12 h-12 rounded-full bg-gray-600 flex items-center justify-center shrink-0 group-hover:ring-2 ring-[#316cf4] transition-all">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-600 flex items-center justify-center shrink-0 group-hover:ring-2 ring-[#316cf4] transition-all">
                             <svg
-                              className="w-6 h-6 text-white"
+                              className="w-5 h-5 sm:w-6 sm:h-6 text-white"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -538,24 +536,24 @@ export default function DashboardFeed() {
                           </div>
                         )}
 
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                            <h3 className="font-bold text-white leading-tight truncate group-hover:text-[#316cf4] group-hover:underline transition-colors">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 min-w-0 mb-0.5">
+                            <h3 className="font-bold text-white leading-tight truncate min-w-0 group-hover:text-[#316cf4] group-hover:underline transition-colors text-sm sm:text-base">
                               {post.author.name}
                             </h3>
                             {post.author.isPioneer && (
                               <div
-                                className="shrink-0 inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-linear-to-r from-amber-900/40 via-yellow-900/20 to-amber-900/40 px-2 py-0.5 shadow-[0_0_10px_rgba(245,158,11,0.2)] backdrop-blur-md"
+                                className="shrink-0 inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-linear-to-r from-amber-900/40 via-yellow-900/20 to-amber-900/40 px-1.5 py-0.5 shadow-[0_0_10px_rgba(245,158,11,0.2)] backdrop-blur-md"
                                 title="Membro Fundador"
                               >
                                 <FiAward className="text-amber-400" size={10} />
-                                <span className="text-[9px] font-black uppercase tracking-widest text-transparent bg-clip-text bg-linear-to-r from-amber-200 to-yellow-500">
+                                <span className="text-[9px] font-black uppercase tracking-widest text-transparent bg-clip-text bg-linear-to-r from-amber-200 to-yellow-500 hidden sm:inline">
                                   Pioneiro
                                 </span>
                               </div>
                             )}
                           </div>
-                          <p className="text-xs text-gray-500 truncate">
+                          <p className="text-xs text-gray-500 truncate min-w-0">
                             {post.author.role === "STUDENT"
                               ? `${post.author.course} na ${post.author.institution}`
                               : "Empresa"}
@@ -563,14 +561,14 @@ export default function DashboardFeed() {
                         </div>
                       </Link>
 
-                      <div className="flex shrink-0 items-center gap-3">
-                        <span className="text-xs text-gray-500">
+                      <div className="flex shrink-0 items-center gap-2 sm:gap-3 text-xs text-gray-500">
+                        <span>
                           {formatTimeAgo(post.createdAt)}
                         </span>
                         {post.authorId === user.id && (
                           <button
                             onClick={() => handleDeletePost(post.id)}
-                            className="text-gray-600 hover:text-red-400 transition-colors opacity-100 md:opacity-0 md:group-hover/post:opacity-100"
+                            className="text-gray-600 hover:text-red-400 transition-colors opacity-100 md:opacity-0 md:group-hover/post:opacity-100 p-1"
                             title="Excluir post"
                           >
                             <FiTrash2 />
@@ -580,33 +578,35 @@ export default function DashboardFeed() {
                     </div>
 
                     {/* Conteúdo do Post */}
-                    <p className="text-gray-300 text-sm mb-4 leading-relaxed whitespace-pre-wrap">
+                    <p className="text-gray-300 text-sm mb-4 leading-relaxed whitespace-pre-wrap break-words min-w-0 max-w-full overflow-hidden">
                       {post.content}
                     </p>
 
                     {/* Imagem do Post */}
                     {post.imageUrl && (
-                      <div className="mb-4 overflow-hidden rounded-xl border border-[#2a2d32] bg-[#0d0f11]">
+                      <div className="mb-4 overflow-hidden rounded-xl border border-[#2a2d32] bg-[#0d0f11] w-full max-w-full">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={post.imageUrl}
                           alt="Imagem da publicação"
-                          className="max-h-125 w-full object-contain"
+                          className="w-full max-w-full h-auto max-h-125 object-cover"
                         />
                       </div>
                     )}
 
                     {/* Ações do Post */}
-                    <div className="flex items-center justify-between pt-4 border-t border-[#2a2d32] text-gray-400 text-sm">
+                    <div className="grid grid-cols-3 gap-[6px] pt-4 border-t border-[#2a2d32] text-gray-400 text-xs sm:text-sm">
                       <button
                         onClick={() => handleLike(post.id)}
-                        className={`flex items-center gap-2 transition-colors ${post.likes.some((like) => like.userId === user?.id)
+                        className={`flex items-center justify-center gap-[6px] min-w-0 py-1 transition-colors ${
+                          post.likes.some((like) => like.userId === user?.id)
                             ? "text-[#316cf4] font-bold"
                             : "hover:text-white"
-                          }`}
+                        }`}
+                        aria-label={`Curtir (${post.likes.length})`}
                       >
                         <svg
-                          className="w-5 h-5"
+                          className="w-4 h-4 sm:w-5 sm:h-5 shrink-0"
                           fill={
                             post.likes.some((like) => like.userId === user?.id)
                               ? "currentColor"
@@ -622,7 +622,9 @@ export default function DashboardFeed() {
                             strokeWidth="2"
                           />
                         </svg>
-                        <span>Curtir {post.likes.length > 0 && post.likes.length}</span>
+                        <span className="truncate min-w-0">
+                          Curtir {post.likes.length > 0 && post.likes.length}
+                        </span>
                       </button>
 
                       <button
@@ -631,10 +633,11 @@ export default function DashboardFeed() {
                             post.id === activeCommentPostId ? null : post.id,
                           )
                         }
-                        className="flex items-center gap-2 hover:text-white transition-colors"
+                        className="flex items-center justify-center gap-[6px] min-w-0 py-1 hover:text-white transition-colors"
+                        aria-label={`Comentar (${post.comments?.length || 0})`}
                       >
                         <svg
-                          className="w-5 h-5"
+                          className="w-4 h-4 sm:w-5 sm:h-5 shrink-0"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -646,16 +649,19 @@ export default function DashboardFeed() {
                             strokeWidth="2"
                           />
                         </svg>
-                        <span>
+                        <span className="truncate min-w-0">
                           Comentar{" "}
                           {post.comments && post.comments.length > 0 &&
                             post.comments.length}
                         </span>
                       </button>
 
-                      <button className="flex items-center gap-2 hover:text-white transition-colors">
+                      <button
+                        className="flex items-center justify-center gap-[6px] min-w-0 py-1 hover:text-white transition-colors"
+                        aria-label="Compartilhar"
+                      >
                         <svg
-                          className="w-5 h-5"
+                          className="w-4 h-4 sm:w-5 sm:h-5 shrink-0"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -667,17 +673,17 @@ export default function DashboardFeed() {
                             strokeWidth="2"
                           />
                         </svg>
-                        <span>Compartilhar</span>
+                        <span className="truncate min-w-0">Compartilhar</span>
                       </button>
                     </div>
 
                     {/* Área de Comentário */}
                     {activeCommentPostId === post.id && (
-                      <div className="mt-4 flex gap-2">
+                      <div className="mt-4 flex w-full min-w-0 gap-[8px]">
                         <input
                           value={commentContent}
                           onChange={(e) => setCommentContent(e.target.value)}
-                          className="flex-1 bg-[#1c1e22] border border-[#2a2d32] rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#316cf4]"
+                          className="min-w-0 flex-1 bg-[#1c1e22] border border-[#2a2d32] rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#316cf4]"
                           placeholder="Escreva um comentário..."
                           onKeyDown={(e) => {
                             if (e.key === "Enter" && !e.shiftKey) {
@@ -688,7 +694,7 @@ export default function DashboardFeed() {
                         />
                         <button
                           onClick={() => handleComment(post.id)}
-                          className="bg-[#316cf4] hover:bg-blue-600 px-4 py-2 rounded-lg text-white text-sm font-semibold transition-colors"
+                          className="shrink-0 bg-[#316cf4] hover:bg-blue-600 px-4 py-2 rounded-lg text-white text-sm font-semibold transition-colors"
                         >
                           Enviar
                         </button>
@@ -697,11 +703,11 @@ export default function DashboardFeed() {
 
                     {/* Lista de Comentários */}
                     {post.comments && post.comments.length > 0 && (
-                      <div className="space-y-3 border-t border-[#2a2d32] pt-4 mt-4">
+                      <div className="space-y-3 border-t border-[#2a2d32] pt-4 mt-4 w-full min-w-0">
                         {post.comments.map((comment) => (
                           <div
                             key={comment.id}
-                            className="flex gap-3 group/comment"
+                            className="flex w-full min-w-0 gap-2 sm:gap-3 group/comment"
                           >
                             <Link
                               href={`/dashboard/perfil/${comment.userId}`}
@@ -721,40 +727,42 @@ export default function DashboardFeed() {
                               )}
                             </Link>
 
-                            <div className="flex-1 rounded-xl bg-[#1c1e22] px-4 py-2.5 text-sm text-gray-300 relative">
-                              <div className="flex items-center gap-2 mb-1">
+                            <div className="w-full min-w-0 flex-1 rounded-xl bg-[#1c1e22] px-3 py-2 sm:px-4 sm:py-2.5 text-sm text-gray-300 relative overflow-hidden">
+                              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1 pr-6 min-w-0">
                                 <Link
                                   href={`/dashboard/perfil/${comment.userId}`}
-                                  className="hover:underline"
+                                  className="hover:underline min-w-0 max-w-full"
                                 >
-                                  <p className="font-bold text-white text-xs hover:text-[#316cf4] transition-colors">
+                                  <p className="font-bold text-white text-xs hover:text-[#316cf4] transition-colors truncate">
                                     {comment.user.name}
                                   </p>
                                 </Link>
                                 {comment.user.isPioneer && (
                                   <div
-                                    className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-linear-to-r from-amber-900/40 via-yellow-900/20 to-amber-900/40 px-1.5 py-0.5 shadow-[0_0_10px_rgba(245,158,11,0.2)] backdrop-blur-sm"
+                                    className="shrink-0 inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-linear-to-r from-amber-900/40 via-yellow-900/20 to-amber-900/40 px-1.5 py-0.5 shadow-[0_0_10px_rgba(245,158,11,0.2)] backdrop-blur-sm"
                                     title="Membro Fundador"
                                   >
                                     <FiAward
                                       className="text-amber-400"
                                       size={10}
                                     />
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-transparent bg-clip-text bg-linear-to-r from-amber-200 to-yellow-500">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-transparent bg-clip-text bg-linear-to-r from-amber-200 to-yellow-500 hidden sm:inline">
                                       Pioneiro
                                     </span>
                                   </div>
                                 )}
                               </div>
 
-                              <p className="leading-relaxed">{comment.content}</p>
+                              <p className="leading-relaxed break-words whitespace-pre-wrap text-xs sm:text-sm">
+                                {comment.content}
+                              </p>
 
                               {comment.userId === user?.id && (
                                 <button
                                   onClick={() =>
                                     handleDeleteComment(comment.id)
                                   }
-                                  className="absolute top-2 right-2 opacity-0 group-hover/comment:opacity-100 text-gray-500 hover:text-red-400 transition-opacity"
+                                  className="absolute top-2 right-2 opacity-100 sm:opacity-0 sm:group-hover/comment:opacity-100 text-gray-500 hover:text-red-400 transition-opacity p-1"
                                   title="Excluir comentário"
                                 >
                                   <FiTrash2 size={12} />

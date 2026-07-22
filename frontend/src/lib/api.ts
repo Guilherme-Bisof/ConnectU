@@ -1,12 +1,6 @@
 const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, "");
 
-const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL;
-
-if (!configuredApiUrl) {
-  throw new Error(
-    "NEXT_PUBLIC_API_URL não está configurada. Defina a URL base da API no ambiente do frontend.",
-  );
-}
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL || "https://connectu-gd1z.onrender.com";
 
 export const API_URL = normalizeBaseUrl(configuredApiUrl);
 
