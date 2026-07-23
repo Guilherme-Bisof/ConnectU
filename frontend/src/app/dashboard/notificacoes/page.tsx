@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FiBell, FiMessageSquare, FiHeart, FiCheck, FiBriefcase, FiUsers, FiInfo, FiChevronDown } from "react-icons/fi";
 import { useSocket } from "@/app/components/providers/SocketProvider";
@@ -41,6 +41,18 @@ export default function NotificationsPage() {
   const [activeTab, setActiveTab] = useState<"ALL" | "UNREAD">("ALL");
   const [activeFilter, setActiveFilter] = useState<string>("ALL");
   
+  const activeTabRef = useRef(activeTab);
+  const activeFilterRef = useRef(activeFilter);
+  const processedIds = useRef(new Set<string>());
+
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+
+  useEffect(() => {
+    activeFilterRef.current = activeFilter;
+  }, [activeFilter]);
+  
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -73,10 +85,15 @@ export default function NotificationsPage() {
       const data = await res.json();
       
       setNotifications(prev => {
-        if (reset) return data.items;
+        if (reset) {
+          const newSet = new Set<string>();
+          data.items.forEach((n: Notification) => newSet.add(n.id));
+          processedIds.current = newSet;
+          return data.items;
+        }
         
-        // Deduplicate
         const newIds = new Set(data.items.map((n: Notification) => n.id));
+        data.items.forEach((n: Notification) => processedIds.current.add(n.id));
         const filteredPrev = prev.filter(n => !newIds.has(n.id));
         return [...filteredPrev, ...data.items];
       });
@@ -100,20 +117,48 @@ export default function NotificationsPage() {
   useEffect(() => {
     if (!socket) return;
 
-    const handleNotification = (newNotification: Notification) => {
-      setGlobalUnreadCount(prev => prev + 1);
+    const handleNotification = (incoming: Notification) => {
+      if (!incoming.id || !incoming.type) return;
 
-      // Check if it matches current tab/filter
-      if (activeTab === "UNREAD" && newNotification.read) return;
-      if (activeFilter !== "ALL") {
-        const allowedTypes = activeFilter.split(",");
-        if (!allowedTypes.includes(newNotification.type)) return;
+      const isUnreadTab = activeTabRef.current === "UNREAD";
+      const filter = activeFilterRef.current;
+
+      const matchesCurrentFilter = (n: Notification) => {
+        if (isUnreadTab && n.read) return false;
+        if (filter !== "ALL") {
+          const allowed = filter.split(",");
+          if (!allowed.includes(n.type)) return false;
+        }
+        return true;
+      };
+
+      const exists = processedIds.current.has(incoming.id);
+      
+      if (!exists) {
+        processedIds.current.add(incoming.id);
+        if (!incoming.read) {
+          setGlobalUnreadCount(prev => prev + 1);
+        }
       }
 
       setNotifications((current) => {
-        const duplicated = current.some((item) => item.id === newNotification.id);
-        if (duplicated) return current;
-        return [newNotification, ...current];
+        const currentExists = current.some((item) => item.id === incoming.id);
+
+        if (currentExists) {
+          return current.map((item) =>
+            item.id === incoming.id
+              ? {
+                  ...item,
+                  ...incoming,
+                  actor: incoming.actor ?? item.actor,
+                }
+              : item
+          );
+        }
+
+        return matchesCurrentFilter(incoming)
+          ? [incoming, ...current]
+          : current;
       });
     };
 
@@ -132,7 +177,7 @@ export default function NotificationsPage() {
           const markedCount = current.filter(n => n.type === "MESSAGE" && !n.read && (n.metadata?.roomId === data.roomId || n.resourceUrl === `/dashboard/chat/${data.roomId}`)).length;
           setGlobalUnreadCount(prev => Math.max(0, prev - markedCount));
           
-          if (activeTab === "UNREAD") {
+          if (activeTabRef.current === "UNREAD") {
             return mapped.filter(n => !n.read);
           }
         }
@@ -142,7 +187,7 @@ export default function NotificationsPage() {
 
     const handleAllRead = () => {
       setNotifications((current) => {
-        if (activeTab === "UNREAD") return [];
+        if (activeTabRef.current === "UNREAD") return [];
         return current.map((notification) => ({ ...notification, read: true }));
       });
       setGlobalUnreadCount(0);
@@ -156,7 +201,7 @@ export default function NotificationsPage() {
         
         setGlobalUnreadCount(prev => Math.max(0, prev - 1));
         
-        if (activeTab === "UNREAD") {
+        if (activeTabRef.current === "UNREAD") {
           return current.filter(n => n.id !== data.notificationId);
         }
         
@@ -177,7 +222,7 @@ export default function NotificationsPage() {
       socket.off("notifications:all-read", handleAllRead);
       socket.off("notification:read", handleSingleRead);
     };
-  }, [socket, activeTab, activeFilter]);
+  }, [socket]);
 
   const handleMarkAllAsRead = async () => {
     const token = localStorage.getItem("connectu_token");
