@@ -93,6 +93,7 @@ export default function NotificationsPage() {
   }, [activeTab, activeFilter]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchNotifications(null, true);
   }, [fetchNotifications]);
 

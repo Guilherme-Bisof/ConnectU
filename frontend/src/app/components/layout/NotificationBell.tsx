@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   FiBell,
   FiCheck,
@@ -38,6 +38,7 @@ export function NotificationBell({
   const [isOpen, setIsOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<{title: string; description: string} | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const processedIds = useRef(new Set<string>());
   const router = useRouter();
   const { socket } = useSocket();
 
@@ -66,61 +67,69 @@ export function NotificationBell({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    async function fetchNotifications() {
-      const token = localStorage.getItem("connectu_token");
-      if (!token) return;
+  const fetchNotifications = useCallback(async () => {
+    const token = localStorage.getItem("connectu_token");
+    if (!token) return;
 
-      try {
-        const res = await fetch(
-          apiEndpoint("/notifications"),
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-        if (res.ok) {
-          const data = await res.json();
-          setNotifications((prev) => {
-            const fetchedIds = new Set(data.items.map((n: Notification) => n.id));
-            const newFromSocket = prev.filter(n => !fetchedIds.has(n.id));
-            return [...newFromSocket, ...data.items];
-          });
-          setGlobalUnreadCount(data.unreadCount || 0);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar notificações:", error);
+    try {
+      const res = await fetch(
+        apiEndpoint("/notifications?limit=30"),
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (res.ok) {
+        const data = await res.json();
+        
+        const newSet = new Set<string>();
+        data.items.forEach((n: Notification) => newSet.add(n.id));
+        processedIds.current = newSet;
+
+        setNotifications(data.items);
+        setGlobalUnreadCount(data.unreadCount || 0);
       }
+    } catch (error) {
+      console.error("Erro ao buscar notificações:", error);
     }
-    fetchNotifications();
   }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   useEffect(() => {
     if (!socket) return;
 
+    const handleConnect = () => {
+      fetchNotifications();
+    };
+
     const handleNotification = (newNotification: Notification) => {
+      if (processedIds.current.has(newNotification.id)) {
+        return;
+      }
+      
+      processedIds.current.add(newNotification.id);
+      
       setNotifications((current) => {
-        const duplicated = current.some((item) => item.id === newNotification.id);
-        
-        if (duplicated) {
-          return current;
-        }
-        setGlobalUnreadCount(prev => prev + 1);
         return [newNotification, ...current];
       });
+      setGlobalUnreadCount((prev) => prev + 1);
     };
 
     const handleRoomRead = (data: { roomId: string, resourceUrl?: string }) => {
       setNotifications((current) => {
-        let changed = false;
+        let markedCount = 0;
         const mapped = current.map(n => {
           if (n.type === "MESSAGE" && !n.read && (n.metadata?.roomId === data.roomId || n.resourceUrl === `/dashboard/chat/${data.roomId}`)) {
-            changed = true;
+            markedCount++;
             return { ...n, read: true };
           }
           return n;
         });
-        if (changed) {
-          setGlobalUnreadCount(prev => Math.max(0, prev - current.filter(n => n.type === "MESSAGE" && !n.read && (n.metadata?.roomId === data.roomId || n.resourceUrl === `/dashboard/chat/${data.roomId}`)).length));
+        if (markedCount > 0) {
+          setGlobalUnreadCount(prev => Math.max(0, prev - markedCount));
         }
         return mapped;
       });
@@ -145,18 +154,20 @@ export function NotificationBell({
       });
     };
 
+    socket.on("connect", handleConnect);
     socket.on("notification:received", handleNotification);
     socket.on("notifications:room-read", handleRoomRead);
     socket.on("notifications:all-read", handleAllRead);
     socket.on("notification:read", handleSingleRead);
 
     return () => {
+      socket.off("connect", handleConnect);
       socket.off("notification:received", handleNotification);
       socket.off("notifications:room-read", handleRoomRead);
       socket.off("notifications:all-read", handleAllRead);
       socket.off("notification:read", handleSingleRead);
     };
-  }, [socket]);
+  }, [socket, fetchNotifications]);
 
 
 
