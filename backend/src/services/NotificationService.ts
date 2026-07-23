@@ -1,6 +1,7 @@
 import { prisma } from "../lib/prisma.js";
 import { ioInstance } from "../controllers/socketController.js";
 import { getUserRoom } from "../utils/socketRooms.js";
+import { serializeNotification } from "../utils/notificationUtils.js";
 
 interface CreateNotificationInput {
     userId: string;
@@ -19,7 +20,7 @@ export class NotificationService {
                 return null;
             }
 
-            const notification = await prisma.notification.create({
+            const rawNotification = await prisma.notification.create({
               data: {
                 userId,
                 senderId: senderId ?? null, 
@@ -28,7 +29,14 @@ export class NotificationService {
                 content,
                 postId: postId ?? null,
               },
+              include: {
+                sender: {
+                  select: { id: true, name: true, avatarUrl: true }
+                }
+              }
             });
+
+            const notification = serializeNotification(rawNotification);
 
             if (ioInstance) {
                 ioInstance.to(getUserRoom(userId)).emit("notification:received", notification);
