@@ -11,10 +11,10 @@ async function backfill() {
   let totalCreated = 0;
 
   while (hasMore) {
-    const messages = await prisma.message.findMany({
+    const messages: any[] = await prisma.message.findMany({
       take: batchSize,
       skip: cursor ? 1 : 0,
-      cursor: cursor ? { id: cursor } : undefined,
+      ...(cursor ? { cursor: { id: cursor } } : {}),
       orderBy: { id: 'asc' },
       include: {
         room: {
@@ -25,7 +25,7 @@ async function backfill() {
         },
         receipts: { select: { userId: true } } // Para idempotência
       }
-    });
+    } as any);
 
     if (messages.length === 0) {
       hasMore = false;
@@ -37,16 +37,16 @@ async function backfill() {
     const receiptsToCreate = [];
 
     for (const msg of messages) {
-      const existingReceiptUserIds = new Set(msg.receipts.map(r => r.userId));
+      const existingReceiptUserIds = new Set(msg.receipts.map((r: any) => r.userId));
       
-      const recipients = msg.room.users.filter(u => u.id !== msg.senderId);
+      const recipients = msg.room.users.filter((u: any) => u.id !== msg.senderId);
 
       for (const recipient of recipients) {
         if (existingReceiptUserIds.has(recipient.id)) {
           continue; // Já tem receipt
         }
 
-        const readState = msg.room.readStates.find(rs => rs.userId === recipient.id);
+        const readState = msg.room.readStates.find((rs: any) => rs.userId === recipient.id);
         const isRead = readState?.lastReadAt && readState.lastReadAt >= msg.createdAt;
 
         receiptsToCreate.push({

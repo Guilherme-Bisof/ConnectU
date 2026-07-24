@@ -8,14 +8,21 @@ export async function calculateTotalUnread(userId: string) {
       where: { users: { some: { id: userId } } },
       select: { 
         id: true, 
-        // @ts-ignore (desativado até prisma generate rodar offline)
-        readStates: { where: { userId }, select: { lastReadAt: true } }
+        // @ts-ignore
+        readStates: { where: { userId }, select: { lastReadAt: true } },
+        // @ts-ignore
+        preferences: { where: { userId }, select: { isArchived: true } }
       }
     });
 
-    if (userRooms.length === 0) return { totalUnread: 0, byRoom: {} };
+    const activeRooms = userRooms.filter((room: any) => {
+      // @ts-ignore
+      return !room.preferences[0]?.isArchived;
+    });
 
-    const orConditions = userRooms.map(room => {
+    if (activeRooms.length === 0) return { totalUnread: 0, byRoom: {} };
+
+    const orConditions = activeRooms.map((room: any) => {
       const rs = room.readStates[0];
       if (!rs || !rs.lastReadAt) {
         return { roomId: room.id }; // Conta todas (já que o backfill lidou com o passado, sem read state = nova)
@@ -89,7 +96,7 @@ export class ChatController {
       const readThroughAt = lastMessage.createdAt;
       let affectedSenderIds: string[] = [];
 
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: any) => {
         await tx.roomReadState.upsert({
           where: {
             roomId_userId: { roomId, userId }
@@ -149,7 +156,7 @@ export class ChatController {
             });
           }
 
-          affectedSenderIds = [...new Set(receiptsToUpdate.map((r: any) => r.message.senderId as string))];
+          affectedSenderIds = Array.from(new Set(receiptsToUpdate.map((r: any) => String(r.message.senderId))));
         }
       });
 
@@ -280,6 +287,26 @@ export class ChatController {
       }
 
       const room = await this.findOrCreateRoom(userId, participantId, "SOCIAL");
+
+      // Auto-desarquivamento: Se a sala já existia e estava arquivada pelo usuário atual, desarquivá-la
+      const unarchiveResult = await prisma.roomPreference.updateMany({
+        where: { roomId: room.id, userId, isArchived: true },
+        data: { isArchived: false, archivedAt: null }
+      });
+
+      if (unarchiveResult.count > 0 && ioInstance) {
+        const pref = await prisma.roomPreference.findUnique({
+          where: { roomId_userId: { roomId: room.id, userId } }
+        });
+        if (pref) {
+          ioInstance.to(getUserRoom(userId)).emit("chat:preference-updated", {
+            roomId: room.id,
+            preference: pref,
+            reason: "new-conversation"
+          });
+        }
+      }
+
       return res.json(room);
     } catch (error) {
       console.error("Erro ao iniciar conversa:", error);
@@ -304,6 +331,12 @@ export class ChatController {
 
       // Usa a mesma lógica: se já existe uma sala com essa pessoa, reutiliza
       const room = await this.findOrCreateRoom(recruiterId, studentId, "PROFESSIONAL", jobId);
+      
+      await prisma.roomPreference.updateMany({
+        where: { roomId: room.id, userId: recruiterId, isArchived: true },
+        data: { isArchived: false, archivedAt: null }
+      });
+
       return res.json(room);
     } catch (error) {
       console.error("Erro ao iniciar chat profissional:", error);
@@ -330,20 +363,88 @@ export class ChatController {
           },
           // @ts-ignore (desativado até prisma generate rodar offline)
           readStates: { where: { userId } },
+          // @ts-ignore
+          preferences: { where: { userId } },
         },
         orderBy: { createdAt: "desc" },
       });
 
+      const wantArchived = req.query.archived === "true";
+
+      const filteredRooms = rooms.filter((r: any) => {
+        const isArchived = r.preferences[0]?.isArchived || false;
+        return wantArchived ? isArchived : !isArchived;
+      });
+
       const summary = await calculateTotalUnread(userId);
-      const mappedRooms = rooms.map(r => ({
-        ...r,
-        unreadCount: summary.byRoom[r.id] || 0
-      }));
+      const mappedRooms = filteredRooms.map((r: any) => {
+        const preference = r.preferences[0] || { isMuted: false, isArchived: false, detailsPanelCollapsed: false };
+        delete r.preferences;
+        return {
+          ...r,
+          preference,
+          unreadCount: summary.byRoom[r.id] || 0
+        };
+      });
+
+      mappedRooms.sort((a: any, b: any) => {
+        const dateA = a.messages[0]?.createdAt ? new Date(a.messages[0].createdAt).getTime() : new Date(a.createdAt).getTime();
+        const dateB = b.messages[0]?.createdAt ? new Date(b.messages[0].createdAt).getTime() : new Date(b.createdAt).getTime();
+        return dateB - dateA;
+      });
 
       return res.json(mappedRooms);
     } catch (error) {
       console.error("Erro ao listar conversas:", error);
       return res.status(500).json({ error: "Erro ao buscar conversas." });
+    }
+  }
+
+  async updatePreferences(req: Request, res: Response) {
+    try {
+      const roomId = String(req.params.roomId);
+      const userId = (req as any).user?.id as string;
+      const { isMuted, isArchived, detailsPanelCollapsed } = req.body;
+
+      if (!roomId) return res.status(400).json({ error: "RoomId obrigatório." });
+
+      const roomAccess = await prisma.room.findFirst({
+        where: { id: roomId, users: { some: { id: userId } } }
+      });
+
+      if (!roomAccess) {
+        return res.status(403).json({ error: "Acesso negado à sala." });
+      }
+
+      const pref = await prisma.roomPreference.upsert({
+        where: { roomId_userId: { roomId, userId } },
+        update: {
+          ...(typeof isMuted === "boolean" && { isMuted, mutedAt: isMuted ? new Date() : null }),
+          ...(typeof isArchived === "boolean" && { isArchived, archivedAt: isArchived ? new Date() : null }),
+          ...(typeof detailsPanelCollapsed === "boolean" && { detailsPanelCollapsed })
+        },
+        create: {
+          roomId,
+          userId,
+          isMuted: isMuted || false,
+          isArchived: isArchived || false,
+          detailsPanelCollapsed: detailsPanelCollapsed || false,
+          mutedAt: isMuted ? new Date() : null,
+          archivedAt: isArchived ? new Date() : null
+        }
+      });
+
+      if (ioInstance) {
+        ioInstance.to(getUserRoom(userId)).emit("chat:preference-updated", {
+          roomId,
+          preference: pref
+        });
+      }
+
+      return res.json(pref);
+    } catch (error) {
+      console.error("Erro ao atualizar preferências:", error);
+      return res.status(500).json({ error: "Erro interno no servidor." });
     }
   }
 

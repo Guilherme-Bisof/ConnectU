@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
-import { FiMessageSquare, FiSearch, FiEdit3 } from "react-icons/fi";
+import { FiMessageSquare, FiSearch, FiEdit3, FiArchive } from "react-icons/fi";
 import { useUnreadMessages } from "../../components/providers/UnreadMessagesProvider";
 import { useSocket } from "../../components/providers/SocketProvider";
 import { apiEndpoint } from "@/lib/api";
+import { NewConversationModal } from "../../components/chat/NewConversationModal";
 
 export interface Participant {
   id: string;
@@ -20,11 +21,18 @@ export interface MessagePreview {
   createdAt: string;
 }
 
+export interface RoomPreference {
+  isMuted: boolean;
+  isArchived: boolean;
+  detailsPanelCollapsed: boolean;
+}
+
 export interface Room {
   id: string;
   context: string;
   users: Participant[];
   messages: MessagePreview[];
+  preference: RoomPreference;
 }
 
 export default function ChatLayout({ children }: { children: React.ReactNode }) {
@@ -36,11 +44,19 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
 
   const [conversations, setConversations] = useState<Room[]>([]);
   const [activeFilter, setActiveFilter] = useState<
-    "TODOS" | "STUDENT" | "RECRUITER"
+    "TODOS" | "STUDENT" | "RECRUITER" | "ARCHIVED"
   >("TODOS");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [user] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("connectu_user");
+      return stored ? JSON.parse(stored) : null;
+    }
+    return null;
+  });
 
   useEffect(() => {
     if (!socket) return;
@@ -71,36 +87,109 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
     };
   }, [socket]);
 
+  const conversationsRef = useRef<Room[]>([]);
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
+
+  const refetchConversations = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("connectu_token");
+      const archivedQuery = activeFilter === "ARCHIVED" ? "true" : "false";
+      const res = await fetch(apiEndpoint(`/conversations?archived=${archivedQuery}`), {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setConversations(data);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar conversas:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeFilter]);
+
   // Buscar conversas do usuário logado
   useEffect(() => {
-    async function fetchConversations() {
+    let isMounted = true;
+    const loadConversations = async () => {
       try {
         const token = localStorage.getItem("connectu_token");
-        const res = await fetch(apiEndpoint("/conversations"), {
+        const archivedQuery = activeFilter === "ARCHIVED" ? "true" : "false";
+        const res = await fetch(apiEndpoint(`/conversations?archived=${archivedQuery}`), {
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (res.ok) {
+        if (res.ok && isMounted) {
           const data = await res.json();
           setConversations(data);
         }
       } catch (error) {
         console.error("Erro ao buscar conversas:", error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
-    }
+    };
 
-    fetchConversations();
-  }, []);
+    loadConversations();
+    return () => {
+      isMounted = false;
+    };
+  }, [activeFilter]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handlePreferenceUpdated = (data: { roomId: string, preference: RoomPreference, room?: Room }) => {
+      const shouldBeVisible = (activeFilter === "ARCHIVED") === data.preference.isArchived;
+      const idx = conversationsRef.current.findIndex(r => r.id === data.roomId);
+
+      if (idx !== -1) {
+        setConversations((prev) => {
+          const localIdx = prev.findIndex(r => r.id === data.roomId);
+          if (localIdx === -1) return prev;
+          
+          const updatedRooms = [...prev];
+          updatedRooms[localIdx] = { ...updatedRooms[localIdx], preference: data.preference };
+          
+          if (activeFilter !== "ARCHIVED" && data.preference.isArchived) {
+             return updatedRooms.filter(r => r.id !== data.roomId);
+          }
+          if (activeFilter === "ARCHIVED" && !data.preference.isArchived) {
+             return updatedRooms.filter(r => r.id !== data.roomId);
+          }
+          return updatedRooms;
+        });
+      } else {
+        if (shouldBeVisible) {
+           void refetchConversations();
+        }
+      }
+    };
+
+    const handleMessageDeliveryRequest = () => {
+      void refetchConversations();
+    };
+
+    socket.on("chat:preference-updated", handlePreferenceUpdated);
+    socket.on("message:delivery-request", handleMessageDeliveryRequest);
+
+    return () => {
+      socket.off("chat:preference-updated", handlePreferenceUpdated);
+      socket.off("message:delivery-request", handleMessageDeliveryRequest);
+    };
+  }, [socket, activeFilter, refetchConversations]);
 
   // Filtro derivado
   const filteredConversations = conversations.filter((room) => {
     const matchRole =
-      activeFilter === "TODOS" ||
+      activeFilter === "TODOS" || activeFilter === "ARCHIVED" ||
       room.users.some((u) => u.role === activeFilter);
     const matchSearch =
       searchQuery.trim() === "" ||
@@ -121,9 +210,12 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
         <div className="p-md space-y-md shrink-0">
           <div className="flex items-center justify-between">
             <h2 className="text-headline-sm font-headline-sm text-on-surface">Mensagens</h2>
-            <span className="text-on-surface-variant cursor-pointer hover:text-primary transition-colors">
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="p-2 -mr-2 text-on-surface-variant hover:text-primary transition-colors rounded-full hover:bg-surface-container-highest"
+            >
               <FiEdit3 size={20} />
-            </span>
+            </button>
           </div>
           
           <div className="relative group">
@@ -140,7 +232,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
           </div>
           
           {/* Segmented Control */}
-          <div className="flex items-center p-0.5 bg-surface-container-low rounded-lg border border-outline-variant">
+          <div className="flex items-center p-0.5 bg-surface-container-low rounded-lg border border-outline-variant relative">
             {(["TODOS", "STUDENT", "RECRUITER"] as const).map((filter, idx) => (
               <div key={filter} className="flex-1 flex items-center">
                 <button
@@ -160,6 +252,14 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
                 {idx !== 2 && <span className="text-outline-variant/50 text-[10px] mx-0.5">|</span>}
               </div>
             ))}
+            
+            <button
+              onClick={() => setActiveFilter("ARCHIVED")}
+              className={`p-1.5 ml-1 rounded-md transition-colors ${activeFilter === "ARCHIVED" ? "bg-surface-container-highest text-primary shadow-sm" : "text-on-surface-variant hover:text-on-surface"}`}
+              title="Conversas Arquivadas"
+            >
+              <FiArchive size={16} />
+            </button>
           </div>
         </div>
 
@@ -222,7 +322,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
                     <div className="min-w-0 flex-1">
                       <div className="flex min-w-0 items-center justify-between gap-2">
                         <span className={`min-w-0 truncate text-[14px] ${isActive ? "font-bold text-white" : (unreadCount > 0 ? "font-bold text-on-surface" : "font-semibold text-on-surface")}`}>
-                          {otherUser.name}
+                          {otherUser.name} {room.preference?.isMuted && <span className="text-on-surface-variant inline-block ml-1 opacity-70">🔕</span>}
                         </span>
                         <time className={`shrink-0 text-[10px] font-bold tracking-wider ${isActive ? "text-primary" : "text-on-surface-variant"}`}>
                           {lastMessage ? new Date(lastMessage.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
@@ -255,6 +355,11 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
         {children}
       </section>
 
+      <NewConversationModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        currentUserId={user?.id}
+      />
     </div>
   );
 }
