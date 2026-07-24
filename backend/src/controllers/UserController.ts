@@ -267,7 +267,7 @@ export class UserController {
 
       const normalizedQuery = normalize(searchFilter);
 
-      const filteredUsers = users.filter((user) => {
+      const filteredUsers = users.filter((user: any) => {
         if (normalize(user.name).includes(normalizedQuery)) return true;
         if (user.course && normalize(user.course).includes(normalizedQuery)) return true;
         if (user.institution && normalize(user.institution).includes(normalizedQuery)) return true;
@@ -277,7 +277,7 @@ export class UserController {
 
         if (
           user.skills &&
-          user.skills.some((skill) => normalize(skill).includes(normalizedQuery))
+          user.skills.some((skill: any) => normalize(skill).includes(normalizedQuery))
         ) {
           return true;
         }

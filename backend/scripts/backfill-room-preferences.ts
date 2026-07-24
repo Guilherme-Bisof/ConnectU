@@ -29,7 +29,7 @@ async function main() {
   let invalidCount = 0;
 
   for (const user of usersWithMuted) {
-    const userRoomIds = new Set(user.rooms.map(r => r.id));
+    const userRoomIds = new Set(user.rooms.map((r: any) => r.id));
 
     for (const roomId of user.mutedRooms) {
       if (!userRoomIds.has(roomId)) {
