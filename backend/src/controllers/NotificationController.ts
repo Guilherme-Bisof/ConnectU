@@ -61,7 +61,7 @@ export class NotificationController {
           { id: "desc" }
         ],
         take: limit + 1,
-        cursor: cursor ? { id: cursor } : undefined,
+        ...(cursor && { cursor: { id: cursor } }),
         skip: cursor ? 1 : 0,
         include: {
           sender: {

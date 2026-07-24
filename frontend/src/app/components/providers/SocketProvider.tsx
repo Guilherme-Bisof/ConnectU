@@ -21,7 +21,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     const instance = io(SOCKET_URL, {
       auth: { token },
       autoConnect: true,
-      transports: ["websocket"],
+      transports: ["websocket", "polling"],
       withCredentials: true,
     });
 

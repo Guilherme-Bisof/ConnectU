@@ -63,14 +63,14 @@ export class ApplicationController {
       });
 
       // Calcula a porcentagem de match para cada um dos alunos
-      const applicantsWithMatch = applications.map(app => {
+      const applicantsWithMatch = applications.map((app: any) => {
         const studentSkills = app.user.skills || [];
         const requiredSkills = app.job.requiredSkills || [];
 
         let matchCount = 0;
-        requiredSkills.forEach(reqSkill => {
+        requiredSkills.forEach((reqSkill: any) => {
           // Compara ignorando maiúsculas/minuscúlas
-          const hasSkill = studentSkills.some(studentSkills => studentSkills.toLowerCase().trim() === reqSkill.toLowerCase().trim());
+          const hasSkill = studentSkills.some((studentSkill: any) => studentSkill.toLowerCase().trim() === reqSkill.toLowerCase().trim());
           if(hasSkill) matchCount++;
         });
 
@@ -89,7 +89,7 @@ export class ApplicationController {
       });
 
       // Ordena a lista (Os maiores matches aparecem primeiro)
-      applicantsWithMatch.sort((a,b) => b.matchPercentage - a.matchPercentage);
+      applicantsWithMatch.sort((a: any, b: any) => b.matchPercentage - a.matchPercentage);
 
       res.json(applicantsWithMatch);
 

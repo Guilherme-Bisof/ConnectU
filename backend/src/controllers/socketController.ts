@@ -27,7 +27,7 @@ export const registerSocketEvents = (io: Server) => {
 
   ioInstance = io;
 
-  io.use((socket, next) => {
+  io.use((socket: any, next: any) => {
     const token =
       socket.handshake.auth.token || socket.handshake.headers["authorization"];
 
@@ -100,7 +100,7 @@ export const registerSocketEvents = (io: Server) => {
         }, {} as Record<string, string[]>);
         
         for (const senderId of Object.keys(bySender)) {
-          for (const msgId of bySender[senderId]) {
+          for (const msgId of (bySender[senderId] || [])) {
             io.to(getUserRoom(senderId)).emit("message:receipt-updated", {
               messageId: msgId,
               userId: authUser.id,
@@ -194,7 +194,7 @@ export const registerSocketEvents = (io: Server) => {
 
           const otherUsers = room.users.filter((u: any) => u.id !== senderId);
 
-          const savedMessage = await prisma.$transaction(async (tx) => {
+          const { savedMessage, unarchiveResults } = await prisma.$transaction(async (tx: any) => {
             const msg = await tx.message.create({
               data: {
                 content: content || null,
@@ -204,7 +204,7 @@ export const registerSocketEvents = (io: Server) => {
               },
             });
 
-            const receiptsData = otherUsers.map(u => ({
+            const receiptsData = otherUsers.map((u: any) => ({
               messageId: msg.id,
               userId: u.id,
               deliveredAt: null,
@@ -217,10 +217,47 @@ export const registerSocketEvents = (io: Server) => {
                 data: receiptsData
               });
             }
-            return msg;
+
+            const unarchiveResults: Record<string, { unarchived: boolean, pref: any }> = {};
+            
+            for (const user of room.users) {
+               const pref = await tx.roomPreference.findUnique({
+                 where: { roomId_userId: { roomId, userId: user.id } }
+               });
+               
+               if (pref?.isArchived) {
+                 const unarchiveResult = await tx.roomPreference.updateMany({
+                   where: { roomId, userId: user.id, isArchived: true },
+                   data: { isArchived: false, archivedAt: null }
+                 });
+
+                 unarchiveResults[user.id] = { unarchived: unarchiveResult.count > 0, pref };
+               } else {
+                 unarchiveResults[user.id] = { unarchived: false, pref };
+               }
+            }
+
+            return { savedMessage: msg, unarchiveResults };
           });
 
           io.to(roomId).emit("receive_message", savedMessage);
+          
+          // Emitir auto-desarquivamento para quem precisou (remetente ou destinatário)
+          for (const user of room.users) {
+            const result = unarchiveResults[user.id];
+            if (result?.unarchived) {
+              io.to(getUserRoom(user.id)).emit("chat:preference-updated", {
+                roomId,
+                preference: {
+                  isArchived: false,
+                  archivedAt: null,
+                  isMuted: result.pref?.isMuted || false,
+                  detailsPanelCollapsed: result.pref?.detailsPanelCollapsed ?? false,
+                },
+                reason: "new-message"
+              });
+            }
+          }
           
           for (const user of otherUsers) {
             io.to(getUserRoom(user.id)).emit("message:delivery-request", {
@@ -235,9 +272,9 @@ export const registerSocketEvents = (io: Server) => {
 
           for (const user of otherUsers) {
               const recipientRoom = getUserRoom(user.id);
-              
-              // Verifica se a sala está silenciada para este usuário
-              const isMuted = user.mutedRooms && user.mutedRooms.includes(roomId);
+              const result = unarchiveResults[user.id];
+              const pref = result?.pref;
+              const isMuted = pref?.isMuted || false;
               
               if (!isMuted) {
                 const notification = await prisma.notification.create({
@@ -343,7 +380,7 @@ export const registerSocketEvents = (io: Server) => {
         
         const isMuted = user.mutedRooms.includes(roomId);
         const updatedMutedRooms = isMuted
-          ? user.mutedRooms.filter(id => id !== roomId)
+          ? user.mutedRooms.filter((id: any) => id !== roomId)
           : [...user.mutedRooms, roomId];
 
         await prisma.user.update({

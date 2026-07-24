@@ -11,20 +11,20 @@ import {
   FiEdit2,
   FiTrash2,
   FiX,
+  FiArchive,
   FiImage,
   FiSmile,
   FiUser,
   FiSidebar,
-  FiCheck,
   FiCheckCircle,
   FiVolume2,
   FiVolumeX,
-  FiEyeOff,
   FiPlusCircle,
   FiBriefcase,
-  FiUsers
+  FiUsers,
+  FiCornerUpLeft
 } from "react-icons/fi";
-import type { Participant, Room } from "../layout";
+import type { Participant, Room, RoomPreference } from "../layout";
 import { useUnreadMessages } from "../../../components/providers/UnreadMessagesProvider";
 import { MessageStatus, MessageDeliveryStatus } from "../../../components/chat/MessageStatus";
 import { useSocket } from "../../../components/providers/SocketProvider";
@@ -62,7 +62,18 @@ export default function ChatRoomPage() {
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [preference, setPreference] = useState<RoomPreference>(() => {
+    if (typeof window !== "undefined") {
+      const cached = sessionStorage.getItem("connectu_conversations_cache");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const currentRoom = parsed.find((r: Room) => r.id === roomId);
+        if (currentRoom && currentRoom.preference) return currentRoom.preference;
+      }
+    }
+    return { isMuted: false, isArchived: false, detailsPanelCollapsed: false };
+  });
+  const menuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeChatUser, setActiveChatUser] = useState<Participant | null>(() => {
@@ -89,7 +100,6 @@ export default function ChatRoomPage() {
 
   useEffect(() => {
     async function fetchActiveUser() {
-      if (activeChatUser) return;
       try {
         const tokenStr = localStorage.getItem("connectu_token");
         const res = await fetch(apiEndpoint("/conversations"), {
@@ -101,8 +111,9 @@ export default function ChatRoomPage() {
           const data = await res.json();
           sessionStorage.setItem("connectu_conversations_cache", JSON.stringify(data));
           const currentRoom = data.find((r: Room) => r.id === roomId);
-          if (currentRoom && currentRoom.users[0]) {
-            setActiveChatUser(currentRoom.users[0]);
+          if (currentRoom) {
+            if (currentRoom.users[0]) setActiveChatUser(currentRoom.users[0]);
+            if (currentRoom.preference) setPreference(currentRoom.preference);
           }
         }
       } catch (error) {
@@ -110,7 +121,19 @@ export default function ChatRoomPage() {
       }
     }
     fetchActiveUser();
-  }, [roomId, activeChatUser]);
+  }, [roomId]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    }
+    if (isMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isMenuOpen]);
 
   // Lógica Socket.io 
   useEffect(() => {
@@ -172,6 +195,12 @@ export default function ChatRoomPage() {
       }));
     };
 
+    const onPreferenceUpdated = (data: { roomId: string, preference: RoomPreference }) => {
+      if (data.roomId === roomId) {
+        setPreference(data.preference);
+      }
+    };
+
     const onMessageEdited = (updatedMsg: Message) => {
       setMessages((prev) => prev.map((m) => (m.id === updatedMsg.id ? updatedMsg : m)));
     };
@@ -192,31 +221,24 @@ export default function ChatRoomPage() {
     socket.on("receive_message", onReceiveMessage);
     socket.on("message:receipt-updated", onMessageReceiptUpdated);
     socket.on("messages:read-up-to", onMessagesReadUpTo);
+    socket.on("chat:preference-updated", onPreferenceUpdated);
     socket.on("message_edited", onMessageEdited);
     socket.on("message_deleted", onMessageDeleted);
     socket.on("room_deleted", onRoomDeleted);
 
     return () => {
+      socket.emit("leave_room", roomId);
       socket.off("online_users_list", onOnlineUsersList);
       socket.off("user_status_change", onUserStatusChange);
       socket.off("receive_message", onReceiveMessage);
       socket.off("message:receipt-updated", onMessageReceiptUpdated);
       socket.off("messages:read-up-to", onMessagesReadUpTo);
+      socket.off("chat:preference-updated", onPreferenceUpdated);
       socket.off("message_edited", onMessageEdited);
       socket.off("message_deleted", onMessageDeleted);
       socket.off("room_deleted", onRoomDeleted);
     };
-  }, [roomId, router, socket]);
-
-  useEffect(() => {
-    // Carrega o estado de mute atual
-    if (typeof window !== "undefined" && roomId) {
-      setTimeout(() => {
-        const mutedRooms = JSON.parse(localStorage.getItem("connectu_muted_rooms") || "[]");
-        setIsMuted(mutedRooms.includes(roomId));
-      }, 0);
-    }
-  }, [roomId]);
+  }, [socket, roomId, user?.id, router]);
 
   // Buscar histórico de mensagens da sala ativa
   useEffect(() => {
@@ -357,21 +379,47 @@ export default function ChatRoomPage() {
     }
   };
 
-  const handleMute = () => {
-    socket?.emit("toggle_mute_room", roomId);
-    const mutedRooms = JSON.parse(localStorage.getItem("connectu_muted_rooms") || "[]");
-    
-    if (isMuted) {
-      const updatedRooms = mutedRooms.filter((id: string) => id !== roomId);
-      localStorage.setItem("connectu_muted_rooms", JSON.stringify(updatedRooms));
-      setIsMuted(false);
-    } else {
-      mutedRooms.push(roomId);
-      localStorage.setItem("connectu_muted_rooms", JSON.stringify(mutedRooms));
-      setIsMuted(true);
-    }
+  const updatePreference = async (updates: Partial<RoomPreference>) => {
+    const token = localStorage.getItem("connectu_token");
+    setPreference(prev => {
+      const newPref = { ...prev, ...updates };
+      const cached = sessionStorage.getItem("connectu_conversations_cache");
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          const roomIdx = parsed.findIndex((r: Room) => r.id === roomId);
+          if (roomIdx !== -1) {
+            parsed[roomIdx].preference = newPref;
+            sessionStorage.setItem("connectu_conversations_cache", JSON.stringify(parsed));
+          }
+        } catch {}
+      }
+      return newPref;
+    });
     setIsMenuOpen(false);
+    try {
+      await fetch(apiEndpoint(`/conversations/${roomId}/preferences`), {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(updates)
+      });
+    } catch (e) {
+      console.error(e);
+      alert("Erro ao atualizar preferências da conversa");
+    }
   };
+
+  const handleMute = () => updatePreference({ isMuted: !preference.isMuted });
+  const handleArchive = () => {
+    updatePreference({ isArchived: !preference.isArchived });
+    if (!preference.isArchived) {
+      router.push('/dashboard/chat');
+    }
+  };
+  const toggleDetailsPanel = () => updatePreference({ detailsPanelCollapsed: !preference.detailsPanelCollapsed });
 
   const isOnline = activeChatUser ? onlineUsers.includes(activeChatUser.id) : false;
 
@@ -412,25 +460,25 @@ export default function ChatRoomPage() {
           </div>
           
           <div className="flex items-center gap-xs">
-            <button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" title="Ver Perfil">
+            <button onClick={() => router.push(`/dashboard/perfil/${activeChatUser?.id}`)} className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" title="Ver Perfil">
               <FiUser size={20} />
             </button>
-            <button className="hidden xl:block p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" title="Alternar Painel">
+            <button onClick={toggleDetailsPanel} className="hidden xl:block p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" title="Alternar Painel">
               <FiSidebar size={20} />
             </button>
-            <div className="relative">
+            <div className="relative" ref={menuRef}>
               <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors">
                 <FiMoreVertical size={20} />
               </button>
               {isMenuOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-surface-container-highest border border-outline-variant rounded-xl shadow-xl overflow-hidden py-1 z-50">
                   <button onClick={handleMute} className="w-full text-left px-4 py-2 text-sm text-on-surface hover:bg-surface-bright transition-colors flex items-center gap-2">
-                    {isMuted ? <FiVolume2 size={18} /> : <FiVolumeX size={18} />}
-                    {isMuted ? "Desativar Mudo" : "Silenciar"}
+                    {preference.isMuted ? <FiVolume2 size={18} /> : <FiVolumeX size={18} />}
+                    {preference.isMuted ? "Reativar Notificações" : "Silenciar"}
                   </button>
-                  <button onClick={() => { setIsMenuOpen(false); alert("Ocultar não implementado"); }} className="w-full text-left px-4 py-2 text-sm text-on-surface hover:bg-surface-bright transition-colors flex items-center gap-2">
-                    <FiEyeOff size={18} />
-                    Ocultar Conversa
+                  <button onClick={handleArchive} className="w-full text-left px-4 py-2 text-sm text-on-surface hover:bg-surface-bright transition-colors flex items-center gap-2">
+                    {preference.isArchived ? <FiCornerUpLeft size={18} /> : <FiArchive size={18} />}
+                    {preference.isArchived ? "Desarquivar" : "Arquivar Conversa"}
                   </button>
                 </div>
               )}
@@ -565,7 +613,7 @@ export default function ChatRoomPage() {
             
             <textarea
               className="min-w-0 flex-1 resize-none bg-transparent py-2 leading-5 outline-none custom-scrollbar placeholder:text-on-surface-variant/50 text-[14px]"
-              placeholder={isMuted ? "Você silenciou as notificações desta conversa..." : "Escreva uma mensagem..."}
+              placeholder={preference.isMuted ? "Você silenciou as notificações desta conversa..." : "Escreva uma mensagem..."}
               value={newMessage}
               rows={1}
               onChange={(e) => {
@@ -606,7 +654,7 @@ export default function ChatRoomPage() {
       </main>
 
       {/* Column 3: Context Panel (300-320px) */}
-      <aside className="hidden lg:flex min-h-0 w-77.5 bg-surface-container-low overflow-y-auto custom-scrollbar shrink-0 flex-col border-l border-outline-variant">
+      <aside className={`${preference.detailsPanelCollapsed ? 'hidden' : 'hidden lg:flex'} min-h-0 w-77.5 bg-surface-container-low overflow-y-auto custom-scrollbar shrink-0 flex-col border-l border-outline-variant`}>
         <div className="p-lg flex flex-col gap-lg">
           
           {/* Identity Section */}
@@ -641,7 +689,7 @@ export default function ChatRoomPage() {
               </div>
             )}
             
-            <button className="w-full mt-lg py-2.5 bg-surface-container-highest border border-outline-variant rounded-lg text-label-md font-bold text-on-surface hover:bg-surface-bright transition-colors">
+            <button onClick={() => router.push(`/dashboard/perfil/${activeChatUser?.id}`)} className="w-full mt-lg py-2.5 bg-surface-container-highest border border-outline-variant rounded-lg text-label-md font-bold text-on-surface hover:bg-surface-bright transition-colors">
               Ver perfil completo
             </button>
           </div>

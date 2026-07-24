@@ -21,6 +21,9 @@ chatRoutes.post("/rooms/professional", authMiddleware, (req, res) =>
 chatRoutes.post("/conversations/upload-image", authMiddleware, uploadChatImage.single('file'), (req, res) =>
   chatController.uploadImage(req, res),
 );
+chatRoutes.patch("/conversations/:roomId/preferences", authMiddleware, (req, res) =>
+  chatController.updatePreferences(req, res),
+);
 
 chatRoutes.get("/chat/unread-summary", authMiddleware, (req, res) =>
   chatController.getUnreadSummary(req, res),
